@@ -1,76 +1,102 @@
-# ========== DOSYA: platform/docker-compose.yml ==========
-version: '3.8' # Docker Compose versiyonu
+# ========== DOSYA: platform/docker-compose.yml (TAM VE SON HALİ) ==========
 
 services:
   # 1. Redis Servisi (Mesaj Kuyruğu ve Sonuç Deposu)
   redis:
-    image: "redis:alpine" # Hafif bir Redis imajı
+    image: "redis:alpine"
     container_name: azuraforge_redis
-    ports:
-      - "6379:6379" # Host makine portu:Konteyner portu
-    volumes:
-      - redis_data:/data # Verilerin kalıcı olması için volume
+    ports: ["6379:6379"]
+    volumes: ["redis_data:/data"]
 
-  # 2. API Servisi (FastAPI Uygulaması)
+  # --- KÜTÜPHANE SERVİSLERİ (SADECE BUILD VE SAĞLIK KONTROLÜ İÇİN) ---
+  # Bu servisler, ana uygulamaların (API, Worker) bağımlılıklarını kurabilmesi için önceden build edilir.
+  # Bağımlılık zincirinde alt seviyede oldukları için 'depends_on' gerekmez,
+  # API ve Worker Dockerfile'ları onları zaten pip ile çeker.
+  # Buradaki tanımlar, onların da build edildiğini doğrulamak içindir.
+
+  # 2. Core Kütüphanesi
+  core_lib:
+    container_name: azuraforge_core_lib_build_test
+    build:
+      context: ./core # 'core' reposunun bulunduğu klasörü göster
+      dockerfile: Dockerfile # 'core' reposunun içindeki Dockerfile
+    command: python -c "import azuraforge_core; print('AzuraForge Core built and imported successfully in Docker!')"
+    # volumes: - ./core:/app # Geliştirme sırasında kodu anında yansıtmak için
+    # Bu servis sadece build ediliyor, çalıştırılmıyor. Mount'a gerek yok.
+
+  # 3. Learner Kütüphanesi
+  learner_lib:
+    container_name: azuraforge_learner_lib_build_test
+    build:
+      context: ./learner
+      dockerfile: Dockerfile
+    command: python -c "import azuraforge_learner; print('AzuraForge Learner built and imported successfully in Docker!')"
+    # volumes: - ./learner:/app # Sadece build ediliyor.
+
+  # 4. Applications Katalogu
+  applications_catalog:
+    container_name: azuraforge_applications_catalog_build_test
+    build:
+      context: ./applications
+      dockerfile: Dockerfile
+    command: python -c "import azuraforge_applications; print('AzuraForge Applications Catalog built and imported successfully in Docker!')"
+    # volumes: - ./applications:/app # Sadece build ediliyor.
+
+  # 5. App Stock Predictor (Uygulama Eklentisi)
+  app_stock_predictor:
+    container_name: azuraforge_app_stock_predictor_build_test
+    build:
+      context: ./app-stock-predictor
+      dockerfile: Dockerfile
+    command: python -c "import azuraforge_stockapp; print('AzuraForge App Stock Predictor built and imported successfully in Docker!')"
+    # volumes: - ./app-stock-predictor:/app # Sadece build ediliyor.
+
+  # --- ANA PLATFORM SERVİSLERİ ---
+  # Bu servisler, tüm ekosistemin temelidir ve diğer kütüphanelere bağımlıdır.
+
+  # 6. API Servisi  XXXX
   api:
     container_name: azuraforge_api
     build:
       context: ./api # 'api' reposunun bulunduğu klasörü göster
       dockerfile: Dockerfile # 'api' reposunun içindeki Dockerfile
     command: start-api # 'api' reposundaki entrypoint script'i
-    ports:
-      - "8000:8000"
+    ports: ["8000:8000"]
     volumes:
-      # Kodda yaptığımız değişikliklerin anında konteynere yansıması için
-      - ./api:/app/api
-      # Worker'ın yazacağı rapor dizinine API'nin de erişmesi için
-      - ${REPORTS_DIR}:/app/reports # Ortam değişkeninden gelecek REPORTS_DIR
-    environment:
-      - REDIS_URL=${REDIS_URL} # .env dosyasından oku
-      - REPORTS_DIR=/app/reports # Konteyner içi rapor dizini
-    depends_on:
-      - redis # Redis başladıktan sonra başla
-
-  # 3. Worker Servisi (Celery İşçisi)
-  worker:
-    container_name: azuraforge_worker
-    build:
-      context: ./worker # 'worker' reposunun bulunduğu klasörü göster
-      dockerfile: Dockerfile # 'worker' reposunun içindeki Dockerfile
-    command: start-worker # 'worker' reposundaki entrypoint script'i
-    volumes:
-      - ./worker:/app/worker
-      # Raporların ve modellerin host makinede kalıcı olması için
-      - ${REPORTS_DIR}:/app/reports
-      # İsteğe bağlı: GPU kullanılıyorsa
-      # deploy:
-      #   resources:
-      #     reservations:
-      #       devices:
-      #         - driver: nvidia
-      #           count: all
-      #           capabilities: [gpu]
+      - ./api:/app # API'ın kendi kodu
+      - ${REPORTS_DIR}:/app/reports # Ortak rapor dizini (Host makineden mount ediliyor)
     environment:
       - REDIS_URL=${REDIS_URL}
       - REPORTS_DIR=/app/reports
-      - CELERY_TASK_ID= # worker'ı başlatırken bunun tanımlı olması önemli değil
-    depends_on:
-      - redis
+    depends_on: [redis] # Redis'e bağımlı
 
-  # 4. Dashboard Servisi (React Uygulaması)
+  # 7. Worker Servisi   XXXXXXX
+  worker:
+    container_name: azuraforge_worker
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    command: start-worker
+    volumes:
+      - ./worker:/app # Worker'ın kendi kodu
+      - ${REPORTS_DIR}:/app/reports # Raporlar için
+    environment:
+      - REDIS_URL=${REDIS_URL}
+      - REPORTS_DIR=/app/reports
+    depends_on: [redis]
+
+  # 8. Dashboard Servisi  XXXXXX
   dashboard:
     container_name: azuraforge_dashboard
     build:
-      context: ./dashboard # 'dashboard' reposunun bulunduğu klasörü göster
-      dockerfile: Dockerfile # 'dashboard' reposunun içindeki Dockerfile
-    command: npm run dev # Vite geliştirme sunucusunu başlat
-    ports:
-      - "5173:5173" # React uygulamasının çalıştığı port
+      context: ./dashboard
+      dockerfile: Dockerfile
+    command: npm run dev
+    ports: ["5173:5173"]
     volumes:
-      - ./dashboard:/app # Kod değişiklikleri için
-      - /app/node_modules # Konteyner içinde node_modules cache'i
-    depends_on:
-      - api # API başladıktan sonra başla
+      - ./dashboard:/app
+      - /app/node_modules
+    depends_on: [api]
 
 volumes:
   redis_data: # Redis verilerini kalıcı tutmak için volume
