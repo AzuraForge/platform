@@ -1,0 +1,76 @@
+# ========== DOSYA: platform/docker-compose.yml ==========
+version: '3.8' # Docker Compose versiyonu
+
+services:
+  # 1. Redis Servisi (Mesaj Kuyruğu ve Sonuç Deposu)
+  redis:
+    image: "redis:alpine" # Hafif bir Redis imajı
+    container_name: azuraforge_redis
+    ports:
+      - "6379:6379" # Host makine portu:Konteyner portu
+    volumes:
+      - redis_data:/data # Verilerin kalıcı olması için volume
+
+  # 2. API Servisi (FastAPI Uygulaması)
+  api:
+    container_name: azuraforge_api
+    build:
+      context: ./api # 'api' reposunun bulunduğu klasörü göster
+      dockerfile: Dockerfile # 'api' reposunun içindeki Dockerfile
+    command: start-api # 'api' reposundaki entrypoint script'i
+    ports:
+      - "8000:8000"
+    volumes:
+      # Kodda yaptığımız değişikliklerin anında konteynere yansıması için
+      - ./api:/app/api
+      # Worker'ın yazacağı rapor dizinine API'nin de erişmesi için
+      - ${REPORTS_DIR}:/app/reports # Ortam değişkeninden gelecek REPORTS_DIR
+    environment:
+      - REDIS_URL=${REDIS_URL} # .env dosyasından oku
+      - REPORTS_DIR=/app/reports # Konteyner içi rapor dizini
+    depends_on:
+      - redis # Redis başladıktan sonra başla
+
+  # 3. Worker Servisi (Celery İşçisi)
+  worker:
+    container_name: azuraforge_worker
+    build:
+      context: ./worker # 'worker' reposunun bulunduğu klasörü göster
+      dockerfile: Dockerfile # 'worker' reposunun içindeki Dockerfile
+    command: start-worker # 'worker' reposundaki entrypoint script'i
+    volumes:
+      - ./worker:/app/worker
+      # Raporların ve modellerin host makinede kalıcı olması için
+      - ${REPORTS_DIR}:/app/reports
+      # İsteğe bağlı: GPU kullanılıyorsa
+      # deploy:
+      #   resources:
+      #     reservations:
+      #       devices:
+      #         - driver: nvidia
+      #           count: all
+      #           capabilities: [gpu]
+    environment:
+      - REDIS_URL=${REDIS_URL}
+      - REPORTS_DIR=/app/reports
+      - CELERY_TASK_ID= # worker'ı başlatırken bunun tanımlı olması önemli değil
+    depends_on:
+      - redis
+
+  # 4. Dashboard Servisi (React Uygulaması)
+  dashboard:
+    container_name: azuraforge_dashboard
+    build:
+      context: ./dashboard # 'dashboard' reposunun bulunduğu klasörü göster
+      dockerfile: Dockerfile # 'dashboard' reposunun içindeki Dockerfile
+    command: npm run dev # Vite geliştirme sunucusunu başlat
+    ports:
+      - "5173:5173" # React uygulamasının çalıştığı port
+    volumes:
+      - ./dashboard:/app # Kod değişiklikleri için
+      - /app/node_modules # Konteyner içinde node_modules cache'i
+    depends_on:
+      - api # API başladıktan sonra başla
+
+volumes:
+  redis_data: # Redis verilerini kalıcı tutmak için volume
