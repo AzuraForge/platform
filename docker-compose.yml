@@ -54,7 +54,7 @@ services:
   # --- ANA PLATFORM SERVİSLERİ ---
   # Bu servisler, tüm ekosistemin temelidir ve diğer kütüphanelere bağımlıdır.
 
-  # 6. API Servisi  XXXX
+  # 6. API Servisi
   api:
     container_name: azuraforge_api
     build:
@@ -70,7 +70,7 @@ services:
       - REPORTS_DIR=/app/reports
     depends_on: [redis] # Redis'e bağımlı
 
-  # 7. Worker Servisi   XXXXXXX
+  # 7. Worker Servisi
   worker:
     container_name: azuraforge_worker
     build:
@@ -85,13 +85,13 @@ services:
       - REPORTS_DIR=/app/reports
     depends_on: [redis]
 
-  # 8. Dashboard Servisi  XXXXXX
+  # 8. Dashboard Servisi
   dashboard:
     container_name: azuraforge_dashboard
     build:
       context: ./dashboard
       dockerfile: Dockerfile
-    command: npm run dev
+    command: npm run dev -- --host 0.0.0.0
     ports: ["5173:5173"]
     volumes:
       - ./dashboard:/app
