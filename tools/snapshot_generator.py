@@ -1,4 +1,4 @@
-# ========== DOSYA: platform/tools/snapshot_generator.py ==========
+# ========== GÜNCELLENMİŞ VE DÜZELTİLMİŞ DOSYA: platform/tools/snapshot_generator.py ==========
 import os
 import sys
 import json
@@ -74,16 +74,29 @@ def clean_code_comments(content: str, file_extension: str) -> str:
     for line in lines:
         stripped_line = line.strip()
         if file_extension == ".py":
-            if stripped_line.startswith("# type:") or stripped_line.startswith("# noqa"): cleaned_lines.append(line)
-            elif stripped_line.startswith("#!/"): cleaned_lines.append(line)
-            elif "#" in line and not stripped_line.startswith("#"): cleaned_lines.append(line.split("#", 1)[0].rstrip())
-            else: cleaned_lines.append(line)
+            # Preserve special comments like '# type:' and shebangs
+            if stripped_line.startswith("# type:") or stripped_line.startswith("# noqa"): 
+                cleaned_lines.append(line)
+            elif stripped_line.startswith("#!/"): 
+                cleaned_lines.append(line)
+            # Remove inline comments
+            elif "#" in line and not stripped_line.startswith("#"): 
+                cleaned_lines.append(line.split("#", 1)[0].rstrip())
+            # Remove full-line comments
+            elif stripped_line.startswith("#"):
+                continue # Skip full line comments
+            else: 
+                cleaned_lines.append(line)
         elif file_extension == ".sh":
-            if stripped_line.startswith("#!/"): cleaned_lines.append(line)
-            elif not stripped_line.startswith("#"): cleaned_lines.append(line)
+            if stripped_line.startswith("#!/"): 
+                cleaned_lines.append(line)
+            elif not stripped_line.startswith("#"): 
+                cleaned_lines.append(line)
         elif file_extension == ".bat":
-            if not stripped_line.lower().startswith("rem "): cleaned_lines.append(line)
-        else: cleaned_lines.append(line)
+            if not stripped_line.lower().startswith("rem "): 
+                cleaned_lines.append(line)
+        else: 
+            cleaned_lines.append(line)
     return "\n".join(cleaned_lines)
 
 
@@ -95,6 +108,8 @@ def should_exclude(item_path: str, root_path: str, exclude_patterns: List[str]) 
     try:
         relative_item_path = os.path.relpath(normalized_item_path, normalized_root_path)
     except ValueError:
+        # If item_path is not relative to root_path (e.g., different drive on Windows)
+        # or other path normalization issues, treat it as its own path.
         relative_item_path = normalized_item_path
     
     relative_item_path_slashes = relative_item_path.replace(os.sep, "/")
@@ -103,14 +118,19 @@ def should_exclude(item_path: str, root_path: str, exclude_patterns: List[str]) 
         normalized_pattern = os.path.normpath(pattern)
         normalized_pattern_slashes = normalized_pattern.replace(os.sep, "/")
 
+        # Wildcard extensions like "*.pyc"
         if pattern.startswith("*."):
             if relative_item_path_slashes.endswith(pattern[1:]): return True
+        # Directory names or file names without path
         elif "/" not in pattern and "." not in pattern and not pattern.startswith("*"):
             path_segments = relative_item_path_slashes.split("/")
             if pattern in path_segments: return True
+        # Exact file name match
         elif pattern == os.path.basename(normalized_item_path): return True
+        # Full path prefix match or relative path match
         elif normalized_item_path.startswith(os.path.join(normalized_root_path, normalized_pattern)) or \
              relative_item_path_slashes.startswith(normalized_pattern_slashes): return True
+        # Absolute path match
         elif os.path.isabs(normalized_pattern) and normalized_pattern == normalized_item_path: return True
     return False
 
@@ -136,14 +156,18 @@ def collect_project_files_full(
         excluded_patterns_placeholder=", ".join(exclude_patterns),
     )
 
-    # --- KRİTİK DÜZELTME: all_found_relative_paths adında yeni bir set kullanılıyor ---
-    all_found_relative_paths: Set[str] = set() # Bu set göreceli yolları tutar
+    all_found_relative_paths: Set[str] = set() # This set stores relative paths to prevent duplicates
     content_parts: List[str] = [snapshot_content_header]
     processed_files_count = 0
 
     for inc_dir_pattern in include_dirs:
         current_scan_dir = os.path.abspath(os.path.join(abs_base_dir, inc_dir_pattern))
+        if not os.path.exists(current_scan_dir):
+            print(f"Warning: Include directory '{inc_dir_pattern}' (resolved to '{current_scan_dir}') does not exist. Skipping.")
+            continue
+
         for root, dirs, files in os.walk(current_scan_dir, topdown=True):
+            # Filter directories in-place to prevent os.walk from entering excluded ones
             dirs[:] = [
                 d for d in dirs
                 if not should_exclude(os.path.join(root, d), abs_base_dir, exclude_patterns)
@@ -154,19 +178,23 @@ def collect_project_files_full(
                 relative_file_path = os.path.relpath(file_path, abs_base_dir)
                 display_path = relative_file_path.replace(os.sep, "/")
 
-                # --- KRİTİK DÜZELTME: Bu dosyanın göreceli yolu daha önce toplandı mı? ---
+                # Skip if already processed (e.g., if included by multiple patterns)
                 if display_path in all_found_relative_paths:
-                    continue # Evet ise, atla
+                    continue 
 
+                # Apply exclusion patterns to files
                 if should_exclude(file_path, abs_base_dir, exclude_patterns):
                     continue
 
                 _, file_extension = os.path.splitext(file_name)
+                # For extension check, handle files without an explicit extension (like Dockerfile)
                 name_part_for_ext_check = file_extension.lower() if file_extension else file_name.lower()
 
-                if any(name_part_for_ext_check.endswith(ext.lower()) for ext in include_extensions):
-                    # --- KRİTİK DÜZELTME: Yeni bulunan göreceli yolu sete ekle ---
-                    all_found_relative_paths.add(display_path)
+                # Check if file extension (or full name for extensionless files) is in include list
+                if any(name_part_for_ext_check.endswith(ext.lower()) for ext in include_extensions) or \
+                   (not file_extension and file_name.lower() in [ext.lower() for ext in include_extensions if not ext.startswith('.')]):
+                    
+                    all_found_relative_paths.add(display_path) # Add to set of found paths
                     try:
                         with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
                             file_content = f.read()
@@ -174,10 +202,13 @@ def collect_project_files_full(
                         if clean_comments:
                             file_content = clean_code_comments(file_content, file_extension)
                         
+                        # Add a leading newline for separator, then the header, then content.
+                        # This creates the format: \n========== FILE:PATH==========\nCONTENT
                         content_parts.append(f"\n{FILE_HEADER_TEMPLATE.format(file_path=display_path)}\n")
                         content_parts.append(file_content)
                         processed_files_count += 1
                     except Exception as e:
+                        print(f"Error reading file {relative_file_path}: {e}")
                         content_parts.append(f"\nError reading file {relative_file_path}: {e}\n")
 
     final_header_with_count = content_parts[0].replace("{total_files_counter}", str(processed_files_count))
@@ -209,18 +240,29 @@ def restore_from_full_snapshot(
         print(f"Error reading snapshot file: {e}")
         return
 
+    # Regex to find file blocks. It captures the file path (group 1) and its content (group 2).
+    # The crucial point is that group(2) captures ALL characters (including newlines due to re.DOTALL)
+    # after the header line's trailing newline, until the START of the next file header or end of string.
+    # The lookahead `(?=...)` is non-consuming, so the content is captured completely.
     file_block_pattern = re.compile(
-        r"^========== FILE: (.*?) ==========\n(.*?)(?=\n^========== FILE: |$)", 
+        r"^========== FILE: (.*?) ==========\n"  # Match header line and its trailing newline
+        r"(.*?)"                                 # Capture content (non-greedy)
+        r"(?=\n========== FILE: |\Z)",           # Lookahead: followed by newline then next header, OR end of string.
+                                                # \Z matches only at the end of the string.
         re.MULTILINE | re.DOTALL
     )
     
+    # Find the end of the initial info header to start parsing file blocks
     info_header_last_line = SNAPSHOT_INFO_TEMPLATE.splitlines()[-1]
     content_start_index = full_content.find(info_header_last_line)
     if content_start_index == -1:
         print("Error: Could not find the end of the snapshot info header.")
         return
     
-    content_to_parse = full_content[content_start_index + len(info_header_last_line):].strip()
+    # Slice the content to start exactly after the info header,
+    # and then lstrip any *leading* newlines that might be left before the first file block.
+    # This ensures the regex for the first file block can match correctly.
+    content_to_parse = full_content[content_start_index + len(info_header_last_line):].lstrip('\n')
 
     files_restored = 0
     files_skipped = 0
@@ -230,11 +272,15 @@ def restore_from_full_snapshot(
 
     for match in matches:
         relative_file_path = match.group(1).strip()
-        content_part = match.group(2).strip()
+        # KRİTİK DÜZELTME: match.group(2) üzerinde .strip() metodunu kaldırdık.
+        # Bu, tüm boşluk karakterlerinin (yeni satırlar dahil) korunmasını sağlar.
+        content_part = match.group(2) 
 
         os_specific_relative_path = relative_file_path.replace("/", os.sep)
         target_file_path = os.path.join(target_dir, os_specific_relative_path)
-        print(f"Processing file: {relative_file_path} -> {target_file_path}")
+        
+        # DEBUG YARDIMI: Yazılacak içeriğin uzunluğunu göster
+        print(f"Processing file: {relative_file_path} (Content length: {len(content_part)}) -> {target_file_path}")
 
         if os.path.exists(target_file_path) and not overwrite_existing:
             print(f"  SKIPPED: File '{target_file_path}' already exists (overwrite_existing is False).")
@@ -369,6 +415,7 @@ def main():
 
 
 if __name__ == "__main__":
+    # Example usage:
     # python tools/snapshot_generator.py collect project_full_snapshot.txt
     # python tools/snapshot_generator.py restore project_full_snapshot.txt --dry-run   
     # python tools/snapshot_generator.py restore project_full_snapshot.txt --overwrite
