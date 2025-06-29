@@ -15,62 +15,54 @@ AzuraForge'un her aşamasında, kalitesini ve sürdürülebilirliğini sağlamak
 
 ## ✅ Tamamlanan Fazlar ve Elde Edilen Başarılar
 
-### Faz 0: Fikir ve İlk Denemeler (Monolitik Yaklaşım)
+### Faz 0: Fikir ve İlk Denemeler (Monolitik "Smart Learner" Prototipi)
 
-*   **Düşünce:** Mevcut ML araçlarının karmaşıklığına ve bağımlılıklarına bir tepki olarak, sıfırdan bir derin öğrenme motoru (`mininn`) inşa etme fikri doğdu.
-*   **İlk Uygulama:** Hava durumu tahmini ve hisse senedi tahmini gibi basit uygulamalarla `mininn`'in yetenekleri test edildi.
-*   **Öğrenilen Ders:** Monolitik bir yaklaşımla (her şey tek bir repo'da) hızlı prototipleme mümkün olsa da, ölçeklenebilirlik ve yönetim zorlukları ortaya çıktı.
+*   **Düşünce:** Mevcut ML araçlarının karmaşıklığına bir tepki olarak, sıfırdan bir derin öğrenme motoru (`mininn`) inşa etme fikri doğdu.
+*   **Çekirdek Güçlendirme:** `mininn` motoruna sıfırdan **LSTM** katmanı ve **Adam** optimizer eklendi.
+*   **Kanıt 1 (Hava Durumu):** LSTM mimarisi, ham hava durumu verileriyle test edildi ve **R² > 0.98** gibi olağanüstü bir başarı elde edildi.
+*   **Kanıt 2 (Hisse Senedi):** LSTM mimarisi, logaritmik dönüşüm uygulanmış hisse senedi verileriyle test edildi ve **R² ≈ 0.73** gibi anlamlı bir başarı elde edildi.
+*   **Öğrenilen Ders:** Monolitik yapı hızlı prototipleme sağlasa da, ölçeklenebilirlik ve yönetim zorlukları ortaya çıkardı. Bu başarılar, daha profesyonel bir mimariye geçiş için temel oluşturdu.
 
-### Faz 1: Multi-Repo ve Mikroservis Mimarisine Geçiş
+### Faz 1: Multi-Repo ve Mikroservis Mimarisine Geçiş ("AzuraForge" Doğuyor)
 
 *   **Karar:** Uzun vadeli sürdürülebilirlik, ölçeklenebilirlik ve profesyonellik için, platformu bağımsız repolara sahip bir mikroservis mimarisine dönüştürme kararı alındı.
-*   **Zorluk:** Python'da çoklu repolar arası bağımlılık yönetimi ve yol (path) sorunları.
-*   **Çözüm:** `pip`'in `editable` kurulumu (`-e`) ve `git+https` bağımlılıklarını kullanarak, her reponun kendi `pyproject.toml` ve `setup.py` dosyalarıyla kurulabilir bir paket olması sağlandı. `importlib.resources` ile paket içi dosya erişimi çözüldü.
+*   **Zorluk:** Python'da çoklu repolar arası bağımlılık yönetimi.
+*   **Çözüm:** `pip`'in `editable` kurulumu (`-e`) ve `git+https` bağımlılıklarını kullanarak, her reponun kendi `pyproject.toml` ile kurulabilir bir paket olması sağlandı.
 
-### Faz 2: Temel Kütüphanelerin İnşası ve Kanıtı
+### Faz 2: Temel Kütüphanelerin ve Dağıtık Servislerin İnşası
 
-*   **`AzuraForge/core` (Matematik Motoru):** `Tensor` objesi ve otomatik türev yetenekleri sıfırdan inşa edildi. `pytest` ile birim testleri (dot, sum, add, mul, relu backward pass) başarıyla yazıldı ve geçti. **`to_cpu` ve `_unbroadcast_to` hataları bu fazda tespit edilip düzeltildi.**
-*   **`AzuraForge/learner` (Öğrenme Kütüphanesi):** `azuraforge-core`'a bağımlı olarak `Layer`, `Linear`, `Loss`, `MSELoss`, `Sequential`, `Optimizer`, `SGD` gibi temel öğrenme bileşenleri inşa edildi. `pytest` ile basit regresyon testi (`test_learner_fit_simple_regression`) başarıyla geçti.
+*   **`azuraforge-core` & `azuraforge-learner`:** Temel matematik motoru ve öğrenme kütüphanesi yeni mimariye uygun olarak oluşturuldu.
+*   **`azuraforge-worker`:** `Celery` ve `importlib.metadata` kullanarak, sisteme kurulu `entry_points`'e sahip eklentileri **otomatik olarak keşfeden** ve çalıştıran işçi servisi kuruldu.
+*   **`azuraforge-api`:** `FastAPI` ile RESTful API ve WebSocket endpoint'leri sunan iletişim katmanı inşa edildi.
+*   **`azuraforge-dashboard`:** React tabanlı temel bir web arayüzü inşa edildi.
 
-### Faz 3: Dağıtık Servisler ve Eklenti Mimarisi
+### Faz 3: Uçtan Uca Canlı Takip Entegrasyonu
 
-*   **`AzuraForge/applications` (Katalog):** Uygulama eklentilerinin JSON kataloğunu barındıran basit bir Python paketi olarak yapılandırıldı.
-*   **`AzuraForge/app-stock-predictor` (İlk Eklenti):** `azuraforge-learner`'ı kullanan ve platforma `entry_points` (`azuraforge.pipelines`) ile kendini tanıtan ilk uygulama eklentisi inşa edildi.
-*   **`AzuraForge/worker` (İşçi Servisi):** `celery[redis]` kullanarak arka plan görevlerini işleyen ve `importlib.metadata` ile sisteme kurulu tüm `azuraforge.pipelines` eklentilerini **otomatik olarak keşfeden** ve çalıştıran worker servisi kuruldu.
-*   **`AzuraForge/api` (API Servisi):** `FastAPI` ile RESTful API endpoint'leri (`/experiments`, `/pipelines`) sunan ve `worker`'a görev gönderen iletişim katmanı inşa edildi. API rotalarının `prefix` yönetimi ve `307 Redirect` sorunları bu fazda çözüldü.
-*   **Başarı:** `api` üzerinden gönderilen bir "stock_predictor" görevinin, `worker` tarafından alınıp, `app-stock-predictor` eklentisinin keşfedilip, `learner` kütüphanesi kullanılarak **gerçek bir model eğitiminin başarıyla tamamlandığı** kanıtlandı.
+*   **Başarı:** `Dashboard` üzerinden başlatılan bir görevin `API`'ye, oradan `Worker`'a iletilmesi ve `Worker`'ın eğitim ilerlemesini (`epoch`, `loss`) anlık olarak WebSocket üzerinden `Dashboard`'a raporlayarak canlı bir grafik ve ilerleme çubuğu güncellemesi başarıyla tamamlandı.
 
-### Faz 4: Kullanıcı Arayüzü ve Canlı Takip
-
-*   **`AzuraForge/dashboard` (Web UI):** React tabanlı, `api` servisinden deney ve pipeline listelerini çeken, yeni deneyler başlatmayı sağlayan temel bir web arayüzü inşa edildi.
-*   **Canlı Takip (WebSocket Entegrasyonu):**
-    *   `worker`, eğitim sırasında `Celery task.update_state` ile ilerleme durumunu Redis'e raporladı.
-    *   `api`, `FastAPI WebSocket` endpoint'i üzerinden bu ilerlemeyi `dashboard`'a anlık olarak iletti.
-    *   `dashboard`, gelen `PROGRESS` mesajlarıyla bir **ilerleme çubuğunu ve kayıp grafiğini canlı olarak güncelledi.**
-
-**An itibarıyla AzuraForge Platform 1.0, tüm temel mimarisi ve uçtan uca çalışan canlı takip yetenekleriyle TAMAMLANMIŞTIR!**
+**An itibarıyla AzuraForge, temel mimarisi ve canlı takip yetenekleriyle çalışır durumdadır. Şimdi, "Smart Learner" prototipinin kanıtlanmış zengin özelliklerini bu sağlam iskelete entegre etme zamanıdır.**
 
 ## 🗺️ Gelecek Fazlar ve Yol Haritası
 
 Bu sağlam temel üzerine inşa edilecek adımlar, AzuraForge'u daha da zenginleştirmeyi ve kapsamını genişletmeyi hedefleyecektir.
 
-### Faz 5: Deney Yönetimini Derinleştirme
+### Faz 4: Çekirdek Kütüphaneleri Zenginleştirme (Mevcut Görev)
+*   **Hedef:** `mininn` çekirdeğindeki `LSTM`, `Adam` optimizer gibi kanıtlanmış yetenekleri `azuraforge-core` ve `azuraforge-learner` kütüphanelerine entegre etmek.
+*   **Hedef:** `BaseTimeSeriesPipeline` gibi soyutlamaları ve otomatik raporlama yeteneklerini yeni mimariye taşımak.
 
-*   **Kalıcı Sonuçlar:** `worker`'ın `results.json`'a kaydettiği tüm detaylı veriyi (eğitim geçmişi, metrikler, konfigürasyon) `api` üzerinden okuyup Dashboard'da görselleştirme.
-*   **Deney Detay Sayfası:** Dashboard'da her deney için ayrı bir detay sayfası oluşturma.
+### Faz 5: Gelişmiş Deney Yönetimi ve Raporlama
+*   **Kalıcı Sonuçlar:** `worker`'ın oluşturduğu detaylı Markdown raporlarını ve grafiklerini `Dashboard` üzerinden görüntülenebilir hale getirmek.
+*   **Deney Detay Sayfası:** Her deney için tüm metriklerin, grafiklerin ve konfigürasyonun görülebildiği özel bir sayfa oluşturmak.
 *   **Model Yönetimi:** Eğitilen modellerin kaydedilmesi, listelenmesi ve daha sonra çıkarım için yüklenebilmesi.
 
 ### Faz 6: Yeni Veri Modalitelerine Açılım (Görüntü İşleme)
-
 *   **`core` Genişletme:** `Conv2D`, `MaxPool2D`, `Flatten` gibi CNN katmanlarını `core` kütüphanesine ekleme.
 *   **Yeni Uygulama Eklentisi:** `azuraforge-app-image-classifier` (örn: MNIST için) oluşturma.
 
 ### Faz 7: Hiperparametre Optimizasyonu
-
-*   **`azuraforge-hyper-tuner`:** Farklı hiperparametre kombinasyonlarıyla otomatik deneyler yapabilen yeni bir uygulama eklentisi.
-*   **Dashboard Entegrasyonu:** Dashboard'dan hiperparametre optimizasyonu işleri başlatma.
+*   **`azuraforge-hyper-tuner`:** Farklı hiperparametre kombinasyonlarıyla otomatik deneyler yapabilen yeni bir uygulama eklentisi veya araç.
+*   **Dashboard Entegrasyonu:** `Dashboard`'dan hiperparametre optimizasyonu işleri başlatma.
 
 ### Faz 8: Üretim Ortamı Hazırlığı (Deployment)
-
 *   **`platform` Orkestrasyonu:** `docker-compose.yml`'ı daha sağlam hale getirme (Nginx, HTTPS, Load Balancing).
 *   **CI/CD Pipeline'ları:** Tüm repolar için otomatik test, versiyonlama ve yayınlama (PyPI/GitHub Packages) pipeline'ları kurma.
