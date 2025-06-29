@@ -19,6 +19,9 @@ DEFAULT_INCLUDE_EXTENSIONS = [
     "html",
     ".bat",
     ".sh",
+    ".jsx",
+    ".js",
+    ".json"    
 ]
 DEFAULT_EXCLUDE_PATTERNS = [
     "__pycache__",
