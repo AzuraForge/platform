@@ -47,7 +47,11 @@ Tüm platformu yerel makinenizde tek bir komutla başlatmak için:
     # Linux/macOS için: ./reports
     REPORTS_DIR=./reports 
     ```
-    (Windows kullanıyorsanız `REPORTS_DIR`'i `C:/azuraforge_platform_reports` gibi bir mutlak yola ayarlamanız daha güvenli olabilir).
+    **ÖNEMLİ:** Docker Compose'u çalıştırmadan önce bu dizini host makinenizde oluşturduğunuzdan emin olun. Örneğin, Linux/macOS'ta:
+    ```bash
+    mkdir -p ./reports
+    ```
+    (Windows kullanıyorsanız `REPORTS_DIR`'i `C:/azuraforge_platform_reports` gibi bir mutlak yola ayarlamanız ve bu klasörü oluşturmanız daha güvenli olabilir).
 4.  **Platformu başlatın:**
     ```bash
     docker-compose up --build -d
