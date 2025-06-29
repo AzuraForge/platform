@@ -1,5 +1,3 @@
-# ========== DOSYA: platform/docker-compose.yml (TAM VE SON HALİ) ==========
-
 services:
   # 1. Redis Servisi (Mesaj Kuyruğu ve Sonuç Deposu)
   redis:

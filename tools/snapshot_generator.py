@@ -55,6 +55,7 @@ DEFAULT_EXCLUDE_PATTERNS = [
     ".DS_Store",
     "Thumbs.db", # Windows thumbnail cache
     "*.lock", # npm lock dosyaları gibi
+    "package-lock.json"
 ]
 
 FILE_HEADER_TEMPLATE = "========== FILE: {file_path} =========="
