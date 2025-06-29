@@ -21,7 +21,8 @@ DEFAULT_INCLUDE_EXTENSIONS = [
     ".sh",
     ".jsx",
     ".js",
-    ".json"    
+    ".json",
+    ".css"    
 ]
 DEFAULT_EXCLUDE_PATTERNS = [
     "__pycache__",
