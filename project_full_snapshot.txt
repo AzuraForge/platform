@@ -1,5 +1,5 @@
 PROJE KOD SNAPSHOT (TAM)
-Toplam 77 dosya bulundu ve eklendi.
+Toplam 80 dosya bulundu ve eklendi.
 Dahil Edilen Dizinler: .
 Dahil Edilen Uzantılar: .toml, .py, .yaml, .yml, .json, .md, .txt, html, .bat, .sh, .jsx, .js, .json, .css
 Hariç Tutulan Desenler/Yollar: __pycache__, .git, .venv, .vscode, .idea, build, dist, *.egg-info, *.pyc, *.so, *.pyd, .pytest_cache, .mypy_cache, .dataset, dataset, .logs, logs, .output, output, inputs, outputs, .tmp, checkpoints, reports, docs/_build, site, node_modules, .DS_Store, Thumbs.db, *.lock
@@ -106,8 +106,6 @@ services:
 
 volumes:
   redis_data: # Redis verilerini kalıcı tutmak için volume
-
-========== FILE: project_full_snapshot.txt ==========
 
 ========== FILE: README.md ==========
 # AzuraForge Platform 🚀
@@ -1056,19 +1054,18 @@ export default defineConfig([
 
 ========== FILE: dashboard/index.html ==========
 <!doctype html>
-<html lang="en">
+<html lang="tr">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React</title>
+    <title>AzuraForge | MLOps Dashboard</title>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
-
 ========== FILE: dashboard/package.json ==========
 {
   "name": "dashboard",
@@ -1082,13 +1079,17 @@ export default defineConfig([
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.2.6",
     "axios": "^1.10.0",
     "chart.js": "^4.5.0",
+    "chartjs-plugin-annotation": "^3.1.0",
+    "chartjs-plugin-zoom": "^2.2.0",
     "prop-types": "^15.8.1",
     "react": "^19.1.0",
     "react-chartjs-2": "^5.3.0",
     "react-dom": "^19.1.0",
-    "react-router-dom": "^7.6.3"
+    "react-router-dom": "^7.6.3",
+    "react-toastify": "^11.0.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.0",
@@ -1128,333 +1129,282 @@ export default defineConfig({
 })
 
 ========== FILE: dashboard/src/App.css ==========
-/* Kök Değişkenler: Tüm tasarım sistemimiz için merkezi kontrol noktası */
+/* ==========================================================================
+   1. KÖK DEĞİŞKENLER (Tasarım Sistemi)
+   ========================================================================== */
 :root {
-  --primary-color: #42b983; /* AzuraForge Yeşili */
-  --primary-color-dark: #369c70;
-  --secondary-color: #3b82f6; /* Vurgu için mavi */
-  --text-color: #e2e8f0; /* Açık gri metin */
-  --text-color-darker: #94a3b8; /* Daha soluk metin */
-  --bg-color: #0f172a; /* Ana Arkaplan (Çok Koyu Mavi/Siyah) */
-  --content-bg: #1e293b; /* Kart ve İçerik Arkaplanı (Koyu Gri/Mavi) */
-  --border-color: #334155;
-  --success-color: #22c55e;
-  --error-color: #ef4444;
-  --warning-color: #f59e0b;
-  --info-color: #3b82f6;
-  --font-sans: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  /* Koyu Tema (Varsayılan) */
+  --primary-color: #42b983; --primary-color-dark: #369c70; --secondary-color: #3b82f6;
+  --text-color: #e2e8f0; --text-color-darker: #94a3b8; --text-inverse: #ffffff;
+  --bg-color: #0f172a; --content-bg: #1e293b; --border-color: #334155; --hover-bg: #2a3a52;
+  --success-color: #22c55e; --error-color: #ef4444; --warning-color: #f59e0b; --info-color: #3b82f6;
+  --font-sans: 'Inter', system-ui, sans-serif; --font-mono: ui-monospace, Menlo, monospace;
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1);
+  --border-radius: 12px;
 }
-
-/* Temel Reset ve Genel Stiller */
+body.light-theme {
+  /* Açık Tema */
+  --text-color: #1e293b; --text-color-darker: #475569; --bg-color: #f8fafc;
+  --content-bg: #ffffff; --border-color: #e2e8f0; --hover-bg: #f1f5f9;
+  --success-color: #16a34a; --error-color: #dc2626; --warning-color: #d97706; --info-color: #2563eb;
+}
+/* ==========================================================================
+   2. TEMEL RESET VE GLOBAL STİLLER
+   ========================================================================== */
+*, *::before, *::after { box-sizing: border-box; }
 body {
-  margin: 0;
-  font-family: var(--font-sans);
-  background-color: var(--bg-color);
-  color: var(--text-color);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  overflow: hidden;
+  margin: 0; font-family: var(--font-sans); background-color: var(--bg-color); color: var(--text-color);
+  font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s, color 0.3s;
 }
-
-#root, .app-layout {
-  display: flex;
-  width: 100vw;
-  height: 100vh;
-}
-
-/* Sidebar */
+#root, .app-layout { display: flex; width: 100vw; height: 100vh; overflow: hidden; }
+/* ==========================================================================
+   3. ANA YAPI (Layout)
+   ========================================================================== */
 .sidebar {
-  width: 240px;
-  background-color: var(--bg-color);
-  border-right: 1px solid var(--border-color);
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  transition: width 0.3s ease;
+  width: 260px; background-color: var(--content-bg); border-right: 1px solid var(--border-color);
+  padding: 20px; display: flex; flex-direction: column; flex-shrink: 0;
+  transition: background-color 0.3s, border-color 0.3s, width 0.3s ease; z-index: 2000;
 }
-
-.sidebar h2 {
-  color: var(--primary-color);
-  font-size: 1.8em;
-  font-weight: 700;
-  text-align: center;
-  margin-bottom: 40px;
-  letter-spacing: 1px;
-}
-
-.sidebar nav ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
+.sidebar nav ul { list-style: none; padding: 0; margin: 0; }
 .sidebar nav a {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  padding: 12px 15px;
-  text-decoration: none;
-  color: var(--text-color-darker);
-  border-radius: 8px;
-  margin-bottom: 8px;
-  transition: background-color 0.2s ease, color 0.2s ease;
-  font-weight: 500;
+  display: flex; align-items: center; gap: 15px; padding: 12px 15px; text-decoration: none;
+  color: var(--text-color-darker); border-radius: 8px; margin-bottom: 8px;
+  transition: background-color 0.2s ease, color 0.2s ease; font-weight: 500;
 }
-
-.sidebar nav a:hover {
-  background-color: var(--content-bg);
-  color: var(--text-color);
-}
-
-.sidebar nav a.active {
-  background-color: var(--primary-color);
-  color: white;
-  font-weight: 600;
-}
-
-/* Ana İçerik Alanı */
-.main-content {
-  flex-grow: 1;
-  padding: 30px;
-  overflow-y: auto;
-  position: relative;
-}
-
-/* Genel Başlık Stilleri */
-.page-header {
-  margin-bottom: 30px;
-}
+.sidebar nav a:hover { background-color: var(--hover-bg); color: var(--text-color); }
+.sidebar nav a.active { background-color: var(--primary-color); color: var(--text-inverse); font-weight: 600; }
+.main-content { flex-grow: 1; padding: 30px; overflow-y: auto; position: relative; }
+.page-header { margin-bottom: 30px; }
 .page-header h1 {
-  font-size: 2.2em;
-  font-weight: 700;
-  color: white;
-  margin: 0 0 5px 0;
-  display: flex;
-  align-items: center;
-  gap: 15px;
+  font-size: 2.2em; font-weight: 700; color: var(--text-color); margin: 0 0 5px 0;
+  display: flex; align-items: center; gap: 15px; transition: color 0.3s;
 }
-.page-header p {
-  color: var(--text-color-darker);
-  font-size: 1.1em;
-  margin: 0;
+.page-header p { color: var(--text-color-darker); font-size: 1.1em; margin: 0; }
+/* ==========================================================================
+   4. LOGO VE TEMA DEĞİŞTİRME
+   ========================================================================== */
+.logo-container {
+  display: flex; align-items: center; justify-content: flex-start; gap: 12px;
+  margin-bottom: 40px; padding: 0 10px;
 }
-
-.section-title {
-  font-size: 1.8em;
-  color: white;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.logo-container h1 {
+  color: var(--text-color); font-size: 1.6em; font-weight: 600; margin: 0;
+  letter-spacing: 0.5px; transition: color 0.3s;
 }
-
-/* Kart Bileşeni */
-.card {
-  background-color: var(--content-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 25px;
-  box-shadow: var(--shadow-md);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+.theme-toggle-button {
+  background-color: var(--bg-color); color: var(--text-color-darker); border: 1px solid var(--border-color);
+  border-radius: 8px; padding: 8px; cursor: pointer; display: flex; align-items: center;
+  justify-content: center; margin-top: 20px; transition: all 0.2s ease;
 }
-.card.clickable:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 0 25px -5px rgba(66, 185, 131, 0.2);
+.theme-toggle-button:hover { border-color: var(--primary-color); color: var(--primary-color); }
+/* ==========================================================================
+   5. BİLEŞENLER (Components)
+   ========================================================================== */
+.card, .table-container, .form-container, .pipeline-details {
+  background-color: var(--content-bg); border: 1px solid var(--border-color);
+  border-radius: var(--border-radius); box-shadow: var(--shadow-md);
+  transition: background-color 0.3s, border-color 0.3s;
 }
-
-/* Canlı Takip Paneli (Glassmorphism) */
-.live-tracker-pane {
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  margin: -30px -30px 30px -30px; /* Padding'i sıfırla */
-  padding: 20px 30px;
-  background: rgba(30, 41, 59, 0.7); /* content-bg'nin yarı şeffaf hali */
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--border-color);
-  box-shadow: var(--shadow-lg);
+.table-container { padding: 0; }
+.card { padding: 25px; }
+.button-primary {
+  background-color: var(--primary-color); color: var(--text-inverse); padding: 10px 20px; border: none;
+  border-radius: 8px; cursor: pointer; font-size: 1em; font-weight: 600;
+  transition: background-color 0.2s ease, transform 0.2s ease; display: inline-flex;
+  align-items: center; gap: 8px;
 }
-
-.live-tracker-pane .close-button {
-  position: absolute; top: 15px; right: 20px; background: none; border: none; font-size: 24px; color: var(--text-color-darker); cursor: pointer; transition: color 0.2s;
-}
-.live-tracker-pane .close-button:hover { color: white; }
-
-.live-tracker-pane .tracker-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-.live-tracker-pane .tracker-header h4 { margin: 0; font-size: 1.3em; display: flex; align-items: center; gap: 10px; }
-.live-tracker-pane .tracker-header .tracker-info { display: flex; align-items: center; gap: 15px; }
-
-.live-tracker-pane .tracker-body { display: flex; gap: 20px; align-items: center; }
-.live-tracker-pane .tracker-progress { flex: 1; }
-.live-tracker-pane .tracker-chart { flex: 2; height: 100px; }
-
-/* Status Badges */
+.button-primary:hover:not(:disabled) { background-color: var(--primary-color-dark); transform: translateY(-2px); }
+.button-primary:disabled { background-color: var(--border-color); cursor: not-allowed; opacity: 0.6; transform: none; }
 .status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
-  border-radius: 9999px; /* Pill shape */
-  font-size: 0.8em;
-  font-weight: 600;
-  text-transform: uppercase;
-  color: white;
-  min-width: 90px;
-  justify-content: center;
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 9999px;
+  font-size: 0.8em; font-weight: 600; text-transform: uppercase; justify-content: center;
 }
-.status-badge::before {
-    content: '';
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    animation: pulse 2s infinite;
-}
-
-.status-badge.status-started, .status-badge.status-progress, .status-badge.status-connecting, .status-badge.status-connected {
-  background-color: rgba(59, 130, 246, 0.2); color: #60a5fa;
-}
-.status-badge.status-started::before, .status-badge.status-progress::before, .status-badge.status-connecting::before, .status-badge.status-connected::before {
-  background-color: var(--info-color);
-}
+.status-badge::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+.status-badge.status-started, .status-badge.status-progress, .status-badge.status-connecting { background-color: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+.status-badge.status-started::before, .status-badge.status-progress::before, .status-badge.status-connecting::before { background-color: var(--info-color); animation: pulse 2s infinite; }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-
 .status-badge.status-success { background-color: rgba(34, 197, 94, 0.2); color: #4ade80; }
-.status-badge.status-success::before { background-color: var(--success-color); animation: none; }
-
+.status-badge.status-success::before { background-color: var(--success-color); }
 .status-badge.status-failure, .status-badge.status-error { background-color: rgba(239, 68, 68, 0.2); color: #f87171; }
-.status-badge.status-failure::before, .status-badge.status-error::before { background-color: var(--error-color); animation: none; }
-
+.status-badge.status-failure::before, .status-badge.status-error::before { background-color: var(--error-color); }
 .status-badge.status-pending, .status-badge.status-unknown, .status-badge.status-disconnected { background-color: rgba(148, 163, 184, 0.2); color: var(--text-color-darker); }
-.status-badge.status-pending::before, .status-badge.status-unknown::before, .status-badge.status-disconnected::before { background-color: var(--text-color-darker); animation: none; }
-
-
-/* Form Stilleri */
-.form-container, .pipeline-details {
-  border-radius: 12px;
-  margin-bottom: 25px;
-}
+.status-badge.status-pending::before, .status-badge.status-unknown::before, .status-badge.status-disconnected::before { background-color: var(--text-color-darker); }
 .form-group { margin-bottom: 20px; }
 .form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-color-darker); }
 .form-group input, .form-group select {
-  width: calc(100% - 24px);
-  padding: 12px;
-  background-color: var(--bg-color);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  color: var(--text-color);
-  font-size: 1em;
+  width: 100%; padding: 12px; background-color: var(--bg-color); border: 1px solid var(--border-color);
+  border-radius: 8px; color: var(--text-color); font-size: 1em; font-family: var(--font-sans);
+  transition: background-color 0.3s, border-color 0.3s, color 0.3s;
 }
 .form-group input:focus, .form-group select:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(66, 185, 131, 0.3);
-}
-
-.button-primary {
-  background-color: var(--primary-color);
-  color: white;
-  padding: 12px 24px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1em;
-  font-weight: 600;
-  transition: background-color 0.2s ease, transform 0.2s ease;
-}
-.button-primary:hover:not(:disabled) {
-  background-color: var(--primary-color-dark);
-  transform: translateY(-2px);
-}
-.button-primary:disabled {
-  background-color: var(--border-color);
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-/* Tablo Stilleri */
-.table-container {
-  overflow-x: auto;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  background-color: var(--content-bg);
+  outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color) 30%, transparent);
 }
 table { width: 100%; border-collapse: collapse; }
-table th, table td { padding: 15px 20px; text-align: left; border-bottom: 1px solid var(--border-color); }
+table th, table td { padding: 12px 20px; text-align: left; border-bottom: 1px solid var(--border-color); vertical-align: middle; transition: border-color 0.3s; }
 table th {
-  background-color: var(--bg-color);
-  color: var(--text-color-darker);
-  font-weight: 600;
-  text-transform: uppercase;
-  font-size: 0.85em;
-  letter-spacing: 0.5px;
+  background-color: var(--bg-color); color: var(--text-color-darker); font-weight: 600;
+  text-transform: uppercase; font-size: 0.8em; letter-spacing: 0.5px;
+  transition: background-color 0.3s, color 0.3s;
 }
-table tbody tr:hover { background-color: #2a3a52; }
-table tr:last-child td { border-bottom: none; }
+table tbody tr:hover { background-color: var(--hover-bg); }
+table tbody tr.selected-row { background-color: color-mix(in srgb, var(--primary-color) 10%, transparent); border-left: 3px solid var(--primary-color); }
+.actions-cell { position: relative; text-align: right !important; }
+.actions-button {
+  background: none; border: none; font-size: 24px; line-height: 1; color: var(--text-color-darker);
+  cursor: pointer; border-radius: 4px; padding: 0 8px;
+}
+.actions-button:hover { background-color: var(--border-color); color: var(--text-color); }
+.actions-menu {
+  position: absolute; right: 20px; top: 50px; background-color: var(--hover-bg); border: 1px solid var(--border-color);
+  border-radius: 8px; box-shadow: var(--shadow-lg); z-index: 100; display: flex;
+  flex-direction: column; padding: 8px; min-width: 180px;
+}
+.actions-menu button {
+  background: none; border: none; color: var(--text-color); padding: 10px 15px; text-align: left;
+  cursor: pointer; border-radius: 6px; display: flex; align-items: center; gap: 10px; font-size: 0.9em;
+}
+.actions-menu button:hover { background-color: var(--secondary-color); color: var(--text-inverse); }
+/* ==========================================================================
+   6. ÖZEL PANELLER VE MODALLAR
+   ========================================================================== */
+.live-tracker-pane {
+  position: sticky; top: -30px; z-index: 1000; margin: -30px -30px 30px -30px;
+  padding: 20px 30px; background: color-mix(in srgb, var(--content-bg) 70%, transparent);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border-color); box-shadow: var(--shadow-lg);
+}
+.comparison-modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background-color: color-mix(in srgb, var(--bg-color) 70%, transparent); backdrop-filter: blur(8px);
+  z-index: 5000; display: flex; align-items: center; justify-content: center;
+}
+.comparison-modal-content {
+  background-color: var(--bg-color); border: 1px solid var(--border-color); border-radius: 16px;
+  width: 90%; max-width: 1200px; height: 90vh; box-shadow: var(--shadow-lg);
+  display: flex; flex-direction: column;
+}
+.comparison-header {
+  display: flex; justify-content: space-between; align-items: center; padding: 20px 30px;
+  border-bottom: 1px solid var(--border-color); flex-shrink: 0;
+}
+.comparison-header h2 { margin: 0; font-size: 1.5em; }
+.close-button {
+  background: none; border: none; font-size: 24px; color: var(--text-color-darker);
+  cursor: pointer; transition: color 0.2s;
+}
+.close-button:hover { color: var(--text-color); }
+.comparison-body {
+  padding: 30px; flex-grow: 1; overflow-y: auto; display: flex;
+  flex-direction: column; gap: 30px;
+}
+.comparison-chart-container { height: 400px; min-height: 300px; width: 100%; position: relative; }
+.chart-instructions {
+  position: absolute; bottom: 5px; right: 10px; font-size: 0.75em;
+  color: var(--text-color-darker); background-color: color-mix(in srgb, var(--content-bg) 80%, transparent);
+  padding: 2px 8px; border-radius: 4px; opacity: 0.7;
+}
+.color-indicator {
+  display: inline-block; width: 12px; height: 12px; border-radius: 50%;
+  margin-right: 10px; vertical-align: middle;
+}
+/* ==========================================================================
+   7. ÜÇÜNCÜ PARTİ KÜTÜPHANE STİLLERİ
+   ========================================================================== */
+.Toastify__toast {
+  background-color: var(--content-bg) !important; color: var(--text-color) !important;
+  border: 1px solid var(--border-color) !important; border-radius: 8px !important;
+  font-family: var(--font-sans) !important;
+}
+.Toastify__progress-bar { background: var(--primary-color) !important; }
+.Toastify__close-button { color: var(--text-color) !important; }
 
-.clickable-cell a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
-.clickable-cell a:hover { text-decoration: underline; }
-.exp-id { font-family: monospace; color: var(--text-color-darker); }
+/* ==========================================================================
+   8. YENİ DENEY SAYFASI ÖZEL STİLLERİ
+   ========================================================================== */
 
-/* Detaylı Görünüm Stilleri */
-
-.expanded-row-content {
+.new-experiment-layout {
   display: flex;
-  gap: 25px;
-  padding: 25px;
-  background-color: var(--bg-color); /* Tablo başlığı ile aynı renk */
-  border-top: 1px solid var(--border-color);
+  flex-direction: column;
+  height: 100%; /* Ana konteynerin tüm yüksekliği kaplaması için */
 }
-.detail-section {
-  flex: 1;
-  min-width: 0;
-}
-.detail-section h4 {
-  margin-top: 0;
-  margin-bottom: 15px;
-  color: var(--primary-color);
-  font-size: 1.1em;
-}
-.code-block {
-  background-color: #0f172a; /* Ana arkaplanla aynı */
+
+.new-experiment-form {
+  flex-grow: 1; /* Kalan tüm alanı kapla */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* İçerik taşmasını engelle */
+  border-radius: var(--border-radius);
+  background-color: var(--content-bg);
   border: 1px solid var(--border-color);
-  padding: 15px;
-  border-radius: 8px;
-  overflow-x: auto;
-  font-family: monospace;
-  font-size: 0.9em;
-  max-height: 300px;
 }
-.detail-chart-container {
-    height: 250px;
-    margin-bottom: 20px;
+
+.form-main-content {
+  flex-grow: 1;
+  overflow-y: auto; /* Sadece bu alan kaydırılabilir olacak */
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.form-action-bar {
+  flex-shrink: 0; /* Bu panelin küçülmesini engelle */
+  padding: 15px 25px;
+  background-color: var(--bg-color);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+.pipeline-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-color-darker);
+}
+.pipeline-info span {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+/* Form içindeki iç içe gruplar için daha iyi stiller */
+.form-fieldset {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 20px;
+  margin: 0 0 20px 0;
+}
+.form-fieldset legend {
+  padding: 0 10px;
+  font-weight: 600;
+  color: var(--text-color);
 }
 ========== FILE: dashboard/src/App.jsx ==========
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
-import './App.css'; 
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-import NewExperiment from './components/NewExperiment';
-// ExperimentDetailPage import'u kaldırıldı
+import './App.css'; 
+import { ThemeContext } from './context/ThemeContext';
+import NewExperiment from './pages/NewExperiment';
 import DashboardOverview from './pages/DashboardOverview';
 import LiveTrackerPane from './components/LiveTrackerPane';
+import Logo from './components/Logo';
+import ThemeToggle from './components/ThemeToggle';
 
 function App() {
   const [trackingTaskId, setTrackingTaskId] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const { theme } = useContext(ThemeContext);
 
   const handleExperimentStarted = (taskId) => {
-    if (taskId) {
-        setTrackingTaskId(taskId);
-    }
+    if (taskId) setTrackingTaskId(taskId);
   };
   
   const handleCloseTracker = () => {
@@ -1462,49 +1412,28 @@ function App() {
   };
 
   const isActive = (path) => {
-    if (path === '/experiments' && (location.pathname === '/' || location.pathname.startsWith('/experiments'))) return true;
+    if (path === '/' && (location.pathname === '/' || location.pathname.startsWith('/experiments'))) return true;
     return location.pathname === path;
   };
 
   return (
     <div className="app-layout">
+      <ToastContainer position="bottom-right" autoClose={5000} theme={theme} />
       <aside className="sidebar">
-        <h2>AzuraForge</h2>
-        <nav>
+        <Logo />
+        <nav style={{ flexGrow: 1 }}>
           <ul>
-            <li>
-              <Link to="/experiments" className={isActive('/experiments') ? 'active' : ''}>
-                <span role="img" aria-label="dashboard">📊</span>
-                <span>Genel Bakış</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/new-experiment" className={isActive('/new-experiment') ? 'active' : ''}>
-                <span role="img" aria-label="rocket">🚀</span>
-                <span>Yeni Deney</span>
-              </Link>
-            </li>
+            <li><Link to="/" className={isActive('/') ? 'active' : ''}><span role="img" aria-label="dashboard">📊</span><span>Genel Bakış</span></Link></li>
+            <li><Link to="/new-experiment" className={isActive('/new-experiment') ? 'active' : ''}><span role="img" aria-label="rocket">🚀</span><span>Yeni Deney</span></Link></li>
           </ul>
         </nav>
+        <ThemeToggle />
       </aside>
-
       <main className="main-content">
-        {trackingTaskId && (
-          <LiveTrackerPane 
-            taskId={trackingTaskId} 
-            onClose={handleCloseTracker} 
-          />
-        )}
-      
+        {trackingTaskId && <LiveTrackerPane taskId={trackingTaskId} onClose={handleCloseTracker} />}
         <Routes>
-          <Route path="/" element={<DashboardOverview 
-            onNewExperimentClick={() => navigate('/new-experiment')}
-          />} />
-          <Route path="/experiments" element={<DashboardOverview 
-            onNewExperimentClick={() => navigate('/new-experiment')}
-          />} />
+          <Route path="/" element={<DashboardOverview onNewExperimentClick={() => navigate('/new-experiment')} setTrackingTaskId={setTrackingTaskId} />} />
           <Route path="/new-experiment" element={<NewExperiment onExperimentStarted={handleExperimentStarted} />} />
-          {/* /experiments/:experimentId rotası kaldırıldı */}
         </Routes>
       </main>
     </div>
@@ -1513,536 +1442,621 @@ function App() {
 
 export default App;
 ========== FILE: dashboard/src/index.css ==========
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-}
-
+/*
+  Bu dosya, gelecekte çok temel, uygulama geneli reset kuralları için kullanılabilir.
+  Şimdilik, projenin tüm özel stil mantığı App.css dosyasında merkezileştirilmiştir.
+*/
 ========== FILE: dashboard/src/main.jsx ==========
-// ========== GÜNCELLENECEK DOSYA: dashboard/src/main.jsx ==========
-import { StrictMode } from 'react';
+import React from 'react';
 import { createRoot } from 'react-dom/client';
-import './index.css'; // Global stil dosyanız (varsa)
+import { BrowserRouter } from 'react-router-dom';
+import { ThemeProvider } from './context/ThemeContext';
+
+// Fontsource
+import '@fontsource/inter/400.css';
+import '@fontsource/inter/500.css';
+import '@fontsource/inter/600.css';
+import '@fontsource/inter/700.css';
+
+// Stil dosyaları
+import './index.css'; 
+import './App.css';
 import App from './App.jsx';
-import { BrowserRouter } from 'react-router-dom'; // BrowserRouter import edildi
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    {/* Uygulamayı BrowserRouter ile sarmala */}
-    <BrowserRouter> 
-      <App />
-    </BrowserRouter>
-  </StrictMode>,
+  // StrictMode'u bilinçli olarak kapalı tutuyoruz
+  // <React.StrictMode>
+    <ThemeProvider>
+      <BrowserRouter> 
+        <App />
+      </BrowserRouter>
+    </ThemeProvider>
+  // </React.StrictMode>
 );
-========== FILE: dashboard/src/components/ExperimentCard.jsx ==========
-// ========== GÜNCELLENECEK DOSYA: dashboard/src/components/ExperimentCard.jsx ==========
-// Not: Bu kart artık kendi WebSocket bağlantısını kurmayacak.
-// DashboardOverview'dan düzenli olarak güncel veriyi alacak.
-import { useNavigate } from 'react-router-dom';
-import PropTypes from 'prop-types';
-import { Line } from 'react-chartjs-2'; 
-
-// Chart.js bileşenlerini kaydet
-import {
-  Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend
-} from 'chart.js';
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
-
-function ExperimentCard({ experiment, onSelect }) {
-  const navigate = useNavigate();
-  
-  // Experiment objesinden gelen verileri doğrudan kullanıyoruz
-  const currentStatus = experiment.status;
-  const finalLoss = experiment.final_loss; // final_loss zaten güncel veri olarak gelecek
-  const pipelineConfig = experiment.config || {};
-  const dataSourcing = pipelineConfig.data_sourcing || {};
-  const trainingParams = pipelineConfig.training_params || {};
-
-  let progress = 0;
-  let statusText = currentStatus || "Bilgi bekleniyor...";
-
-  // PROGRESS veya STARTED durumları için ilerlemeyi hesapla
-  if (currentStatus === 'PROGRESS' && experiment.details?.total_epochs) {
-    progress = ((experiment.details.epoch || 0) / experiment.details.total_epochs) * 100;
-    statusText = experiment.details.status_text || `Epoch ${experiment.details.epoch}/${experiment.details.total_epochs}`;
-  } else if (currentStatus === 'SUCCESS') {
-    progress = 100;
-    statusText = "Başarıyla Tamamlandı";
-  } else if (currentStatus === 'FAILURE' || currentStatus === 'ERROR') {
-    progress = 0;
-    statusText = experiment.error_message || "Hata Oluştu";
-  }
-  
-  // Kayıp grafiği verisi
-  const lossHistory = experiment.results?.loss || [];
-  const chartData = {
-    labels: Array.from({ length: lossHistory.length }, (_, i) => `Epoch ${i + 1}`),
-    datasets: [{
-      label: 'Eğitim Kaybı',
-      data: lossHistory,
-      borderColor: 'rgb(75, 192, 192)',
-      backgroundColor: 'rgba(75, 192, 192, 0.5)',
-      tension: 0.1,
-      fill: false
-    }]
-  };
-
-  const handleCardClick = () => {
-    navigate(`/experiments/${experiment.id}`);
-    if (onSelect) {
-      onSelect(experiment.id);
-    }
-  };
-
-  return (
-    <div className="card experiment-card clickable" onClick={handleCardClick}>
-      <h3>
-        {experiment.pipeline_name || 'Bilinmeyen Pipeline'} 
-        {dataSourcing.ticker && <span className="exp-id"> ({dataSourcing.ticker})</span>}
-      </h3>
-      <p><strong>ID:</strong> <span className="exp-id">{experiment.id}</span></p>
-      <p><strong>Durum:</strong> 
-        <span className={`status-badge status-${currentStatus?.toLowerCase()}`}>{currentStatus || 'Bilinmiyor'}</span>
-      </p>
-      
-      {(currentStatus === 'STARTED' || currentStatus === 'PROGRESS') && (
-        <div className="progress-section">
-          <p>{statusText}</p>
-          <progress value={progress} max="100"></progress>
-          <p>Mevcut Kayıp: <strong>{experiment.details?.loss !== undefined && experiment.details?.loss !== null ? experiment.details.loss.toFixed(6) : (finalLoss !== undefined && finalLoss !== null ? finalLoss.toFixed(6) : 'N/A')}</strong></p>
-        </div>
-      )}
-      {(currentStatus === 'SUCCESS' || currentStatus === 'FAILURE' || currentStatus === 'ERROR' || currentStatus === 'DISCONNECTED' || currentStatus === 'UNKNOWN') && (
-        <p>Son Kayıp: <strong>{finalLoss !== undefined && finalLoss !== null ? finalLoss.toFixed(6) : 'N/A'}</strong></p>
-      )}
-
-      {/* Mini Grafik */}
-      {chartData.labels.length > 0 && (
-          <div className="mini-chart-container" style={{ height: '150px', width: '100%', marginTop: '15px' }}>
-              <Line data={chartData} options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: { legend: { display: false }, title: { display: false }, tooltip: { enabled: false } },
-                  scales: {
-                      x: { display: false },
-                      y: { display: false, beginAtZero: false }
-                  },
-                  animation: false, // Canlı grafik için animasyonu kapat
-                  elements: { point: { radius: 0 } } // Noktaları gizle
-              }} />
-          </div>
-      )}
-    </div>
-  );
-}
-
-ExperimentCard.propTypes = {
-  experiment: PropTypes.object.isRequired,
-  onSelect: PropTypes.func, // Optional callback for parent component
-};
-
-export default ExperimentCard;
-========== FILE: dashboard/src/components/ExperimentRow.jsx ==========
-import { useState } from 'react';
+========== FILE: dashboard/src/components/ComparisonView.jsx ==========
+// Bu dosyanın içeriği önceki cevaptaki ile aynı, tam halini tekrar veriyorum
 import PropTypes from 'prop-types';
 import { Line } from 'react-chartjs-2';
-
-// Chart.js bileşenleri zaten App.jsx'te veya başka bir yerde register edilmiş olmalı,
-// ama burada tekrar etmekte zarar yok.
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+import zoomPlugin from 'chartjs-plugin-zoom';
 
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, zoomPlugin);
 
-function ExperimentRow({ experiment }) {
-  const [isExpanded, setIsExpanded] = useState(false);
+const chartColors = ['#42b983', '#3b82f6', '#ef4444', '#f59e0b', '#8b5cf6', '#ec4899'];
 
-  const { experiment_id, status, config, results, completed_at, failed_at } = experiment;
-  const pipeline_name = config?.pipeline_name || 'N/A';
-  const ticker = config?.data_sourcing?.ticker || 'N/A';
-  const final_loss = results?.final_loss;
-  const finish_time = completed_at || failed_at;
-  const loss_history = results?.loss || [];
-
+function ComparisonView({ experiments, onClose }) {
   const chartData = {
-    labels: Array.from({ length: loss_history.length }, (_, i) => `E${i + 1}`),
-    datasets: [{
-      label: 'Eğitim Kaybı',
-      data: loss_history,
-      borderColor: 'var(--primary-color)',
-      backgroundColor: 'rgba(66, 185, 131, 0.2)',
-      tension: 0.2,
-      fill: true,
-    }]
+    labels: Array.from({ length: Math.max(...experiments.map(e => e.results?.loss?.length || 0)) }, (_, i) => `E${i + 1}`),
+    datasets: experiments.map((exp, i) => ({
+      label: `${exp.config.data_sourcing.ticker} (${exp.experiment_id.slice(-6)})`,
+      data: exp.results?.loss || [],
+      borderColor: chartColors[i % chartColors.length],
+      backgroundColor: `${chartColors[i % chartColors.length]}33`,
+      tension: 0.1, fill: false, borderWidth: 2, pointRadius: 1, pointHoverRadius: 5,
+    })),
   };
 
   const chartOptions = {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { enabled: true } },
-      scales: { 
-          y: { beginAtZero: false, ticks: { color: 'var(--text-color-darker)' }, grid: { color: 'var(--border-color)' } }, 
-          x: { ticks: { color: 'var(--text-color-darker)', maxRotation: 0, autoSkip: true, maxTicksLimit: 10 }, grid: { display: false } } 
+      interaction: { mode: 'index', intersect: false, },
+      plugins: { 
+        legend: { position: 'top', labels: { font: { size: 14 } } },
+        tooltip: {
+          backgroundColor: 'var(--content-bg)',
+          borderColor: 'var(--border-color)',
+          borderWidth: 1,
+        },
+        zoom: {
+          pan: { enabled: true, mode: 'xy', modifierKey: 'alt', },
+          zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'xy' }
+        }
+      },
+      scales: {
+          y: { title: { display: true, text: 'Kayıp Değeri (Loss)' }, beginAtZero: false, }, 
+          x: { title: { display: true, text: 'Epoch' }, grid: { display: false } } 
       }
   };
 
   return (
-    <>
-      <tr onClick={() => setIsExpanded(!isExpanded)} style={{ cursor: 'pointer' }}>
-        <td className="exp-id">{experiment_id}</td>
-        <td><span className={`status-badge status-${status?.toLowerCase() || 'unknown'}`}>{status || 'Bilinmiyor'}</span></td>
-        <td>{pipeline_name}</td>
-        <td>{ticker}</td>
-        <td>{final_loss !== undefined && final_loss !== null ? final_loss.toFixed(6) : 'N/A'}</td>
-        <td>{finish_time ? new Date(finish_time).toLocaleString() : 'N/A'}</td>
-      </tr>
-      {isExpanded && (
-        <tr>
-          <td colSpan="6" style={{ padding: '0' }}>
-            <div className="expanded-row-content">
-              <div className="detail-section">
-                <h4>Konfigürasyon</h4>
-                <pre className="code-block">{JSON.stringify(config, null, 2)}</pre>
-              </div>
-              <div className="detail-section">
-                <h4>Sonuçlar & Grafik</h4>
-                {loss_history.length > 0 ? (
-                    <div className="detail-chart-container">
-                        <Line data={chartData} options={chartOptions} />
-                    </div>
-                ) : <p>Grafik için geçmiş verisi bulunamadı.</p>}
-                <pre className="code-block">{JSON.stringify(results, null, 2)}</pre>
-              </div>
-            </div>
-          </td>
-        </tr>
-      )}
-    </>
+    <div className="comparison-modal-overlay" onClick={onClose}>
+      <div className="comparison-modal-content" onClick={e => e.stopPropagation()}>
+        <div className="comparison-header">
+          <h2>Deney Karşılaştırması ({experiments.length} adet)</h2>
+          <button className="close-button" onClick={onClose}>×</button>
+        </div>
+        <div className="comparison-body">
+          <div className="comparison-chart-container">
+            <Line data={chartData} options={chartOptions} />
+            <p className="chart-instructions">Yakınlaştırmak için fare tekerleğini kullanın. Sıfırlamak için çift tıklayın. Kaydırmak için <strong>Alt + Sürükle</strong>.</p>
+          </div>
+          <h4 className="section-title" style={{ marginTop: 0 }}>Özet Tablosu</h4>
+          <div className="table-container">
+            <table>
+              <thead><tr><th>Deney ID</th><th>Ticker</th><th>Epochs</th><th>LR</th><th>Final Kayıp</th></tr></thead>
+              <tbody>
+                {experiments.map((exp, i) => (
+                  <tr key={exp.experiment_id}>
+                    <td><span className="color-indicator" style={{backgroundColor: chartColors[i % chartColors.length]}}></span>{exp.experiment_id.slice(0, 18)}...</td>
+                    <td>{exp.config.data_sourcing.ticker}</td>
+                    <td>{exp.config.training_params.epochs}</td>
+                    <td>{exp.config.training_params.lr}</td>
+                    <td>{exp.results.final_loss?.toFixed(6) ?? 'N/A'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
+ComparisonView.propTypes = { experiments: PropTypes.array.isRequired, onClose: PropTypes.func.isRequired, };
+export default ComparisonView;
+========== FILE: dashboard/src/components/ExperimentRow.jsx ==========
+// Bu dosyanın içeriği de önceki cevaptaki ile aynı, tam halini tekrar veriyorum
+import { useState } from 'react';
+import PropTypes from 'prop-types';
+import { toast } from 'react-toastify';
 
-ExperimentRow.propTypes = {
-  experiment: PropTypes.object.isRequired,
+const Icon = ({ path }) => <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d={path} /></svg>;
+Icon.propTypes = { path: PropTypes.string.isRequired };
+
+const ICONS = {
+  rerun: "M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z",
+  copy: "M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z",
+  satellite: "M6.34 5.34L4.93 3.93l-1.41 1.41 1.41 1.41C3.89 7.79 3.5 9.05 3.5 10.41c0 .46.06.91.16 1.34l-2.48 1.43c-.22.13-.34.38-.34.65v1.14c0 .27.11.52.34.65l2.48 1.43c-.1.43-.16.88-.16 1.34 0 2.21 1.79 4 4 4s4-1.79 4-4c0-1.37-.69-2.63-1.76-3.34l1.41-1.41-1.41-1.41-1.41 1.41C9.11 6.1 9.5 4.95 9.5 3.59c0-.46-.06-.91-.16-1.34l2.48-1.43c.22-.13.34-.38.34-.65V-.98c0-.27-.11-.52-.34-.65L9.34.8c.1-.43.16-.88.16-1.34 0-2.21-1.79-4-4-4s-4 1.79-4 4c0 1.37.69 2.63 1.76 3.34zm.24 9.35l-1.24-.71c.12-.52.19-1.06.19-1.61s-.07-1.09-.19-1.61l1.24-.71C7.58 10.9 8.5 12.05 8.5 13.41s-.92 2.51-1.92 3.28zM12 17.5c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z",
 };
 
+function ExperimentRow({ experiment, isSelected, onSelect, onReRun, setTrackingTaskId }) {
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const { experiment_id, status, config, results, completed_at, failed_at, task_id } = experiment;
+
+  const handleCopyConfig = () => {
+    navigator.clipboard.writeText(JSON.stringify(config, null, 2));
+    toast.success('Konfigürasyon panoya kopyalandı!');
+    setActionsOpen(false);
+  };
+  const isRunning = ['STARTED', 'PROGRESS', 'PENDING'].includes(status);
+  return (
+    <tr className={isSelected ? 'selected-row' : ''}>
+      <td><input type="checkbox" checked={isSelected} onChange={onSelect} title="Karşılaştırmak için seç"/></td>
+      <td><span className={`status-badge status-${status?.toLowerCase() || 'unknown'}`}>{status || 'Bilinmiyor'}</span></td>
+      <td><div className="detail-cell"><strong>{config?.pipeline_name || 'N/A'}</strong><span className="exp-id">{experiment_id}</span></div></td>
+      <td><div className="detail-cell"><span>Ticker: <strong>{config?.data_sourcing?.ticker || 'N/A'}</strong></span><span>Epochs: <strong>{config?.training_params?.epochs || 'N/A'}</strong>, LR: <strong>{config?.training_params?.lr || 'N/A'}</strong></span></div></td>
+      <td><div className="detail-cell"><span>Final Kayıp: <strong>{results?.final_loss !== undefined ? results.final_loss.toFixed(6) : 'N/A'}</strong></span></div></td>
+      <td><div className="detail-cell"><span>Başlangıç: {new Date(config.start_time).toLocaleString()}</span><span>Bitiş: {completed_at || failed_at ? new Date(completed_at || failed_at).toLocaleString() : 'N/A'}</span></div></td>
+      <td className="actions-cell">
+        <button className="actions-button" onClick={() => setActionsOpen(!actionsOpen)}>⋮</button>
+        {actionsOpen && (
+          <div className="actions-menu" onMouseLeave={() => setActionsOpen(false)}>
+            {isRunning && <button onClick={() => { setTrackingTaskId(task_id); setActionsOpen(false); }}><Icon path={ICONS.satellite} /> Canlı İzle</button>}
+            <button onClick={() => { onReRun(); setActionsOpen(false); }}><Icon path={ICONS.rerun} /> Yeniden Çalıştır</button>
+            <button onClick={handleCopyConfig}><Icon path={ICONS.copy} /> Config'i Kopyala</button>
+          </div>
+        )}
+      </td>
+    </tr>
+  );
+}
+ExperimentRow.propTypes = { experiment: PropTypes.object.isRequired, isSelected: PropTypes.bool.isRequired, onSelect: PropTypes.func.isRequired, onReRun: PropTypes.func.isRequired, setTrackingTaskId: PropTypes.func.isRequired, };
 export default ExperimentRow;
 ========== FILE: dashboard/src/components/ExperimentsList.jsx ==========
 import PropTypes from 'prop-types';
-import ExperimentRow from './ExperimentRow'; // YENİ: ExperimentRow bileşenini import et
+import ExperimentRow from './ExperimentRow';
 
-function ExperimentsList({ experiments }) {
+function ExperimentsList({ experiments, selectedIds, onSelect, onReRun, setTrackingTaskId }) {
   if (!experiments || experiments.length === 0) {
-    return <p className="feedback info">Henüz gösterilecek bir deney bulunamadı.</p>;
+    return <p style={{textAlign: 'center', padding: '20px'}}>Filtrelerinize uyan bir deney bulunamadı.</p>;
   }
-
   return (
     <div className="table-container">
       <table>
         <thead>
           <tr>
-            <th>Deney ID</th>
+            <th style={{width: '40px'}}></th>
             <th>Durum</th>
-            <th>Pipeline</th>
-            <th>Sembol</th>
-            <th>Final Kayıp</th>
-            <th>Bitiş Tarihi</th>
+            <th>Deney Detayları</th>
+            <th>Parametreler</th>
+            <th>Sonuçlar</th>
+            <th>Zamanlama</th>
+            <th style={{width: '50px'}}>Aksiyon</th>
           </tr>
         </thead>
         <tbody>
-          {/* DÜZELTME: Her bir deney için ExperimentRow bileşenini render et */}
           {experiments.map((exp) => (
-            <ExperimentRow key={exp.experiment_id} experiment={exp} />
+            <ExperimentRow 
+              key={exp.experiment_id} 
+              experiment={exp} 
+              isSelected={selectedIds.has(exp.experiment_id)}
+              onSelect={() => onSelect(exp.experiment_id)}
+              onReRun={() => onReRun(exp.config)}
+              setTrackingTaskId={setTrackingTaskId}
+            />
           ))}
         </tbody>
       </table>
     </div>
   );
 }
-
-ExperimentsList.propTypes = {
-  experiments: PropTypes.array.isRequired,
-};
-
+ExperimentsList.propTypes = { experiments: PropTypes.array.isRequired, selectedIds: PropTypes.object.isRequired, onSelect: PropTypes.func.isRequired, onReRun: PropTypes.func.isRequired, setTrackingTaskId: PropTypes.func.isRequired, };
 export default ExperimentsList;
 ========== FILE: dashboard/src/components/LiveTrackerPane.jsx ==========
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Line } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+import { Chart } from 'chart.js';
+import 'chart.js/auto';
+import { getCssVar } from '../utils/cssUtils';
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+// Sabit başlangıç durumları
+const initialStatus = { 
+  state: 'CONNECTING', 
+  details: { status_text: 'Worker\'a bağlanılıyor...' }
+};
 
 function LiveTrackerPane({ taskId, onClose }) {
-  // DÜZELTME: State değişkeni adı 'statusData', set fonksiyonu 'setStatusData'
-  const [statusData, setStatusData] = useState({ state: 'CONNECTING', details: { status_text: 'Worker\'a bağlanılıyor...' } });
-  const [chartData, setChartData] = useState({ labels: [], datasets: [{ label: 'Loss', data: [] }] });
-  const ws = useRef(null);
+  // Tek bir state objesi
+  const [liveData, setLiveData] = useState({ 
+    status: initialStatus,
+    chart: { labels: [], datasets: [{ data: [] }] } // Başlangıçta boş
+  });
+  
+  const socketRef = useRef(null);
+  
+  const chartOptions = useMemo(() => {
+    return {
+      responsive: true, maintainAspectRatio: false,
+      animation: { duration: 300, easing: 'linear' },
+      plugins: { 
+        legend: { display: false }, 
+        tooltip: {
+          enabled: true, backgroundColor: getCssVar('--content-bg'),
+          titleColor: getCssVar('--text-color'), bodyColor: getCssVar('--text-color'),
+          borderColor: getCssVar('--border-color'), borderWidth: 1, padding: 10,
+          displayColors: false,
+          callbacks: {
+            title: (ctx) => ctx[0].label,
+            label: (ctx) => `Kayıp: ${ctx.parsed.y.toFixed(6)}`,
+          }
+        },
+      },
+      scales: { 
+        y: { 
+          grid: { color: getCssVar('--border-color'), borderDash: [2, 4], drawTicks: false },
+          ticks: { padding: 10, maxTicksLimit: 5, font: { size: 12 }, color: getCssVar('--text-color-darker') },
+        }, 
+        x: {
+          grid: { display: false },
+          ticks: { padding: 10, maxRotation: 0, autoSkip: true, maxTicksLimit: 7, font: { size: 12 }, color: getCssVar('--text-color-darker') },
+        } 
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!taskId) return;
 
-    // DÜZELTME: State'i setStatusData ile başlat
-    setStatusData({ state: 'CONNECTING', details: { status_text: 'Worker\'a bağlanılıyor...' } });
-    setChartData({
+    // YENİ: Başlangıç chart state'ini renklerle birlikte burada ayarla
+    const initialChartWithColors = {
       labels: [],
       datasets: [{
-        label: 'Eğitim Kaybı', data: [],
-        borderColor: '#42b983', backgroundColor: 'rgba(66, 185, 131, 0.5)',
-        tension: 0.1, fill: false
+        label: 'Eğitim Kaybı', data: [], fill: true,
+        borderColor: getCssVar('--primary-color'),
+        backgroundColor: `color-mix(in srgb, ${getCssVar('--primary-color')} 20%, transparent)`,
+        tension: 0.4, borderWidth: 2,
+        pointRadius: (ctx) => ctx.dataIndex === ctx.dataset.data.length - 1 ? 6 : 0,
+        pointBorderColor: getCssVar('--text-inverse'),
+        pointBackgroundColor: getCssVar('--primary-color'),
+        pointHoverRadius: 8,
       }]
-    });
-
-    const wsUrl = `ws://localhost:8000/ws/task_status/${taskId}`;
-    ws.current = new WebSocket(wsUrl);
-
-    ws.current.onopen = () => console.log(`WebSocket connected for task ${taskId}`);
-
-    ws.current.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      // DÜZELTME: State'i setStatusData ile güncelle
-      setStatusData(data);
-      
-      const updateChart = (newLoss, newEpoch) => {
-        setChartData(prev => {
-            const epochLabel = `E${newEpoch}`;
-            if (!prev.labels.includes(epochLabel)) {
-                return {
-                    labels: [...prev.labels, epochLabel],
-                    datasets: [{ ...prev.datasets[0], data: [...prev.datasets[0].data, newLoss] }]
-                };
-            }
-            return prev;
-        });
-      };
-
-      if (data.state === 'PROGRESS' && data.details?.loss !== undefined) {
-        updateChart(data.details.loss, data.details.epoch);
-      } else if (data.ready || data.state === 'SUCCESS' || data.state === 'FAILURE') {
-        const finalResult = data.result || {};
-        if (finalResult.results?.loss && Array.isArray(finalResult.results.loss)) {
-            const losses = finalResult.results.loss;
-            const labels = Array.from({ length: losses.length }, (_, i) => `E${i + 1}`);
-            setChartData({ labels: labels, datasets: [{...chartData.datasets[0], data: losses }]});
-        }
-        if (ws.current.readyState === WebSocket.OPEN) {
-            ws.current.close();
-        }
-      }
-    };
-
-    ws.current.onerror = () => {
-        // DÜZELTME: State'i setStatusData ile güncelle
-        setStatusData({ state: 'ERROR', details: { status_text: 'WebSocket bağlantı hatası!' } });
     };
     
-    ws.current.onclose = () => {
-      // DÜZELTME: State'i setStatusData ile güncelle
-      setStatusData(prev => {
-        if (prev?.state === 'SUCCESS' || prev?.state === 'FAILURE' || prev?.state === 'ERROR') return prev;
-        return { ...prev, state: 'DISCONNECTED', details: { status_text: `Bağlantı kesildi.` } };
+    setLiveData({ status: initialStatus, chart: initialChartWithColors });
+
+    const newSocket = new WebSocket(`ws://localhost:8000/ws/task_status/${taskId}`);
+    socketRef.current = newSocket;
+    
+    newSocket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      
+      setLiveData(prev => {
+        let newChart = prev.chart;
+        if (data.state === 'PROGRESS' && data.details?.loss !== undefined) {
+          const epochLabel = `E${data.details.epoch}`;
+          if (!prev.chart.labels.includes(epochLabel)) {
+            const newLabels = [...prev.chart.labels, epochLabel].slice(-30);
+            const newLossData = [...prev.chart.datasets[0].data, data.details.loss].slice(-30);
+            newChart = { ...prev.chart, labels: newLabels, datasets: [{ ...prev.chart.datasets[0], data: newLossData }] };
+          }
+        } else if (data.result?.results?.loss) {
+          const finalLossHistory = data.result.results.loss;
+          newChart = {
+            ...prev.chart,
+            labels: Array.from({ length: finalLossHistory.length }, (_, i) => `E${i + 1}`),
+            datasets: [{ ...prev.chart.datasets[0], data: finalLossHistory }]
+          };
+        }
+        return { status: data, chart: newChart };
       });
     };
-
-    return () => {
-      if (ws.current) {
-        ws.current.close();
-      }
-    };
+    
+    newSocket.onerror = () => setLiveData(prev => ({ ...prev, status: { state: 'ERROR', details: { status_text: 'WebSocket bağlantı hatası!' } }}));
+    newSocket.onclose = () => setLiveData(prev => (['SUCCESS', 'FAILURE', 'ERROR'].includes(prev.status.state)) ? prev : { ...prev, status: { ...prev.status, state: 'DISCONNECTED' }});
+    
+    return () => { newSocket.close(1000, "Component unmounting"); };
   }, [taskId]);
   
-  const { state, details, result } = statusData;
-  const config = details?.config || result?.config || {};
-  const pipelineName = config.pipeline_name || '';
-  const ticker = config.data_sourcing?.ticker || '';
-  
-  let currentLoss = 'N/A';
-  if (state === 'PROGRESS' && details?.loss !== undefined) {
-    currentLoss = details.loss.toFixed(6);
-  } else if (state === 'SUCCESS' || state === 'FAILURE') {
-    const finalResult = result?.results || {};
-    const finalLoss = finalResult.final_loss ?? (finalResult.loss?.[finalResult.loss.length - 1]);
-    currentLoss = finalLoss !== undefined ? finalLoss.toFixed(6) : (state === 'FAILURE' ? 'Hata!' : 'N/A');
-  }
-
-  let progressPercent = 0;
-  if (state === 'SUCCESS') {
-    progressPercent = 100;
-  } else if (details?.total_epochs) {
-    progressPercent = ((details.epoch || 0) / details.total_epochs) * 100;
-  }
-
-  let statusText = 'İlerleme durumu bekleniyor...';
-  if (state === 'SUCCESS') {
-    statusText = 'Eğitim başarıyla tamamlandı!';
-  } else if (details?.status_text) {
-    statusText = details.status_text;
-  }
+  const { state, details, result } = liveData.status;
+  const { pipeline_name, data_sourcing } = details?.config || result?.config || {};
+  const { total_epochs, epoch, status_text } = details || {};
+  const progressPercent = state === 'SUCCESS' ? 100 : (total_epochs ? (epoch / total_epochs) * 100 : 0);
   
   return (
     <div className="live-tracker-pane">
-      <button className="close-button" onClick={onClose} aria-label="Kapat">×</button>
-      <div className="tracker-header">
-        <h4><span role="img" aria-label="satellite">🛰️</span> Canlı Takip: {pipelineName || "Yükleniyor..."} {ticker && `(${ticker})`}</h4>
-        <div className="tracker-info">
-            <span className="exp-id">ID: {taskId}</span>
-            <span className={`status-badge status-${state?.toLowerCase()}`}>{state || 'Bilinmiyor'}</span>
+      <button className="close-button" onClick={onClose}>×</button>
+      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px'}}>
+        <h4><span role="img" aria-label="satellite">🛰️</span> Canlı Takip: {pipeline_name || "..."} {data_sourcing?.ticker && `(${data_sourcing.ticker})`}</h4>
+        <div><span className="exp-id">ID: {taskId}</span><span className={`status-badge status-${state?.toLowerCase()}`}>{state}</span></div>
+      </div>
+      <div style={{display: 'flex', gap: '20px', alignItems: 'center'}}>
+        <div style={{flex: 1}}><p>{status_text || state}</p><progress value={progressPercent} max="100" style={{width: '100%'}}></progress></div>
+        <div style={{flex: 2, height: '100px'}}>
+          {liveData.chart.labels.length > 0 && <Line data={liveData.chart} options={chartOptions} />}
         </div>
       </div>
-      
-      <div className="tracker-body">
-        <div className="tracker-progress">
-          <p>{statusText}</p>
-          <progress value={progressPercent} max="100" style={{width: '100%'}}></progress>
-          <p style={{marginTop: '10px'}}>Mevcut Kayıp: <strong>{currentLoss}</strong></p>
-        </div>
-        <div className="tracker-chart">
-          {chartData.labels.length > 0 ? (
-            <Line data={chartData} options={{
-              animation: false, responsive: true, maintainAspectRatio: false,
-              plugins: { legend: { display: false }, tooltip: { enabled: true } },
-              scales: { 
-                  y: { beginAtZero: false, ticks: { color: 'var(--text-color-darker)' }, grid: { color: 'var(--border-color)' } }, 
-                  x: { ticks: { color: 'var(--text-color-darker)', maxRotation: 0, autoSkip: true, maxTicksLimit: 7 }, grid: { color: 'var(--border-color)' } } 
-              }
-            }} />
-          ) : <div className="chart-placeholder">Grafik verisi bekleniyor...</div>}
-        </div>
-      </div>
-      {state === 'FAILURE' && <p className="feedback error" style={{marginTop: '15px'}}>{result?.error_message || 'Bilinmeyen bir hata oluştu.'}</p>}
+      {state === 'FAILURE' && result?.error && <p className="feedback error" style={{marginTop: '15px', whiteSpace: 'pre-wrap', maxHeight: '100px', overflowY: 'auto'}}>{result.error}</p>}
     </div>
   );
 }
 
-LiveTrackerPane.propTypes = {
-  taskId: PropTypes.string.isRequired,
-  onClose: PropTypes.func.isRequired,
+LiveTrackerPane.propTypes = { 
+  taskId: PropTypes.string.isRequired, 
+  onClose: PropTypes.func.isRequired, 
 };
 
 export default LiveTrackerPane;
-========== FILE: dashboard/src/components/NewExperiment.jsx ==========
-import { useState, useEffect } from 'react';
-import { startNewExperiment, fetchAvailablePipelines, fetchPipelineDefaultConfig } from '../services/api';
+========== FILE: dashboard/src/components/Logo.jsx ==========
 import PropTypes from 'prop-types';
 
-const Feedback = ({ message, type }) => {
-  if (!message) return null;
-  return <p className={`feedback ${type}`}>{message}</p>;
-};
+function Logo({ size = 36 }) {
+  return (
+    <div className="logo-container">
+      <svg width={size} height={size} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style={{ flexShrink: 0 }}>
+        <defs>
+          <linearGradient id="azura-stream-gradient-component" x1="15" y1="50" x2="85" y2="50" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="var(--secondary-color)"/>
+            <stop offset="100%" stopColor="var(--primary-color)"/>
+          </linearGradient>
+        </defs>
+        <path d="M50 10 L10 90 H32 L42 70 H58 L68 90 H90 Z" fill="var(--content-bg)" stroke="var(--text-color-darker)" strokeWidth="4" strokeLinejoin="round"/>
+        <path d="M15 55 C 35 45, 65 45, 85 55" stroke="url(#azura-stream-gradient-component)" strokeWidth="8" strokeLinecap="round" fill="none"/>
+      </svg>
+      <h1>AzuraForge</h1>
+    </div>
+  );
+}
+Logo.propTypes = { size: PropTypes.number, };
+export default Logo;
+========== FILE: dashboard/src/components/ThemeToggle.jsx ==========
+import { useContext } from 'react';
+import { ThemeContext } from '../context/ThemeContext';
 
-Feedback.propTypes = {
-  message: PropTypes.string,
-  type: PropTypes.string.isRequired,
-};
+const SunIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>;
+const MoonIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>;
 
+function ThemeToggle() {
+  const { theme, toggleTheme } = useContext(ThemeContext);
+
+  return (
+    <button onClick={toggleTheme} className="theme-toggle-button" title="Temayı Değiştir">
+      {theme === 'light' ? <MoonIcon /> : <SunIcon />}
+    </button>
+  );
+}
+
+// DÜZELTME: Eksik olan 'export default' satırı eklendi.
+export default ThemeToggle;
+========== FILE: dashboard/src/context/ThemeContext.jsx ==========
+import { createContext, useState, useEffect, useMemo } from 'react';
+import PropTypes from 'prop-types';
+
+export const ThemeContext = createContext();
+
+export function ThemeProvider({ children }) {
+  const [theme, setTheme] = useState(() => {
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return savedTheme || (prefersDark ? 'dark' : 'light');
+  });
+
+  useEffect(() => {
+    const body = document.body;
+    // body'nin class'ını mevcut temaya göre ayarla
+    body.classList.toggle('light-theme', theme === 'light');
+    // Seçimi tarayıcı hafızasına kaydet
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
+  };
+
+  // Sadece theme ve toggleTheme'i dışarıya veriyoruz.
+  const value = useMemo(() => ({ theme, toggleTheme }), [theme]);
+
+  return (
+    <ThemeContext.Provider value={value}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+ThemeProvider.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+========== FILE: dashboard/src/pages/DashboardOverview.jsx ==========
+import { useState, useEffect, useMemo } from 'react';
+import { toast } from 'react-toastify';
+import PropTypes from 'prop-types';
+import ExperimentsList from '../components/ExperimentsList';
+import ComparisonView from '../components/ComparisonView';
+import { fetchExperiments, startNewExperiment } from '../services/api';
+
+function DashboardOverview({ onNewExperimentClick, setTrackingTaskId }) {
+  const [experiments, setExperiments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // Filtreleme ve Arama State'leri
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('ALL');
+  
+  // Karşılaştırma State'leri
+  const [selectedForComparison, setSelectedForComparison] = useState(new Set());
+  const [comparisonData, setComparisonData] = useState(null);
+
+  const getExperiments = async (showLoadingIndicator = false) => {
+    if (showLoadingIndicator) setLoading(true);
+    try {
+      const response = await fetchExperiments();
+      // Gelen veriyi başlangıç zamanına göre sırala (en yeni en üstte)
+      const sortedData = response.data.sort((a, b) => new Date(b.config.start_time) - new Date(a.config.start_time));
+      setExperiments(sortedData);
+      setError(null);
+    } catch (err) {
+      setError('API sunucusuna bağlanılamadı veya veri çekilemedi. Servislerin çalıştığından emin olun.');
+    } finally {
+      if (showLoadingIndicator) setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getExperiments(true); // Sayfa ilk yüklendiğinde loading göstergesiyle veri çek
+    const intervalId = setInterval(() => getExperiments(false), 5000); // Arka planda sessizce güncelle
+    return () => clearInterval(intervalId); // Component unmount olduğunda interval'ı temizle
+  }, []);
+
+  // Mevcut deneylerden dinamik olarak durum listesi oluşturur
+  const allStatuses = useMemo(() => {
+    const statuses = new Set(experiments.map(exp => exp.status));
+    return ['ALL', ...Array.from(statuses).sort()];
+  }, [experiments]);
+
+  // Filtrelenmiş deneyleri hesaplar
+  const filteredExperiments = useMemo(() => {
+    return experiments.filter(exp => {
+      // Durum filtresi
+      const statusMatch = filterStatus === 'ALL' || exp.status === filterStatus;
+      if (!statusMatch) return false;
+
+      // Arama terimi filtresi (ID, pipeline adı veya ticker sembolü)
+      if (searchTerm) {
+        const lowerCaseSearchTerm = searchTerm.toLowerCase();
+        const searchFields = [
+          exp.experiment_id,
+          exp.config?.pipeline_name,
+          exp.config?.data_sourcing?.ticker
+        ];
+        return searchFields.some(field => field?.toLowerCase().includes(lowerCaseSearchTerm));
+      }
+
+      return true;
+    });
+  }, [experiments, filterStatus, searchTerm]);
+  
+  // Karşılaştırma için deney seçme/kaldırma fonksiyonu
+  const handleComparisonSelect = (experimentId) => {
+    setSelectedForComparison(prev => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(experimentId)) {
+        newSelection.delete(experimentId);
+      } else {
+        newSelection.add(experimentId);
+      }
+      return newSelection;
+    });
+  };
+
+  // Bir deneyi konfigürasyonuyla yeniden çalıştırma fonksiyonu
+  const handleReRun = async (experimentConfig) => {
+    // Yeniden çalıştırmadan önce eski ID ve zaman bilgilerini temizle
+    const { experiment_id, task_id, start_time, ...configToReRun } = experimentConfig;
+    toast.info(`"${configToReRun.pipeline_name}" deneyi yeniden başlatılıyor...`);
+    try {
+      const response = await startNewExperiment(configToReRun);
+      toast.success(`Deney başarıyla gönderildi! ID: ${response.data.task_id}`);
+      setTrackingTaskId(response.data.task_id); // Yeniden çalıştırılan deneyi canlı izlemeye başla
+    } catch (err) {
+      toast.error('Deney yeniden başlatılamadı.');
+    }
+  };
+
+  // Karşılaştırma modalını açar
+  const handleStartComparison = () => {
+    const dataToCompare = experiments.filter(exp => selectedForComparison.has(exp.experiment_id));
+    if (dataToCompare.length > 1) {
+      setComparisonData(dataToCompare);
+    }
+  };
+
+  // Yükleme ve Hata durumları için gösterilecek arayüz
+  if (loading) return <p style={{textAlign: 'center', padding: '40px'}}>Deney verileri yükleniyor...</p>;
+  if (error) return <p style={{textAlign: 'center', padding: '40px', color: 'var(--error-color)'}}>{error}</p>;
+
+  return (
+    <div className="dashboard-overview">
+      {/* Karşılaştırma modalı, sadece data varsa render edilir */}
+      {comparisonData && <ComparisonView experiments={comparisonData} onClose={() => setComparisonData(null)}/>}
+      
+      <div className="page-header">
+        <h1>Genel Bakış</h1>
+        <p>Tüm deneylerinizi tek bir yerden yönetin, takip edin ve karşılaştırın.</p>
+      </div>
+      
+      {/* Filtreleme ve Aksiyonlar Paneli */}
+      <div className="card" style={{ marginBottom: '25px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
+          <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label htmlFor="search-term">Arama</label>
+              <input type="text" id="search-term" placeholder="ID, Pipeline, Sembol ara..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label htmlFor="filter-status">Durum</label>
+              <select id="filter-status" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+                {allStatuses.map(s => <option key={s} value={s}>{s === 'ALL' ? 'Tümü' : s}</option>)}
+              </select>
+            </div>
+          </div>
+          <button 
+            className="button-primary" 
+            onClick={handleStartComparison} 
+            disabled={selectedForComparison.size < 2} 
+            title={selectedForComparison.size < 2 ? 'Karşılaştırmak için en az 2 deney seçin' : ''}
+          >
+            <span role="img" aria-label="scales">⚖️</span> Seçilenleri Karşılaştır ({selectedForComparison.size})
+          </button>
+        </div>
+      </div>
+      
+      {/* Deney Tablosu */}
+      <ExperimentsList 
+        experiments={filteredExperiments} 
+        selectedIds={selectedForComparison} 
+        onSelect={handleComparisonSelect} 
+        onReRun={handleReRun} 
+        setTrackingTaskId={setTrackingTaskId} 
+      />
+    </div>
+  );
+}
+DashboardOverview.propTypes = { 
+  onNewExperimentClick: PropTypes.func.isRequired, 
+  setTrackingTaskId: PropTypes.func.isRequired, 
+};
+export default DashboardOverview;
+========== FILE: dashboard/src/pages/NewExperiment.jsx ==========
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import PropTypes from 'prop-types';
+import { toast } from 'react-toastify';
+import { startNewExperiment, fetchAvailablePipelines, fetchPipelineDefaultConfig } from '../services/api';
+
+// Bu bileşen artık bu dosyanın içinde yerel olarak kalabilir.
 const renderConfigForm = (config, setConfig) => {
-  if (!config) return null;
-
   const handleChange = (e, keyPath) => {
-    const { value, type, checked } = e.target;
-    const newConfig = JSON.parse(JSON.stringify(config)); // Derin kopyalama
-
+    const { value, type } = e.target;
+    const newConfig = JSON.parse(JSON.stringify(config));
     let current = newConfig;
     for (let i = 0; i < keyPath.length - 1; i++) {
-      current = current[keyPath[i]] = current[keyPath[i]] || {}; // Yolu oluştur
+      current = current[keyPath[i]] = current[keyPath[i]] || {};
     }
-    current[keyPath[keyPath.length - 1]] = type === 'checkbox' ? checked : (type === 'number' ? parseFloat(value) : value);
+    current[keyPath[keyPath.length - 1]] = type === 'number' ? parseFloat(value) : value;
     setConfig(newConfig);
   };
 
-  const traverseConfig = (obj, path = []) => {
-    return Object.entries(obj).map(([key, value]) => {
-      const currentPath = [...path, key];
-      const fieldId = currentPath.join('-');
+  const traverseConfig = (obj, path = []) => Object.entries(obj).map(([key, value]) => {
+    const currentPath = [...path, key];
+    const fieldId = currentPath.join('-');
+    const labelText = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
-      if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-        return (
-          <div key={fieldId} className="form-group-section">
-            <label><strong>{key.replace(/_/g, ' ').toUpperCase()}</strong></label> {/* Bölüm başlığı */}
-            <div style={{ marginLeft: '20px', borderLeft: '2px solid #eee', paddingLeft: '15px' }}>
-              {traverseConfig(value, currentPath)}
-            </div>
-          </div>
-        );
-      } else {
-        // Basit form alanı
-        const inputType = typeof value === 'number' ? 'number' : 'text';
-        return (
-          <div key={fieldId} className="form-group">
-            <label htmlFor={fieldId}>{key.replace(/_/g, ' ').charAt(0).toUpperCase() + key.replace(/_/g, ' ').slice(1)}:</label>
-            <input
-              type={inputType}
-              id={fieldId}
-              value={value || ''} // Null/undefined durumlarını handle et
-              onChange={(e) => handleChange(e, currentPath)}
-              step={inputType === 'number' ? 'any' : undefined}
-            />
-          </div>
-        );
-      }
-    });
-  };
+    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      return (
+        <fieldset key={fieldId} className="form-fieldset">
+          <legend>{labelText}</legend>
+          {traverseConfig(value, currentPath)}
+        </fieldset>
+      );
+    }
+    const inputType = typeof value === 'number' ? 'number' : 'text';
+    return (
+      <div key={fieldId} className="form-group">
+        <label htmlFor={fieldId}>{labelText}:</label>
+        <input type={inputType} id={fieldId} value={value ?? ''} onChange={(e) => handleChange(e, currentPath)} step={inputType === 'number' ? 'any' : undefined} />
+      </div>
+    );
+  });
 
   return traverseConfig(config);
 };
@@ -2050,328 +2064,125 @@ const renderConfigForm = (config, setConfig) => {
 function NewExperiment({ onExperimentStarted }) {
   const [pipelines, setPipelines] = useState([]);
   const [selectedPipelineId, setSelectedPipelineId] = useState('');
-  const [selectedPipelineDetails, setSelectedPipelineDetails] = useState(null);
   const [currentConfig, setCurrentConfig] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [feedback, setFeedback] = useState(null);
-  const [isConfigLoading, setIsConfigLoading] = useState(false); // YENİ: Konfigürasyon yükleme durumu
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const loadPipelines = async () => {
+      setIsLoading(true);
       try {
         const response = await fetchAvailablePipelines();
-        setPipelines(response.data);
-        if (response.data.length > 0) {
-          const firstPipeline = response.data[0];
-          setSelectedPipelineId(firstPipeline.id);
+        if (response.data && response.data.length > 0) {
+          setPipelines(response.data);
+          setSelectedPipelineId(response.data[0].id);
         }
-      } catch (error) {
-        setFeedback({ type: 'error', message: 'Pipeline listesi yüklenemedi.' });
-      } finally {
-        setIsLoading(false);
-      }
+      } catch (error) { toast.error('Pipeline listesi yüklenemedi.'); } 
+      finally { setIsLoading(false); }
     };
     loadPipelines();
   }, []);
 
-  const loadPipelineConfig = async (pipelineId) => {
-    if (!pipelineId) return;
-    setIsConfigLoading(true);
-    setCurrentConfig(null);
-    try {
-      const configResponse = await fetchPipelineDefaultConfig(pipelineId);
-      if (configResponse.data && !configResponse.data.error) {
-        setCurrentConfig(configResponse.data);
-        setFeedback(null);
-      } else {
-        setFeedback({ type: 'info', message: 'Bu pipeline için düzenlenebilir varsayılan konfigürasyon bulunamadı.' });
-      }
-    } catch (error) {
-      setFeedback({ type: 'error', message: `Konfigürasyon yüklenemedi: ${error.message}` });
-    } finally {
-        setIsConfigLoading(false);
-    }
-  };
-
   useEffect(() => {
-    if (selectedPipelineId) {
-      setSelectedPipelineDetails(pipelines.find(p => p.id === selectedPipelineId));
-      loadPipelineConfig(selectedPipelineId);
-    }
-  }, [selectedPipelineId, pipelines]);
+    const loadPipelineConfig = async (pipelineId) => {
+      if (!pipelineId) return;
+      setIsLoading(true);
+      setCurrentConfig(null);
+      try {
+        const { data } = await fetchPipelineDefaultConfig(pipelineId);
+        if (data && !data.error) setCurrentConfig(data);
+      } catch (error) { toast.error(`Konfigürasyon yüklenemedi: ${error.message}`); } 
+      finally { setIsLoading(false); }
+    };
+    loadPipelineConfig(selectedPipelineId);
+  }, [selectedPipelineId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-    setFeedback(null);
-    
-    // DÜZELTME: currentConfig null olsa bile pipeline_name'i gönder
-    const configToSend = currentConfig ? { ...currentConfig, pipeline_name: selectedPipelineId } : { pipeline_name: selectedPipelineId };
-    
+    setIsSubmitting(true);
+    const configToSend = { ...currentConfig, pipeline_name: selectedPipelineId };
     try {
-      const response = await startNewExperiment(configToSend);
-      const taskId = response.data.task_id;
-      setFeedback({ type: 'success', message: `Görev başarıyla gönderildi! ID: ${taskId}` });
-      if (onExperimentStarted) {
-        onExperimentStarted(taskId);
-      }
+      const { data } = await startNewExperiment(configToSend);
+      toast.success(`Görev başarıyla gönderildi! ID: ${data.task_id}`);
+      if (onExperimentStarted) onExperimentStarted(data.task_id);
+      navigate('/');
     } catch (err) {
-      setFeedback({ type: 'error', message: 'Deney başlatılamadı. API ve Worker loglarını kontrol edin.' });
+      toast.error('Deney başlatılamadı. API/Worker loglarını kontrol edin.');
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
-
-  if (isLoading && pipelines.length === 0) return <p className="feedback info">Pipeline'lar yükleniyor...</p>;
-
-  return (
-    <form onSubmit={handleSubmit} className="form-container card">
-      <div className="page-header">
-        <h1><span role="img" aria-label="rocket">🚀</span> Yeni Deney Başlat</h1>
-        <p>Platformda kurulu mevcut yapay zeka pipeline'larından birini seçerek yeni bir deney başlatın.</p>
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="pipeline-select">Çalıştırılacak Pipeline Eklentisi</label>
-        <select id="pipeline-select" value={selectedPipelineId} onChange={(e) => setSelectedPipelineId(e.target.value)} disabled={isLoading}>
-          {pipelines.map(p => (
-            <option key={p.id} value={p.id}>{p.name} ({p.id})</option>
-          ))}
-        </select>
-      </div>
-      
-      {selectedPipelineDetails && (
-        <div className="pipeline-details card">
-          <h3>{selectedPipelineDetails.name} Detayları</h3>
-          <p><strong>Açıklama:</strong> <i>{selectedPipelineDetails.description || 'Açıklama bulunmuyor.'}</i></p>
-          <p><strong>Repository:</strong> <a href={selectedPipelineDetails.repository} target="_blank" rel="noopener noreferrer">{selectedPipelineDetails.repository}</a></p>
-        </div>
-      )}
-      
-      {isConfigLoading ? (
-          <p className="feedback info">Konfigürasyon yükleniyor...</p>
-      ) : currentConfig ? (
-        <div className="card" style={{ marginTop: '20px' }}>
-          <h3>Deney Parametreleri (Düzenlenebilir)</h3>
-          {renderConfigForm(currentConfig, setCurrentConfig)}
-        </div>
-      ) : (
-        <p className="feedback info">Bu pipeline için düzenlenebilir varsayılan konfigürasyon bulunamadı. Deney, pipeline'ın kendi içindeki varsayılanlarıyla başlatılacaktır.</p>
-      )}
-
-      <button type="submit" disabled={isLoading || isConfigLoading} className="button-primary">
-        {isLoading ? 'Başlatılıyor...' : `"${selectedPipelineDetails?.name || 'Seçilen'}" Eğitimini Başlat`}
-      </button>
-      
-      <Feedback message={feedback?.message} type={feedback?.type} />
-    </form>
-  );
-}
-
-NewExperiment.propTypes = {
-    onExperimentStarted: PropTypes.func.isRequired,
-};
-export default NewExperiment;
-========== FILE: dashboard/src/pages/DashboardOverview.jsx ==========
-import { useState, useEffect, useMemo } from 'react';
-import { fetchExperiments } from '../services/api';
-import ExperimentCard from '../components/ExperimentCard';
-import ExperimentsList from '../components/ExperimentsList';
-import PropTypes from 'prop-types';
-
-function DashboardOverview({ onNewExperimentClick }) {
-  const [experiments, setExperiments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('ALL');
-
-  // Mevcut deneylerden dinamik olarak durum listesi oluşturur
-  const allStatuses = useMemo(() => {
-    if (experiments.length === 0) return ['ALL'];
-    const statuses = new Set(experiments.map(exp => exp.status));
-    return ['ALL', ...Array.from(statuses).sort()];
-  }, [experiments]);
-
-  // Deneyleri API'dan çeker ve periyodik olarak günceller
-  useEffect(() => {
-    const getExperiments = async () => {
-      // Sadece ilk yüklemede tam ekran yükleme göstergesi göster
-      if (experiments.length === 0) {
-          setLoading(true);
-      }
-      try {
-        const response = await fetchExperiments();
-        setExperiments(response.data);
-        setError(null);
-      } catch (err) {
-        setError('API sunucusuna bağlanılamadı veya veri çekilemedi. Servislerin çalıştığından emin olun.');
-        console.error("Error fetching experiments for overview:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    getExperiments();
-    const intervalId = setInterval(getExperiments, 5000); 
-    
-    return () => clearInterval(intervalId);
-  }, [experiments.length]); // Sadece ilk yüklemede loading'i tetiklemek için `experiments.length` bağımlılığı
-
-  // Filtrelenmiş ve aranmış deneyleri hesaplar
-  const filteredExperiments = useMemo(() => {
-    let filtered = experiments;
-
-    // Durum filtresi
-    if (filterStatus !== 'ALL') {
-      filtered = filtered.filter(exp => exp.status === filterStatus);
-    }
-
-    // Arama terimi filtresi
-    if (searchTerm) {
-      const lowerCaseSearchTerm = searchTerm.toLowerCase();
-      filtered = filtered.filter(exp => {
-        const config = exp.config || {};
-        const results = exp.results || {};
-        const pipeline_name = config.pipeline_name || '';
-        const ticker = config.data_sourcing?.ticker || '';
-        const experiment_id = exp.experiment_id || '';
-
-        return experiment_id.toLowerCase().includes(lowerCaseSearchTerm) ||
-               pipeline_name.toLowerCase().includes(lowerCaseSearchTerm) ||
-               ticker.toLowerCase().includes(lowerCaseSearchTerm);
-      });
-    }
-    return filtered;
-  }, [experiments, filterStatus, searchTerm]);
-
-
-  const runningExperiments = filteredExperiments.filter(exp => 
-    ['STARTED', 'PROGRESS', 'PENDING'].includes(exp.status)
-  );
   
-  const completedOrFailedExperiments = filteredExperiments.filter(exp => 
-    !runningExperiments.some(runningExp => runningExp.experiment_id === exp.experiment_id)
-  );
-
-  if (loading) {
-    return <p className="feedback info">Veriler yükleniyor...</p>;
-  }
+  const selectedPipelineDetails = pipelines.find(p => p.id === selectedPipelineId);
 
   return (
-    <div className="dashboard-overview">
+    // YENİ YAPI: Form, başlık ve aksiyon paneli olarak ayrıldı
+    <div className="new-experiment-layout">
       <div className="page-header">
-        <h1><span role="img" aria-label="dashboard">📊</span> Genel Bakış</h1>
-        <p>Tüm deneylerinizin durumunu ve son gelişmelerini takip edin.</p>
+        <h1>Yeni Deney Başlat</h1>
+        <p>Mevcut bir AI pipeline'ı seçerek yeni bir eğitim süreci başlatın.</p>
       </div>
-
-      {error && <p className="feedback error">{error}</p>}
-
-      {!error && (
-        <>
-          {/* Filtre ve Arama Alanları */}
-          <div className="card" style={{ marginBottom: '25px', padding: '20px' }}>
-            <h3 style={{ marginTop: 0, color: 'white', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '20px'}}>Deneyleri Filtrele</h3>
-            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-              <div className="form-group" style={{ flex: '1 1 250px', minWidth: '200px', marginBottom: 0 }}>
-                <label htmlFor="search-term">Arama</label>
-                <input 
-                  type="text" 
-                  id="search-term" 
-                  placeholder="ID, Pipeline, Sembol ara..." 
-                  value={searchTerm} 
-                  onChange={(e) => setSearchTerm(e.target.value)} 
-                />
-              </div>
-              <div className="form-group" style={{ flex: '1 1 150px', minWidth: '150px', marginBottom: 0 }}>
-                <label htmlFor="filter-status">Durum</label>
-                <select 
-                  id="filter-status" 
-                  value={filterStatus} 
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                >
-                  {allStatuses.map(status => (
-                    <option key={status} value={status}>{status === 'ALL' ? 'Tümü' : status}</option>
-                  ))}
-                </select>
-              </div>
+      
+      <form onSubmit={handleSubmit} className="new-experiment-form">
+        <div className="form-main-content"> {/* Kaydırılabilir alan */}
+          <div className="card">
+            <div className="form-group">
+              <label htmlFor="pipeline-select">Çalıştırılacak Pipeline Eklentisi</label>
+              <select id="pipeline-select" value={selectedPipelineId} onChange={(e) => setSelectedPipelineId(e.target.value)} disabled={isLoading || isSubmitting}>
+                {pipelines.map(p => <option key={p.id} value={p.id}>{p.name} ({p.id})</option>)}
+              </select>
             </div>
           </div>
+          
+          <div className="card">
+            <h3>Deney Parametreleri</h3>
+            {isLoading ? <p>Parametreler yükleniyor...</p> : (
+              currentConfig ? renderConfigForm(currentConfig, setCurrentConfig) : <p>Bu pipeline için düzenlenebilir konfigürasyon bulunamadı.</p>
+            )}
+          </div>
+        </div>
 
-          <h2 className="section-title">
-            <span role="img" aria-label="running">⚡</span>
-            Çalışan Deneyler ({runningExperiments.length})
-          </h2>
-          {runningExperiments.length > 0 ? (
-            <div className="running-experiments-grid" style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-                gap: '25px'
-            }}>
-              {runningExperiments.map(exp => (
-                <ExperimentCard key={exp.experiment_id} experiment={exp} />
-              ))}
-            </div>
-          ) : (
-            <p className="feedback info">Şu anda çalışan bir deney bulunmamaktadır. <button onClick={onNewExperimentClick} className="button-link" style={{background: 'none', border: 'none', color: 'var(--primary-color)', textDecoration: 'underline', cursor: 'pointer', fontSize: '1em', padding: 0}}>Yeni bir deney başlatmak</button> ister misiniz?</p>
-          )}
-
-          <h2 className="section-title" style={{marginTop: '40px'}}>
-            <span role="img" aria-label="history">🗂️</span>
-            Deney Geçmişi ({completedOrFailedExperiments.length})
-          </h2>
-          {completedOrFailedExperiments.length > 0 ? (
-            <ExperimentsList experiments={completedOrFailedExperiments} />
-          ) : (
-            <p className="feedback info">Henüz tamamlanan veya başarısız olan bir deney bulunmamaktadır.</p>
-          )}
-        </>
-      )}
+        {/* YENİ YAPI: Yapışkan Aksiyon Paneli */}
+        <div className="form-action-bar">
+          <div className="pipeline-info">
+            <strong>Pipeline:</strong>
+            <span>{selectedPipelineDetails?.name || '...'}</span>
+          </div>
+          <button type="submit" disabled={isLoading || isSubmitting} className="button-primary">
+            {isSubmitting ? 'Başlatılıyor...' : 'Eğitimi Başlat'}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
 
-DashboardOverview.propTypes = {
-  onNewExperimentClick: PropTypes.func.isRequired,
-};
-
-export default DashboardOverview;
+NewExperiment.propTypes = { onExperimentStarted: PropTypes.func.isRequired };
+export default NewExperiment;
 ========== FILE: dashboard/src/services/api.js ==========
-// ========== DOSYA: dashboard/src/services/api.js (DEĞİŞİKLİK YOK) ==========
-// Zaten mevcut kodunuzda bu fonksiyona ihtiyacımız yok.
-// fetchAvailablePipelines endpointi ile zaten pipeline listesini çekiyoruz.
-// Yeni eklenen get_pipeline_default_config() API endpointini kullanmak için yeni bir fonksiyon ekleyeceğiz.
-
 import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  headers: { 'Content-Type': 'application/json' },
 });
 
-export const fetchExperiments = () => {
-  return apiClient.get('/experiments');
-};
-
-export const startNewExperiment = (config) => {
-  return apiClient.post('/experiments', config);
-};
-
-export const fetchAvailablePipelines = () => {
-  return apiClient.get('/pipelines'); 
-};
-
-// YENİ FONKSİYON: Belirli bir pipeline'ın varsayılan konfigürasyonunu çeker
-export const fetchPipelineDefaultConfig = (pipelineId) => {
-  return apiClient.get(`/pipelines/${pipelineId}/config`);
-};
-
-export const getTaskStatus = (taskId) => {
-  return apiClient.get(`/experiments/${taskId}/status`);
+export const fetchExperiments = () => apiClient.get('/experiments');
+export const startNewExperiment = (config) => apiClient.post('/experiments', config);
+export const fetchAvailablePipelines = () => apiClient.get('/pipelines'); 
+export const fetchPipelineDefaultConfig = (pipelineId) => apiClient.get(`/pipelines/${pipelineId}/config`);
+========== FILE: dashboard/src/utils/cssUtils.js ==========
+/**
+ * Belirtilen CSS değişkeninin hesaplanmış değerini döndürür.
+ * @param {string} varName - '--primary-color' gibi CSS değişken adı.
+ * @returns {string} - Değişkenin renk değeri (örn. '#42b983').
+ */
+export const getCssVar = (varName) => {
+  if (typeof window === 'undefined') return '';
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
 };
 ========== FILE: docs/CONTRIBUTING.md ==========
 # 🤝 AzuraForge Platforma Katkıda Bulunma Rehberi
