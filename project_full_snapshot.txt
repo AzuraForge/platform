@@ -1,5 +1,5 @@
 PROJE KOD SNAPSHOT (TAM)
-Toplam 95 dosya bulundu ve eklendi.
+Toplam 96 dosya bulundu ve eklendi.
 Dahil Edilen Dizinler: .
 Dahil Edilen Uzantılar: .toml, .py, .yaml, .yml, .json, .md, .txt, html, .bat, .sh, .jsx, .js, .json, .css
 Hariç Tutulan Desenler/Yollar: __pycache__, .git, .venv, .vscode, .idea, build, dist, *.egg-info, *.pyc, *.so, *.pyd, .pytest_cache, .mypy_cache, .dataset, dataset, .logs, logs, .output, output, inputs, outputs, .tmp, checkpoints, reports, docs/_build, site, node_modules, .DS_Store, Thumbs.db, *.lock
@@ -14,7 +14,7 @@ services:
     ports: ["6379:6379"]
     volumes: ["redis_data:/data"]
 
-  # 2. PostgreSQL Veritabanı Servisi (Sağlık Kontrolü ile)
+  # 2. PostgreSQL Veritabanı Servisi
   postgres:
     image: postgres:15-alpine
     container_name: azuraforge_postgres
@@ -27,13 +27,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: always
-    # === YENİ BÖLÜM: SAĞLIK KONTROLÜ ===
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
-    # === DEĞİŞİKLİK SONU ===
 
   # --- ANA PLATFORM SERVİSLERİ ---
 
@@ -43,7 +41,8 @@ services:
     build:
       context: ./api
       dockerfile: Dockerfile
-    command: start-api
+    # === DEĞİŞİKLİK: Bu satır kaldırıldı. Artık Dockerfile'daki CMD kullanılacak. ===
+    # command: start-api 
     ports: ["8000:8000"]
     volumes:
       - ./api:/app
@@ -54,22 +53,20 @@ services:
       - REPORTS_DIR=/app/reports
       - CACHE_DIR=/app/.cache
       - DATABASE_URL=${DATABASE_URL}
-    # === DEĞİŞİKLİK BURADA ===
-    # depends_on yapısı, sağlık kontrolünü bekleyecek şekilde güncellendi
     depends_on:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started # Redis için basit başlangıç yeterli
-    # === DEĞİŞİKLİK SONU ===
+        condition: service_started
 
-  # 4. Worker Servisi (GPU Yetenekli)
+  # 4. Worker Servisi
   worker:
     container_name: azuraforge_worker
     build:
       context: ./worker
       dockerfile: Dockerfile
-    command: start-worker
+    # === DEĞİŞİKLİK: Bu satır kaldırıldı. Artık Dockerfile'daki CMD kullanılacak. ===
+    # command: start-worker
     volumes:
       - ./worker:/app
       - ${REPORTS_DIR}:/app/reports
@@ -78,23 +75,20 @@ services:
       - REDIS_URL=${REDIS_URL}
       - REPORTS_DIR=/app/reports
       - CACHE_DIR=/app/.cache
-      - DATABASE_URL=${DATABASE_URL}
-      # YENİ: Cihazı GPU olarak ayarlıyoruz
       - AZURAFORGE_DEVICE=gpu
+      - DATABASE_URL=${DATABASE_URL}
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_started
-    # === YENİ BÖLÜM: GPU KAYNAKLARINI AYIRMA ===
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
-              count: 1 # veya 'all'
+              count: 1
               capabilities: [gpu]
-    # === DEĞİŞİKLİK SONU ===
 
   # 5. Dashboard Servisi
   dashboard:
@@ -102,6 +96,7 @@ services:
     build:
       context: ./dashboard
       dockerfile: Dockerfile
+    # Bu servis Node.js tabanlı olduğu için command'ın kalması doğru.
     command: npm run dev -- --host 0.0.0.0
     ports: ["5173:5173"]
     volumes:
@@ -338,6 +333,17 @@ jobs:
     - name: Test with pytest
       run: |
         pytest
+========== FILE: api/src/azuraforge_api/database.py ==========
+import os
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise ValueError("API: DATABASE_URL ortam değişkeni ayarlanmamış!")
+
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 ========== FILE: api/src/azuraforge_api/main.py ==========
 import uvicorn
 from fastapi import FastAPI, APIRouter # DÜZELTME: APIRouter'ı import et
@@ -524,8 +530,6 @@ async def websocket_task_status(websocket: WebSocket, task_id: str):
 ========== FILE: api/src/azuraforge_api/routes/__init__.py ==========
 
 ========== FILE: api/src/azuraforge_api/services/experiment_service.py ==========
-# api/src/azuraforge_api/services/experiment_service.py
-
 import json
 import itertools
 import uuid
@@ -536,111 +540,100 @@ from fastapi import HTTPException
 from celery.result import AsyncResult
 from sqlalchemy import desc
 
-# === DEĞİŞİKLİK BURADA ===
-# Kendi veritabanı modülümüzden ve worker'dan doğru modülleri import ediyoruz
-from .database import SessionLocal
+from ..database import SessionLocal # DOĞRU IMPORT
 from azuraforge_worker.database import Experiment 
-# === DEĞİŞİKLİK SONU ===
 
 from azuraforge_worker import celery_app
 from azuraforge_worker.tasks.training_tasks import AVAILABLE_PIPELINES_AND_CONFIGS
 
-# get_db fonksiyonu artık gerekli değil, doğrudan SessionLocal kullanacağız.
-
-# ... (dosyanın geri kalanı aynı, sadece list_experiments ve get_experiment_details içindeki
-# get_db() context manager'ını kaldırıyoruz)
-
 def get_available_pipelines() -> List[Dict[str, Any]]:
-    # ... (kod değişmedi) ...
     official_apps_data = []
     try:
         with resources.open_text("azuraforge_applications", "official_apps.json") as f:
             official_apps_data = json.load(f)
     except (FileNotFoundError, ModuleNotFoundError):
         pass
-    
     available_pipelines = [app for app in official_apps_data if app.get("id") in AVAILABLE_PIPELINES_AND_CONFIGS]
     return available_pipelines
 
 def get_default_pipeline_config(pipeline_id: str) -> Dict[str, Any]:
-    # ... (kod değişmedi) ...
     pipeline_info = AVAILABLE_PIPELINES_AND_CONFIGS.get(pipeline_id)
     if not pipeline_info:
         raise ValueError(f"Pipeline '{pipeline_id}' not found.")
-    
     get_config_func = pipeline_info.get('get_config_func')
     if not get_config_func:
         return {"message": "No specific default configuration available."}
     return get_config_func()
 
+def _generate_config_combinations(config: Dict[str, Any]) -> Generator[Dict[str, Any], None, None]:
+    varying_params, static_params = {}, {}
+    def _traverse_and_split(conf, path=""):
+        for key, value in conf.items():
+            new_path = f"{path}.{key}" if path else key
+            if isinstance(value, list): varying_params[new_path] = value
+            elif isinstance(value, dict): _traverse_and_split(value, new_path)
+            else: static_params[new_path] = value
+    _traverse_and_split(config)
+    if not varying_params:
+        yield config
+        return
+    param_names, param_values = list(varying_params.keys()), list(varying_params.values())
+    for combo in itertools.product(*param_values):
+        new_config = {}
+        for key_path, value in static_params.items():
+            keys = key_path.split('.')
+            d = new_config
+            for k in keys[:-1]: d = d.setdefault(k, {})
+            d[keys[-1]] = value
+        for i, key_path in enumerate(param_names):
+            keys = key_path.split('.')
+            d = new_config
+            for k in keys[:-1]: d = d.setdefault(k, {})
+            d[keys[-1]] = combo[i]
+        yield new_config
 
 def start_experiment(config: Dict[str, Any]) -> Dict[str, Any]:
-    # ... (kod değişmedi) ...
     task_ids = []
-    batch_id = str(uuid.uuid4())
-    batch_name = config.pop("batch_name", f"Batch-{datetime.now().strftime('%Y-%m-%d-%H%M')}")
-    
+    batch_id, batch_name = str(uuid.uuid4()), config.pop("batch_name", f"Batch-{datetime.now().strftime('%Y-%m-%d-%H%M')}")
     combinations = list(_generate_config_combinations(config))
     num_combinations = len(combinations)
-
     for single_config in combinations:
-        if num_combinations > 1:
-            single_config['batch_id'] = batch_id
-            single_config['batch_name'] = batch_name
-        else:
-            single_config['batch_id'] = None
-            single_config['batch_name'] = None
-            
+        single_config['batch_id'] = batch_id if num_combinations > 1 else None
+        single_config['batch_name'] = batch_name if num_combinations > 1 else None
         task = celery_app.send_task("start_training_pipeline", args=[single_config])
         task_ids.append(task.id)
-
     if num_combinations > 1:
-        return {
-            "message": f"{num_combinations} experiments submitted as a batch.",
-            "batch_id": batch_id,
-            "task_ids": task_ids
-        }
+        return {"message": f"{num_combinations} experiments submitted as a batch.", "batch_id": batch_id, "task_ids": task_ids}
     else:
         return {"message": "Experiment submitted to worker.", "task_id": task_ids[0]}
 
-
 def list_experiments() -> List[Dict[str, Any]]:
-    """Veritabanındaki tüm deneylerin bir özetini en yeniden eskiye doğru listeler."""
     db = SessionLocal()
     try:
         experiments = db.query(Experiment).order_by(desc(Experiment.created_at)).all()
-        results_summary = []
-        for exp in experiments:
-            summary = {
-                "experiment_id": exp.id, "task_id": exp.task_id, "pipeline_name": exp.pipeline_name,
-                "status": exp.status,
-                "created_at": exp.created_at.isoformat() if exp.created_at else None,
-                "completed_at": exp.completed_at.isoformat() if exp.completed_at else None,
-                "failed_at": exp.failed_at.isoformat() if exp.failed_at else None,
-                "batch_id": exp.batch_id, "batch_name": exp.batch_name,
-                "config_summary": {
-                    "ticker": exp.config.get("data_sourcing", {}).get("ticker", "N/A") if exp.config else "N/A",
-                    "epochs": exp.config.get("training_params", {}).get("epochs", "N/A") if exp.config else "N/A",
-                    "lr": exp.config.get("training_params", {}).get("lr", "N/A") if exp.config else "N/A",
-                },
-                "results_summary": {
-                    "final_loss": exp.results.get("final_loss") if exp.results else None
-                }
-            }
-            results_summary.append(summary)
-        return results_summary
+        return [{
+            "experiment_id": exp.id, "task_id": exp.task_id, "pipeline_name": exp.pipeline_name,
+            "status": exp.status,
+            "created_at": exp.created_at.isoformat() if exp.created_at else None,
+            "completed_at": exp.completed_at.isoformat() if exp.completed_at else None,
+            "failed_at": exp.failed_at.isoformat() if exp.failed_at else None,
+            "batch_id": exp.batch_id, "batch_name": exp.batch_name,
+            "config_summary": {
+                "ticker": exp.config.get("data_sourcing", {}).get("ticker", "N/A") if exp.config else "N/A",
+                "epochs": exp.config.get("training_params", {}).get("epochs", "N/A") if exp.config else "N/A",
+                "lr": exp.config.get("training_params", {}).get("lr", "N/A") if exp.config else "N/A",
+            },
+            "results_summary": {"final_loss": exp.results.get("final_loss") if exp.results else None}
+        } for exp in experiments]
     finally:
         db.close()
 
-
 def get_experiment_details(experiment_id: str) -> Dict[str, Any]:
-    """Belirli bir deneyin tüm detaylarını veritabanından çeker."""
     db = SessionLocal()
     try:
         exp = db.query(Experiment).filter(Experiment.id == experiment_id).first()
         if not exp:
             raise HTTPException(status_code=404, detail=f"Experiment '{experiment_id}' not found.")
-        
         return {
             "experiment_id": exp.id, "task_id": exp.task_id, "pipeline_name": exp.pipeline_name,
             "status": exp.status, "config": exp.config, "results": exp.results, "error": exp.error,
@@ -652,54 +645,9 @@ def get_experiment_details(experiment_id: str) -> Dict[str, Any]:
     finally:
         db.close()
 
-
 def get_task_status(task_id: str) -> Dict[str, Any]:
-    #... (kod değişmedi)
     task_result = AsyncResult(task_id, app=celery_app)
     return {"status": task_result.state, "details": task_result.info}
-
-# _generate_config_combinations fonksiyonu burada kalabilir
-def _generate_config_combinations(config: Dict[str, Any]) -> Generator[Dict[str, Any], None, None]:
-    # ... (kod değişmedi) ...
-    varying_params = {}
-    static_params = {}
-    
-    def _traverse_and_split(conf, path=""):
-        for key, value in conf.items():
-            new_path = f"{path}.{key}" if path else key
-            if isinstance(value, list):
-                varying_params[new_path] = value
-            elif isinstance(value, dict):
-                _traverse_and_split(value, new_path)
-            else:
-                static_params[new_path] = value
-
-    _traverse_and_split(config)
-
-    if not varying_params:
-        yield config
-        return
-
-    param_names = list(varying_params.keys())
-    param_values = list(varying_params.values())
-    
-    for combo in itertools.product(*param_values):
-        new_config = {}
-        for key_path, value in static_params.items():
-            keys = key_path.split('.')
-            d = new_config
-            for k in keys[:-1]:
-                d = d.setdefault(k, {})
-            d[keys[-1]] = value
-            
-        for i, key_path in enumerate(param_names):
-            keys = key_path.split('.')
-            d = new_config
-            for k in keys[:-1]:
-                d = d.setdefault(k, {})
-            d[keys[-1]] = combo[i]
-            
-        yield new_config
 ========== FILE: api/src/azuraforge_api/services/__init__.py ==========
 
 ========== FILE: api/src/azuraforge_api/tasks/training_tasks.py ==========
@@ -4796,7 +4744,7 @@ dependencies = [
 ]
 
 [project.scripts]
-start-worker = "azuraforge_worker.main:run_celery_worker"
+start-worker = "azuraforge_worker.main:run_azuraforge_worker"
 ========== FILE: worker/README.md ==========
 # AzuraForge Worker Servisi
 
@@ -5034,69 +4982,52 @@ def init_db():
 ========== FILE: worker/src/azuraforge_worker/main.py ==========
 # worker/src/azuraforge_worker/main.py
 
-import subprocess
+import logging
 import sys
 import platform
-import logging
 import multiprocessing
-import os # os'i import et
+import os
 
-def determine_pool_and_concurrency():
-    """İşletim sistemine ve cihaz türüne göre uygun pool ve concurrency değerini belirler."""
-    current_platform = platform.system()
+from .celery_app import celery_app
+
+def get_concurrency():
+    """Cihaz türüne göre uygun concurrency değerini belirler."""
     device = os.environ.get("AZURAFORGE_DEVICE", "cpu").lower()
-
-    if current_platform == "Windows":
-        pool_type = "solo"
-        concurrency = 1
-        logging.info("Windows platformu algılandı. 'solo' pool kullanılıyor.")
-    elif device == "gpu":
-        # === DEĞİŞİKLİK BURADA: GPU için özel concurrency ayarı ===
-        pool_type = "prefork"
-        # Tek bir GPU varken, çok fazla paralel süreç başlatmak verimsizdir ve OOM'a yol açabilir.
-        # 2 veya 4 gibi küçük bir değerle başlayalım.
-        concurrency = 4 
-        logging.info(f"GPU modu aktif. 'prefork' pool ve {concurrency} (sabit) concurrency kullanılıyor.")
-        # === DEĞİŞİKLİK SONU ===
-    else: # CPU-bound Linux
-        pool_type = "prefork"
+    if device == "gpu":
+        # Tek bir GPU varken, çok fazla paralel süreç başlatmak verimsizdir.
+        concurrency = 4
+        logging.info(f"GPU modu aktif. Concurrency = {concurrency} (sabit).")
+        return concurrency
+    else:
         concurrency = multiprocessing.cpu_count()
-        logging.info(f"CPU-bound Linux/macOS platformu algılandı. 'prefork' pool ve {concurrency} concurrency kullanılıyor.")
-    
-    return pool_type, concurrency
+        logging.info(f"CPU modu aktif. Concurrency = {concurrency} (CPU çekirdek sayısı).")
+        return concurrency
 
-
-def run_celery_worker():
-    """'start-worker' komutu için giriş noktası."""
-
+def run_azuraforge_worker():
+    """
+    Bu fonksiyon, worker'ı programatik olarak, subprocess kullanmadan başlatır.
+    """
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(name)s:%(lineno)d - %(levelname)s - %(message)s',
         stream=sys.stdout
     )
-
-    logging.info("👷‍♂️ Starting AzuraForge Worker...")
-
-    pool_type, concurrency = determine_pool_and_concurrency()
-
-    logging.info(f"Platform: {platform.system()} - Using pool: {pool_type}, concurrency: {concurrency}")
-
-    command = [
-        # python -m celery ... yerine doğrudan celery komutunu kullanmak daha standarttır
-        # ve PATH sorunları artık Dockerfile'da çözüldü.
-        "celery",
-        "-A", "azuraforge_worker.celery_app:celery_app",
-        "worker",
-        f"--pool={pool_type}",
-        "--loglevel=INFO",
-        f"--concurrency={concurrency}"
+    logging.info("👷‍♂️ Starting AzuraForge Worker via Celery's programmatic API...")
+    
+    # Celery worker'ını başlatmak için argüman listesi oluştur
+    worker_argv = [
+        'worker',
+        '--loglevel=info',
+        # 'prefork' Linux'ta varsayılan olduğu için belirtmeye gerek yok.
+        # 'solo' da hata ayıklama modundan kaldırıldı.
+        f'--concurrency={get_concurrency()}',
     ]
-
-    subprocess.run(command)
-
+    
+    # Celery uygulamasının worker_main metodunu bu argümanlarla çağır
+    celery_app.worker_main(argv=worker_argv)
 
 if __name__ == "__main__":
-    run_celery_worker()
+    run_azuraforge_worker()
 ========== FILE: worker/src/azuraforge_worker/__init__.py ==========
 from .celery_app import celery_app
 
