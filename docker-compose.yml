@@ -1,76 +1,49 @@
 services:
-  # 1. Redis Servisi (Mesaj Kuyruğu ve Sonuç Deposu)
+  # 1. Redis Servisi
   redis:
     image: "redis:alpine"
     container_name: azuraforge_redis
     ports: ["6379:6379"]
     volumes: ["redis_data:/data"]
 
-  # --- KÜTÜPHANE SERVİSLERİ (SADECE BUILD VE SAĞLIK KONTROLÜ İÇİN) ---
-  # Bu servisler, ana uygulamaların (API, Worker) bağımlılıklarını kurabilmesi için önceden build edilir.
-  # Bağımlılık zincirinde alt seviyede oldukları için 'depends_on' gerekmez,
-  # API ve Worker Dockerfile'ları onları zaten pip ile çeker.
-  # Buradaki tanımlar, onların da build edildiğini doğrulamak içindir.
-
-  # # 2. Core Kütüphanesi
-  # core_lib:
-  #   container_name: azuraforge_core_lib_build_test
-  #   build:
-  #     context: ./core # 'core' reposunun bulunduğu klasörü göster
-  #     dockerfile: Dockerfile # 'core' reposunun içindeki Dockerfile
-  #   command: python -c "import azuraforge_core; print('AzuraForge Core built and imported successfully in Docker!')"
-  #   # volumes: - ./core:/app # Geliştirme sırasında kodu anında yansıtmak için
-  #   # Bu servis sadece build ediliyor, çalıştırılmıyor. Mount'a gerek yok.
-
-  # # 3. Learner Kütüphanesi
-  # learner_lib:
-  #   container_name: azuraforge_learner_lib_build_test
-  #   build:
-  #     context: ./learner
-  #     dockerfile: Dockerfile
-  #   command: python -c "import azuraforge_learner; print('AzuraForge Learner built and imported successfully in Docker!')"
-  #   # volumes: - ./learner:/app # Sadece build ediliyor.
-
-  # # 4. Applications Katalogu
-  # applications_catalog:
-  #   container_name: azuraforge_applications_catalog_build_test
-  #   build:
-  #     context: ./applications
-  #     dockerfile: Dockerfile
-  #   command: python -c "import azuraforge_applications; print('AzuraForge Applications Catalog built and imported successfully in Docker!')"
-  #   # volumes: - ./applications:/app # Sadece build ediliyor.
-
-  # # 5. App Stock Predictor (Uygulama Eklentisi)
-  # app_stock_predictor:
-  #   container_name: azuraforge_app_stock_predictor_build_test
-  #   build:
-  #     context: ./app-stock-predictor
-  #     dockerfile: Dockerfile
-  #   command: python -c "import azuraforge_stockapp; print('AzuraForge App Stock Predictor built and imported successfully in Docker!')"
-  #   # volumes: - ./app-stock-predictor:/app # Sadece build ediliyor.
+  # 2. YENİ: PostgreSQL Veritabanı Servisi
+  postgres:
+    image: postgres:15-alpine
+    container_name: azuraforge_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
 
   # --- ANA PLATFORM SERVİSLERİ ---
-  # Bu servisler, tüm ekosistemin temelidir ve diğer kütüphanelere bağımlıdır.
 
-  # 6. API Servisi
+  # 3. API Servisi
   api:
     container_name: azuraforge_api
     build:
-      context: ./api # 'api' reposunun bulunduğu klasörü göster
-      dockerfile: Dockerfile # 'api' reposunun içindeki Dockerfile
-    command: start-api # 'api' reposundaki entrypoint script'i
+      context: ./api
+      dockerfile: Dockerfile
+    command: start-api
     ports: ["8000:8000"]
     volumes:
-      - ./api:/app # API'ın kendi kodu
-      - ${REPORTS_DIR}:/app/reports # Ortak rapor dizini (Host makineden mount ediliyor)
-      - ${CACHE_DIR}:/app/.cache # YENİ SATIR
+      - ./api:/app
+      - ${REPORTS_DIR}:/app/reports
+      - ${CACHE_DIR}:/app/.cache
     environment:
       - REDIS_URL=${REDIS_URL}
       - REPORTS_DIR=/app/reports
-      - CACHE_DIR=/app/.cache # YENİ SATIR
-    depends_on: [redis] # Redis'e bağımlı
+      - CACHE_DIR=/app/.cache
+      # YENİ: Veritabanı bağlantı bilgisi
+      - DATABASE_URL=${DATABASE_URL}
+    # YENİ: Veritabanı ve Redis'e bağımlı
+    depends_on: [redis, postgres]
 
-  # 7. Worker Servisi
+  # 4. Worker Servisi
   worker:
     container_name: azuraforge_worker
     build:
@@ -78,16 +51,19 @@ services:
       dockerfile: Dockerfile
     command: start-worker
     volumes:
-      - ./worker:/app # Worker'ın kendi kodu
-      - ${REPORTS_DIR}:/app/reports # Raporlar için
-      - ${CACHE_DIR}:/app/.cache # YENİ SATIR
+      - ./worker:/app
+      - ${REPORTS_DIR}:/app/reports
+      - ${CACHE_DIR}:/app/.cache
     environment:
       - REDIS_URL=${REDIS_URL}
       - REPORTS_DIR=/app/reports
-      - CACHE_DIR=/app/.cache # YENİ SATIR
-    depends_on: [redis]
+      - CACHE_DIR=/app/.cache
+      # YENİ: Veritabanı bağlantı bilgisi
+      - DATABASE_URL=${DATABASE_URL}
+    # YENİ: Veritabanı ve Redis'e bağımlı
+    depends_on: [redis, postgres]
 
-  # 8. Dashboard Servisi
+  # 5. Dashboard Servisi
   dashboard:
     container_name: azuraforge_dashboard
     build:
@@ -101,4 +77,5 @@ services:
     depends_on: [api]
 
 volumes:
-  redis_data: # Redis verilerini kalıcı tutmak için volume
+  redis_data:
+  postgres_data: # YENİ: Postgres verilerini kalıcı tutmak için volume
