@@ -63,9 +63,11 @@ services:
     volumes:
       - ./api:/app # API'ın kendi kodu
       - ${REPORTS_DIR}:/app/reports # Ortak rapor dizini (Host makineden mount ediliyor)
+      - ${CACHE_DIR}:/app/.cache # YENİ SATIR
     environment:
       - REDIS_URL=${REDIS_URL}
       - REPORTS_DIR=/app/reports
+      - CACHE_DIR=/app/.cache # YENİ SATIR
     depends_on: [redis] # Redis'e bağımlı
 
   # 7. Worker Servisi
@@ -78,9 +80,11 @@ services:
     volumes:
       - ./worker:/app # Worker'ın kendi kodu
       - ${REPORTS_DIR}:/app/reports # Raporlar için
+      - ${CACHE_DIR}:/app/.cache # YENİ SATIR
     environment:
       - REDIS_URL=${REDIS_URL}
       - REPORTS_DIR=/app/reports
+      - CACHE_DIR=/app/.cache # YENİ SATIR
     depends_on: [redis]
 
   # 8. Dashboard Servisi
