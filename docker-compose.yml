@@ -6,7 +6,7 @@ services:
     ports: ["6379:6379"]
     volumes: ["redis_data:/data"]
 
-  # 2. PostgreSQL Veritabanı Servisi (Sağlık Kontrolü ile)
+  # 2. PostgreSQL Veritabanı Servisi
   postgres:
     image: postgres:15-alpine
     container_name: azuraforge_postgres
@@ -19,13 +19,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: always
-    # === YENİ BÖLÜM: SAĞLIK KONTROLÜ ===
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
-    # === DEĞİŞİKLİK SONU ===
 
   # --- ANA PLATFORM SERVİSLERİ ---
 
@@ -35,7 +33,8 @@ services:
     build:
       context: ./api
       dockerfile: Dockerfile
-    command: start-api
+    # === DEĞİŞİKLİK: Bu satır kaldırıldı. Artık Dockerfile'daki CMD kullanılacak. ===
+    # command: start-api 
     ports: ["8000:8000"]
     volumes:
       - ./api:/app
@@ -46,22 +45,20 @@ services:
       - REPORTS_DIR=/app/reports
       - CACHE_DIR=/app/.cache
       - DATABASE_URL=${DATABASE_URL}
-    # === DEĞİŞİKLİK BURADA ===
-    # depends_on yapısı, sağlık kontrolünü bekleyecek şekilde güncellendi
     depends_on:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started # Redis için basit başlangıç yeterli
-    # === DEĞİŞİKLİK SONU ===
+        condition: service_started
 
-  # 4. Worker Servisi (GPU Yetenekli)
+  # 4. Worker Servisi
   worker:
     container_name: azuraforge_worker
     build:
       context: ./worker
       dockerfile: Dockerfile
-    command: start-worker
+    # === DEĞİŞİKLİK: Bu satır kaldırıldı. Artık Dockerfile'daki CMD kullanılacak. ===
+    # command: start-worker
     volumes:
       - ./worker:/app
       - ${REPORTS_DIR}:/app/reports
@@ -70,23 +67,20 @@ services:
       - REDIS_URL=${REDIS_URL}
       - REPORTS_DIR=/app/reports
       - CACHE_DIR=/app/.cache
-      - DATABASE_URL=${DATABASE_URL}
-      # YENİ: Cihazı GPU olarak ayarlıyoruz
       - AZURAFORGE_DEVICE=gpu
+      - DATABASE_URL=${DATABASE_URL}
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_started
-    # === YENİ BÖLÜM: GPU KAYNAKLARINI AYIRMA ===
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
-              count: 1 # veya 'all'
+              count: 1
               capabilities: [gpu]
-    # === DEĞİŞİKLİK SONU ===
 
   # 5. Dashboard Servisi
   dashboard:
@@ -94,6 +88,7 @@ services:
     build:
       context: ./dashboard
       dockerfile: Dockerfile
+    # Bu servis Node.js tabanlı olduğu için command'ın kalması doğru.
     command: npm run dev -- --host 0.0.0.0
     ports: ["5173:5173"]
     volumes:
