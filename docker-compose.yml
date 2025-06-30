@@ -12,33 +12,33 @@ services:
   # API ve Worker Dockerfile'ları onları zaten pip ile çeker.
   # Buradaki tanımlar, onların da build edildiğini doğrulamak içindir.
 
-  # 2. Core Kütüphanesi
-  core_lib:
-    container_name: azuraforge_core_lib_build_test
-    build:
-      context: ./core # 'core' reposunun bulunduğu klasörü göster
-      dockerfile: Dockerfile # 'core' reposunun içindeki Dockerfile
-    command: python -c "import azuraforge_core; print('AzuraForge Core built and imported successfully in Docker!')"
-    # volumes: - ./core:/app # Geliştirme sırasında kodu anında yansıtmak için
-    # Bu servis sadece build ediliyor, çalıştırılmıyor. Mount'a gerek yok.
+  # # 2. Core Kütüphanesi
+  # core_lib:
+  #   container_name: azuraforge_core_lib_build_test
+  #   build:
+  #     context: ./core # 'core' reposunun bulunduğu klasörü göster
+  #     dockerfile: Dockerfile # 'core' reposunun içindeki Dockerfile
+  #   command: python -c "import azuraforge_core; print('AzuraForge Core built and imported successfully in Docker!')"
+  #   # volumes: - ./core:/app # Geliştirme sırasında kodu anında yansıtmak için
+  #   # Bu servis sadece build ediliyor, çalıştırılmıyor. Mount'a gerek yok.
 
-  # 3. Learner Kütüphanesi
-  learner_lib:
-    container_name: azuraforge_learner_lib_build_test
-    build:
-      context: ./learner
-      dockerfile: Dockerfile
-    command: python -c "import azuraforge_learner; print('AzuraForge Learner built and imported successfully in Docker!')"
-    # volumes: - ./learner:/app # Sadece build ediliyor.
+  # # 3. Learner Kütüphanesi
+  # learner_lib:
+  #   container_name: azuraforge_learner_lib_build_test
+  #   build:
+  #     context: ./learner
+  #     dockerfile: Dockerfile
+  #   command: python -c "import azuraforge_learner; print('AzuraForge Learner built and imported successfully in Docker!')"
+  #   # volumes: - ./learner:/app # Sadece build ediliyor.
 
-  # 4. Applications Katalogu
-  applications_catalog:
-    container_name: azuraforge_applications_catalog_build_test
-    build:
-      context: ./applications
-      dockerfile: Dockerfile
-    command: python -c "import azuraforge_applications; print('AzuraForge Applications Catalog built and imported successfully in Docker!')"
-    # volumes: - ./applications:/app # Sadece build ediliyor.
+  # # 4. Applications Katalogu
+  # applications_catalog:
+  #   container_name: azuraforge_applications_catalog_build_test
+  #   build:
+  #     context: ./applications
+  #     dockerfile: Dockerfile
+  #   command: python -c "import azuraforge_applications; print('AzuraForge Applications Catalog built and imported successfully in Docker!')"
+  #   # volumes: - ./applications:/app # Sadece build ediliyor.
 
   # 5. App Stock Predictor (Uygulama Eklentisi)
   app_stock_predictor:
