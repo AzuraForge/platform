@@ -42,6 +42,16 @@ Bu adımlar, platformun tüm parçalarını yerel geliştirme için hazır hale 
     ```
 
 3.  **Sanal Ortam ve Bağımlılıklar (Python):**
+
+    **`.env` Dosyasını Oluşturma:**
+    Platformu çalıştırmadan önce, ana `platform` dizininde bir `.env` dosyası oluşturun. Bu dosya, servislerin ortak dizinlere erişimini sağlar.
+    ```
+    # .env
+    REDIS_URL=redis://redis:6379/0
+    REPORTS_DIR=./reports
+    CACHE_DIR=./.cache
+    ```
+
     Yerel geliştirme için, **`platform` projesinin** kök dizininde tek bir sanal ortam oluşturup tüm Python bağımlılıklarını oraya kurmak en pratik yoldur.
 
     ```bash

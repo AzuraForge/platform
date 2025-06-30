@@ -1,5 +1,5 @@
 PROJE KOD SNAPSHOT (TAM)
-Toplam 83 dosya bulundu ve eklendi.
+Toplam 84 dosya bulundu ve eklendi.
 Dahil Edilen Dizinler: .
 Dahil Edilen Uzantılar: .toml, .py, .yaml, .yml, .json, .md, .txt, html, .bat, .sh, .jsx, .js, .json, .css
 Hariç Tutulan Desenler/Yollar: __pycache__, .git, .venv, .vscode, .idea, build, dist, *.egg-info, *.pyc, *.so, *.pyd, .pytest_cache, .mypy_cache, .dataset, dataset, .logs, logs, .output, output, inputs, outputs, .tmp, checkpoints, reports, docs/_build, site, node_modules, .DS_Store, Thumbs.db, *.lock
@@ -71,9 +71,11 @@ services:
     volumes:
       - ./api:/app # API'ın kendi kodu
       - ${REPORTS_DIR}:/app/reports # Ortak rapor dizini (Host makineden mount ediliyor)
+      - ${CACHE_DIR}:/app/.cache # YENİ SATIR
     environment:
       - REDIS_URL=${REDIS_URL}
       - REPORTS_DIR=/app/reports
+      - CACHE_DIR=/app/.cache # YENİ SATIR
     depends_on: [redis] # Redis'e bağımlı
 
   # 7. Worker Servisi
@@ -86,9 +88,11 @@ services:
     volumes:
       - ./worker:/app # Worker'ın kendi kodu
       - ${REPORTS_DIR}:/app/reports # Raporlar için
+      - ${CACHE_DIR}:/app/.cache # YENİ SATIR
     environment:
       - REDIS_URL=${REDIS_URL}
       - REPORTS_DIR=/app/reports
+      - CACHE_DIR=/app/.cache # YENİ SATIR
     depends_on: [redis]
 
   # 8. Dashboard Servisi
@@ -549,10 +553,8 @@ setup(
     },
 )
 ========== FILE: app-stock-predictor/src/azuraforge_stockapp/pipeline.py ==========
-# app-stock-predictor/src/azuraforge_stockapp/pipeline.py
-
 import logging
-from typing import Dict, Any, Tuple, List
+from typing import Any, Dict, Tuple, List
 
 import yaml
 from importlib import resources
@@ -563,7 +565,6 @@ from azuraforge_learner import Sequential, LSTM, Linear
 from azuraforge_learner.pipelines import TimeSeriesPipeline
 
 def get_default_config() -> Dict[str, Any]:
-    """Uygulamanın varsayılan konfigürasyonunu yükler."""
     try:
         with resources.open_text("azuraforge_stockapp.config", "stock_predictor_config.yml") as f:
             return yaml.safe_load(f)
@@ -572,12 +573,11 @@ def get_default_config() -> Dict[str, Any]:
         return {"error": f"Varsayılan konfigürasyon yüklenemedi: {e}"}
 
 class StockPredictionPipeline(TimeSeriesPipeline):
-    """
-    Hisse senedi fiyat tahmini için TimeSeriesPipeline'den türetilmiş,
-    standartlaştırılmış ve basit pipeline.
-    """
-    def _load_data(self) -> pd.DataFrame:
-        """yfinance'ten hisse senedi verilerini çeker."""
+    # DÜZELTME: Artık __init__ metoduna gerek yok, çünkü BasePipeline'in __init__'i
+    # bizim için logger'ı zaten ayarlıyor.
+    
+    def _load_data_from_source(self) -> pd.DataFrame:
+        """Sadece yfinance'ten veri çekme işini yapar. Caching bu metodun dışındadır."""
         ticker = self.config.get("data_sourcing", {}).get("ticker", "MSFT")
         self.logger.info(f"'{ticker}' için yfinance'ten veri çekiliyor (period=max)...")
         
@@ -586,44 +586,52 @@ class StockPredictionPipeline(TimeSeriesPipeline):
             raise ValueError(f"'{ticker}' için veri indirilemedi.")
             
         self.logger.info(f"{len(data)} satır veri indirildi.")
-        # Sadece 'Close' sütununu döndürüyoruz
-        return data[['Close']]
+        return data
+
+    def get_caching_params(self) -> Dict[str, Any]:
+        """Önbellek anahtarı için sadece ticker'ın yeterli olduğunu belirtir."""
+        return {"ticker": self.config.get("data_sourcing", {}).get("ticker", "MSFT")}
 
     def _get_target_and_feature_cols(self) -> Tuple[str, List[str]]:
-        """Bu basit model için hedef ve özellik aynı sütundur."""
-        target_col = "Close"
-        feature_cols = ["Close"]
-        return target_col, feature_cols
+        """Bu basit model için hedef ve özellik aynı sütundur: 'Close'."""
+        return "Close", ["Close"]
 
     def _create_model(self, input_shape: Tuple) -> Sequential:
-        """
-        LSTM ve bir Linear katmandan oluşan modeli oluşturur.
-        input_shape: (num_samples, sequence_length, num_features)
-        """
-        input_size = input_shape[2] # num_features
+        """LSTM ve bir Linear katmandan oluşan modeli oluşturur."""
+        input_size = input_shape[2] 
         hidden_size = self.config.get("model_params", {}).get("hidden_size", 50)
         
         return Sequential(
             LSTM(input_size=input_size, hidden_size=hidden_size),
-            Linear(hidden_size, 1) # Çıktı boyutu her zaman 1 (tek bir değer tahmini)
+            Linear(hidden_size, 1)
         )
 ========== FILE: app-stock-predictor/src/azuraforge_stockapp/__init__.py ==========
 
 ========== FILE: app-stock-predictor/src/azuraforge_stockapp/config/stock_predictor_config.yml ==========
+# app-stock-predictor/src/azuraforge_stockapp/config/stock_predictor_config.yml
+
 pipeline_name: "stock_predictor"
 
 data_sourcing:
-  ticker: "MSFT" # Microsoft
-  start_date: "2010-01-01" # <- DEĞİŞİKLİK: Yeterli veriyi garanti altına almak için tarihi çok daha geriye çektik.
+  ticker: "MSFT"
 
 model_params:
-  sequence_length: 60 # LSTM'in ne kadar geriye bakacağı
-  hidden_size: 50     # LSTM katmanındaki nöron sayısı
+  sequence_length: 60
+  hidden_size: 50
 
 training_params:
-  epochs: 50 # <-- DEĞİŞİKLİK: Varsayılan epoch sayısını daha anlamlı bir eğitime izin verecek şekilde artırdık.
-  lr: 0.001 
+  epochs: 50
+  lr: 0.001
   optimizer: "adam"
+  test_size: 0.2
+  validate_every: 5 # Her 5 epoch'ta bir canlı tahmin grafiğini güncelle
+
+# YENİ: Merkezi sistem ayarları artık burada değil, 
+# .env ve docker-compose.yml'de yönetiliyor.
+# Ancak eklenti seviyesinde caching'i açıp kapatmak için bu flag'i tutabiliriz.
+system:
+  caching_enabled: true
+  cache_max_age_hours: 24
 ========== FILE: app-stock-predictor/src/azuraforge_stockapp/config/__init__.py ==========
 
 ========== FILE: applications/pyproject.toml ==========
@@ -2429,6 +2437,16 @@ Bu adımlar, platformun tüm parçalarını yerel geliştirme için hazır hale 
     ```
 
 3.  **Sanal Ortam ve Bağımlılıklar (Python):**
+
+    **`.env` Dosyasını Oluşturma:**
+    Platformu çalıştırmadan önce, ana `platform` dizininde bir `.env` dosyası oluşturun. Bu dosya, servislerin ortak dizinlere erişimini sağlar.
+    ```
+    # .env
+    REDIS_URL=redis://redis:6379/0
+    REPORTS_DIR=./reports
+    CACHE_DIR=./.cache
+    ```
+
     Yerel geliştirme için, **`platform` projesinin** kök dizininde tek bir sanal ortam oluşturup tüm Python bağımlılıklarını oraya kurmak en pratik yoldur.
 
     ```bash
@@ -2595,31 +2613,39 @@ AzuraForge'un her aşamasında, kalitesini ve sürdürülebilirliğini sağlamak
 - **BAŞARI (İnteraktif Raporlama):** `Dashboard`'daki rapor sayfası, artık statik Markdown dosyalarını değil, bu dinamik JSON verisini kullanarak, `Chart.js` ile çizilmiş **interaktif ve canlı grafikler** sunar hale getirildi.
 - **BAŞARI (Canlı Tahmin Grafiği):** `LiveTrackerPane`, eğitim sırasında her `n` epoch'ta bir güncellenen "Tahmin vs Gerçek" grafiğini canlı olarak gösterecek şekilde geliştirildi.
 
-**An itibarıyla AzuraForge Platformu, tam işlevsel, canlı takip yetenekli, standartlaştırılmış eklenti yapısına sahip ve dinamik raporlama sunan "Checkpoint Charlie" kilometre taşına ulaşmıştır.**
+### Faz 15-16: Merkezi Caching Mimarisi ile Performans Optimizasyonu
+- **Hedef:** Harici API çağrılarını azaltarak deney başlatma süresini kısaltmak ve platformu daha verimli hale getirmek.
+- **Mimari Karar:** Her eklentinin kendi caching mantığını yazması yerine, bu sorumluluk `azuraforge-learner` kütüphanesi içine taşındı.
+- **BAŞARI:** `TimeSeriesPipeline`, artık bir deneyi çalıştırmadan önce, deney parametrelerine göre bir önbellek anahtarı oluşturup verinin yerel diskte (`.cache` dizini) olup olmadığını kontrol eder. Veri mevcut ve güncelse, API çağrısı atlanır ve deney saniyeler içinde başlar. Bu, hem geliştirici deneyimini iyileştirir hem de harici API'lerin kullanımını azaltır.
 
-## 🗺️ Gelecek Fazlar ve Yol Haritası
+**An itibarıyla AzuraForge Platformu, kararlı, canlı takip yetenekli, dinamik raporlama sunan ve verimli bir önbellekleme mekanizmasına sahip "Checkpoint Delta" kilometre taşına ulaşmıştır. Platformun temel vizyonu tamamlanmıştır.**
+
+## 🗺️ Gelecek Vizyonu: Genişleme ve Olgunlaşma
 
 Bu sağlam temel üzerine inşa edilecek adımlar, AzuraForge'u daha da zenginleştirmeyi ve kapsamını genişletmeyi hedefleyecektir.
 
-### Faz 15: Performans ve UX İyileştirmeleri
-- **Akıllı Önbellekleme (Caching):** `yfinance` gibi harici API çağrılarının sonuçları önbelleğe alınarak, aynı parametrelerle yapılan sonraki deneyler önemli ölçüde hızlandırılacak.
+### **Grup 1: Mevcut Yapıyı Zenginleştirme**
 - **Gelişmiş Ön İşleme:** `target_col_transform: "log"` gibi kanıtlanmış ön işleme adımlarını `BasePipeline`'e entegre etmek.
+- **Model Yönetimi:** `ModelCheckpoint` callback'ini kullanarak en iyi modelleri kaydetme ve bu modellere API üzerinden erişim sağlama.
+- **Hiperparametre Optimizasyonu:** `hyper_tuner` aracını, API üzerinden otomatik olarak yüzlerce deney başlatacak şekilde modernize etmek.
 
-### Faz 16: Yeni Eklentiler ve Yetenek Kanıtı
+### **Grup 2: Yeni Yetenekler ve Eklentiler**
 - **`app-weather-forecaster`:** `TimeSeriesPipeline`'in gücünü kanıtlamak için hava durumu tahmincisi eklentisi, yeni standartlara uygun olarak hızla geliştirilecek.
-- **Sınıflandırma Problemleri:** Sınıflandırma görevleri için yeni bir `BaseClassificationPipeline` ve buna uygun raporlama araçları geliştirilecek.
+- **Sınıflandırma Problemleri:** Sınıflandırma görevleri için yeni bir `BaseClassificationPipeline` ve buna uygun raporlama (örn: Karışıklık Matrisi) araçları geliştirilecek.
 
-### Faz 17: Görüntü İşleme
-- **`core` Genişletme:** `Conv2D`, `MaxPool2D` gibi CNN katmanlarının `core`'a eklenmesi.
-- **Yeni Eklenti:** `azuraforge-app-image-classifier` (örn: MNIST için) oluşturma.
+### **Grup 3: Çekirdeği Genişletme**
+- **Görüntü İşleme:** `Conv2D`, `MaxPool2D` gibi CNN katmanlarının `core`'a eklenmesi ve bir `app-image-classifier` eklentisinin geliştirilmesi.
+- **GPU Desteği:** `CuPy` entegrasyonunu test edip, `docker-compose.yml`'e GPU desteği eklemek.
 ========== FILE: learner/pyproject.toml ==========
+# learner/pyproject.toml
+
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "azuraforge-learner"
-version = "0.1.2" # Sürüm artırımı
+version = "0.1.3" # Yeni bağımlılık için sürüm artırımı
 authors = [{ name = "Azmi Sahin" }]
 description = "High-level deep learning library for model training and management, using the AzuraForge Core engine."
 readme = "README.md"
@@ -2630,8 +2656,9 @@ dependencies = [
     "scikit-learn",
     "numpy",
     "redis",
-    "matplotlib", # YENİ BAĞIMLILIK
-    "pandas"      # YENİ BAĞIMLILIK (raporlama için)
+    "matplotlib",
+    "pandas",
+    "pyarrow" # YENİ VE KRİTİK BAĞIMLILIK
 ]
 
 [project.optional-dependencies]
@@ -2654,6 +2681,86 @@ setup(
     packages=find_packages(where="src"),
 )
 
+========== FILE: learner/src/azuraforge_learner/caching.py ==========
+# learner/src/azuraforge_learner/caching.py
+
+import logging
+import os
+import hashlib
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, Optional
+import pandas as pd
+
+def get_cache_filepath(cache_dir: str, context: str, params: Dict[str, Any]) -> str:
+    """
+    Verilen parametrelere göre deterministik bir önbellek dosya yolu oluşturur.
+    Dosya adı, parametrelerin sıralı bir karmasından (hash) türetilir.
+    
+    Args:
+        cache_dir (str): Önbellek dosyalarının saklanacağı ana dizin.
+        context (str): Önbelleğin ait olduğu bağlam (örn: 'stock_predictor').
+        params (Dict[str, Any]): Dosya adını oluşturmak için kullanılacak parametreler.
+        
+    Returns:
+        str: Oluşturulan tam dosya yolu.
+    """
+    # Parametreleri anahtarlarına göre sıralayarak tutarlı bir string oluştur
+    param_str = str(sorted(params.items()))
+    # Bu string'in hash'ini alarak benzersiz ve dosya sistemi için güvenli bir kimlik oluştur
+    param_hash = hashlib.md5(param_str.encode()).hexdigest()
+    filename = f"{context}_{param_hash}.parquet"
+    
+    # Bağlama özel bir alt klasör oluşturarak karışıklığı önle
+    full_cache_dir = os.path.join(cache_dir, context)
+    os.makedirs(full_cache_dir, exist_ok=True)
+    
+    return os.path.join(full_cache_dir, filename)
+
+def load_from_cache(filepath: str, max_age_hours: int) -> Optional[pd.DataFrame]:
+    """
+    Veriyi önbellekten yükler. Eğer dosya yoksa veya belirtilen süreden eskiyse
+    None döner.
+    
+    Args:
+        filepath (str): Önbellek dosyasının yolu.
+        max_age_hours (int): Önbelleğin saat cinsinden maksimum geçerlilik süresi.
+        
+    Returns:
+        Optional[pd.DataFrame]: Geçerli önbellek verisi varsa DataFrame, yoksa None.
+    """
+    if not os.path.exists(filepath):
+        return None
+        
+    try:
+        # Dosyanın son değiştirilme zamanını al (UTC olarak)
+        mod_time = datetime.fromtimestamp(os.path.getmtime(filepath), tz=timezone.utc)
+        # Eğer dosyanın yaşı, izin verilen maksimum yaştan küçükse, geçerlidir
+        if (datetime.now(timezone.utc) - mod_time) < timedelta(hours=max_age_hours):
+            logging.info(f"Geçerli önbellek bulundu, buradan okunuyor: {filepath}")
+            return pd.read_parquet(filepath)
+        else:
+            logging.info(f"Önbellek süresi dolmuş: {filepath}")
+            os.remove(filepath) # Süresi dolmuş dosyayı temizle
+            return None
+    except Exception as e:
+        logging.error(f"Önbellekten okuma hatası {filepath}: {e}")
+        return None
+
+def save_to_cache(df: pd.DataFrame, filepath: str) -> None:
+    """
+    Verilen DataFrame'i belirtilen yola Parquet formatında kaydeder.
+    
+    Args:
+        df (pd.DataFrame): Kaydedilecek veri.
+        filepath (str): Kaydedilecek dosyanın tam yolu.
+    """
+    try:
+        # Dosyanın kaydedileceği dizinin var olduğundan emin ol
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        df.to_parquet(filepath)
+        logging.info(f"Veri önbelleğe kaydedildi: {filepath}")
+    except Exception as e:
+        logging.error(f"Önbelleğe yazma hatası {filepath}: {e}")
 ========== FILE: learner/src/azuraforge_learner/callbacks.py ==========
 # learner/src/azuraforge_learner/callbacks.py
 
@@ -3091,9 +3198,8 @@ class Adam(Optimizer):
                 update_val = self.lr * m_hat / (xp.sqrt(v_hat) + self.epsilon)
                 p.data -= update_val
 ========== FILE: learner/src/azuraforge_learner/pipelines.py ==========
-# learner/src/azuraforge_learner/pipelines.py
-
 import logging
+import os
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Tuple, Optional, List
 
@@ -3107,6 +3213,7 @@ from .reporting import generate_regression_report
 from .optimizers import Adam, SGD
 from .losses import MSELoss
 from .events import Event
+from .caching import get_cache_filepath, load_from_cache, save_to_cache
 
 def _create_sequences(data: np.ndarray, seq_length: int) -> Tuple[np.ndarray, np.ndarray]:
     xs, ys = [], []
@@ -3120,8 +3227,8 @@ def _create_sequences(data: np.ndarray, seq_length: int) -> Tuple[np.ndarray, np
 class BasePipeline(ABC):
     def __init__(self, config: Dict[str, Any]):
         self.config = config
+        # DÜZELTME: Sadece logger'ı al, yapılandırmayı yapma.
         self.logger = logging.getLogger(self.__class__.__name__)
-        logging.basicConfig(level="INFO", format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', force=True)
 
     @abstractmethod
     def run(self, callbacks: Optional[List[Callback]] = None) -> Dict[str, Any]:
@@ -3158,10 +3265,8 @@ class LivePredictionCallback(Callback):
 
             validation_payload = {
                 "x_axis": [d.isoformat() for d in self.time_index_val],
-                "y_true": y_test_unscaled.tolist(),
-                "y_pred": y_pred_unscaled.tolist(),
-                "x_label": "Tarih",
-                "y_label": target_col
+                "y_true": y_test_unscaled.tolist(), "y_pred": y_pred_unscaled.tolist(),
+                "x_label": "Tarih", "y_label": target_col
             }
             event.payload['validation_data'] = validation_payload
             
@@ -3183,8 +3288,11 @@ class TimeSeriesPipeline(BasePipeline):
         self.learner: Optional[Learner] = None
 
     @abstractmethod
-    def _load_data(self) -> pd.DataFrame:
+    def _load_data_from_source(self) -> pd.DataFrame:
         pass
+        
+    def get_caching_params(self) -> Dict[str, Any]:
+        return self.config.get("data_sourcing", {})
 
     @abstractmethod
     def _get_target_and_feature_cols(self) -> Tuple[str, List[str]]:
@@ -3204,10 +3312,30 @@ class TimeSeriesPipeline(BasePipeline):
     def run(self, callbacks: Optional[List[Callback]] = None) -> Dict[str, Any]:
         self.logger.info(f"'{self.config.get('pipeline_name')}' pipeline başlatılıyor...")
         
-        raw_data = self._load_data()
-        target_col, feature_cols = self._get_target_and_feature_cols()
-        data_to_process = raw_data[feature_cols]
+        system_config = self.config.get("system", {})
+        cache_enabled = system_config.get("caching_enabled", True)
+        cache_dir = os.getenv("CACHE_DIR", system_config.get("cache_dir", ".cache"))
+        cache_max_age = system_config.get("cache_max_age_hours", 24)
+        
+        cache_params = self.get_caching_params()
+        cache_filepath = get_cache_filepath(cache_dir, self.config.get('pipeline_name', 'default_context'), cache_params)
 
+        raw_data = None
+        if cache_enabled:
+            raw_data = load_from_cache(cache_filepath, cache_max_age)
+
+        if raw_data is None:
+            self.logger.info("Önbellek boş veya geçersiz. Veri kaynaktan çekiliyor...")
+            raw_data = self._load_data_from_source()
+            if cache_enabled and isinstance(raw_data, pd.DataFrame) and not raw_data.empty:
+                save_to_cache(raw_data, cache_filepath)
+        
+        target_col, feature_cols = self._get_target_and_feature_cols()
+        
+        if not all(col in raw_data.columns for col in feature_cols):
+            raise ValueError(f"Yapılandırılan özellik sütunları ({feature_cols}) indirilen veride bulunamadı.")
+            
+        data_to_process = raw_data[feature_cols]
         sequence_length = self.config.get("model_params", {}).get("sequence_length", 60)
         scaled_data = self.scaler.fit_transform(data_to_process)
         
@@ -3247,7 +3375,6 @@ class TimeSeriesPipeline(BasePipeline):
         self.logger.info("Rapor oluşturuluyor...")
         generate_regression_report(final_results, self.config)
         
-        # DÜZELTME: Worker'a döndürülecek nihai sonuçları JSON uyumlu hale getir
         final_loss = history['loss'][-1] if history.get('loss') else None
         
         return {
@@ -3940,21 +4067,33 @@ celery_app = Celery(
 )
 
 ========== FILE: worker/src/azuraforge_worker/main.py ==========
+# worker/src/azuraforge_worker/main.py
+
 import subprocess
 import sys
+import logging # YENİ
 
 def run_celery_worker():
     """'start-worker' komutu için giriş noktası."""
-    print("👷‍♂️ Starting AzuraForge Worker...")
+    
+    # YENİ: Platform genelinde loglama yapılandırmasını burada yap
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s:%(lineno)d - %(levelname)s - %(message)s',
+        stream=sys.stdout  # Logların konsola basıldığından emin ol
+    )
+    
+    logging.info("👷‍♂️ Starting AzuraForge Worker...")
     command = [
         sys.executable, "-m", "celery",
-        "-A", "azuraforge_worker.celery_app:celery_app", # Celery app nesnesinin tam yolu
+        "-A", "azuraforge_worker.celery_app:celery_app",
         "worker",
-        "--pool=solo", # Windows uyumluluğu üretim için prefork kullanın
+        "--pool=solo",
         "--loglevel=INFO"
     ]
+    # Celery'nin kendi log formatını kullanmasını engellemek için --logfile= olmadan çalıştırıyoruz
+    # ve kendi yapılandırmamıza güveniyoruz.
     subprocess.run(command)
-
 ========== FILE: worker/src/azuraforge_worker/__init__.py ==========
 from .celery_app import celery_app
 

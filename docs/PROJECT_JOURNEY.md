@@ -50,20 +50,26 @@ AzuraForge'un her aşamasında, kalitesini ve sürdürülebilirliğini sağlamak
 - **BAŞARI (İnteraktif Raporlama):** `Dashboard`'daki rapor sayfası, artık statik Markdown dosyalarını değil, bu dinamik JSON verisini kullanarak, `Chart.js` ile çizilmiş **interaktif ve canlı grafikler** sunar hale getirildi.
 - **BAŞARI (Canlı Tahmin Grafiği):** `LiveTrackerPane`, eğitim sırasında her `n` epoch'ta bir güncellenen "Tahmin vs Gerçek" grafiğini canlı olarak gösterecek şekilde geliştirildi.
 
-**An itibarıyla AzuraForge Platformu, tam işlevsel, canlı takip yetenekli, standartlaştırılmış eklenti yapısına sahip ve dinamik raporlama sunan "Checkpoint Charlie" kilometre taşına ulaşmıştır.**
+### Faz 15-16: Merkezi Caching Mimarisi ile Performans Optimizasyonu
+- **Hedef:** Harici API çağrılarını azaltarak deney başlatma süresini kısaltmak ve platformu daha verimli hale getirmek.
+- **Mimari Karar:** Her eklentinin kendi caching mantığını yazması yerine, bu sorumluluk `azuraforge-learner` kütüphanesi içine taşındı.
+- **BAŞARI:** `TimeSeriesPipeline`, artık bir deneyi çalıştırmadan önce, deney parametrelerine göre bir önbellek anahtarı oluşturup verinin yerel diskte (`.cache` dizini) olup olmadığını kontrol eder. Veri mevcut ve güncelse, API çağrısı atlanır ve deney saniyeler içinde başlar. Bu, hem geliştirici deneyimini iyileştirir hem de harici API'lerin kullanımını azaltır.
 
-## 🗺️ Gelecek Fazlar ve Yol Haritası
+**An itibarıyla AzuraForge Platformu, kararlı, canlı takip yetenekli, dinamik raporlama sunan ve verimli bir önbellekleme mekanizmasına sahip "Checkpoint Delta" kilometre taşına ulaşmıştır. Platformun temel vizyonu tamamlanmıştır.**
+
+## 🗺️ Gelecek Vizyonu: Genişleme ve Olgunlaşma
 
 Bu sağlam temel üzerine inşa edilecek adımlar, AzuraForge'u daha da zenginleştirmeyi ve kapsamını genişletmeyi hedefleyecektir.
 
-### Faz 15: Performans ve UX İyileştirmeleri
-- **Akıllı Önbellekleme (Caching):** `yfinance` gibi harici API çağrılarının sonuçları önbelleğe alınarak, aynı parametrelerle yapılan sonraki deneyler önemli ölçüde hızlandırılacak.
+### **Grup 1: Mevcut Yapıyı Zenginleştirme**
 - **Gelişmiş Ön İşleme:** `target_col_transform: "log"` gibi kanıtlanmış ön işleme adımlarını `BasePipeline`'e entegre etmek.
+- **Model Yönetimi:** `ModelCheckpoint` callback'ini kullanarak en iyi modelleri kaydetme ve bu modellere API üzerinden erişim sağlama.
+- **Hiperparametre Optimizasyonu:** `hyper_tuner` aracını, API üzerinden otomatik olarak yüzlerce deney başlatacak şekilde modernize etmek.
 
-### Faz 16: Yeni Eklentiler ve Yetenek Kanıtı
+### **Grup 2: Yeni Yetenekler ve Eklentiler**
 - **`app-weather-forecaster`:** `TimeSeriesPipeline`'in gücünü kanıtlamak için hava durumu tahmincisi eklentisi, yeni standartlara uygun olarak hızla geliştirilecek.
-- **Sınıflandırma Problemleri:** Sınıflandırma görevleri için yeni bir `BaseClassificationPipeline` ve buna uygun raporlama araçları geliştirilecek.
+- **Sınıflandırma Problemleri:** Sınıflandırma görevleri için yeni bir `BaseClassificationPipeline` ve buna uygun raporlama (örn: Karışıklık Matrisi) araçları geliştirilecek.
 
-### Faz 17: Görüntü İşleme
-- **`core` Genişletme:** `Conv2D`, `MaxPool2D` gibi CNN katmanlarının `core`'a eklenmesi.
-- **Yeni Eklenti:** `azuraforge-app-image-classifier` (örn: MNIST için) oluşturma.
+### **Grup 3: Çekirdeği Genişletme**
+- **Görüntü İşleme:** `Conv2D`, `MaxPool2D` gibi CNN katmanlarının `core`'a eklenmesi ve bir `app-image-classifier` eklentisinin geliştirilmesi.
+- **GPU Desteği:** `CuPy` entegrasyonunu test edip, `docker-compose.yml`'e GPU desteği eklemek.
