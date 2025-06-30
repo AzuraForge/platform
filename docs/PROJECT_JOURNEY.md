@@ -14,7 +14,6 @@ AzuraForge'un her aşamasında, kalitesini ve sürdürülebilirliğini sağlamak
 6.  **Otomatik Kalite Kontrolü:** Kod kalitesi (linting, type checking, unit tests) ve versiyonlama süreçleri (CI/CD) otomatikleştirilmiştir.
 
 ## ✅ Tamamlanan Fazlar ve Elde Edilen Başarılar
-
 ### Faz 0: Fikir ve İlk Denemeler (Monolitik "Smart Learner" Prototipi)
 - **Düşünce:** Mevcut ML araçlarının karmaşıklığına bir tepki olarak, sıfırdan bir derin öğrenme motoru (`mininn`) inşa etme fikri doğdu.
 - **Kanıt:** LSTM mimarisi, hava durumu ve hisse senedi verileriyle test edildi ve yüksek başarı oranları elde edildi.
@@ -40,20 +39,23 @@ AzuraForge'un her aşamasında, kalitesini ve sürdürülebilirliğini sağlamak
     3.  **`API`:** `WebSocket` bağlantısı kurulduğunda bu Redis kanalını dinleyen (`subscribe`) ve gelen her mesajı anında `Dashboard`'a ileten bir yapıya dönüştürüldü.
 - **BAŞARI:** Bu mimari değişiklik sayesinde, worker'ın CPU kullanımı ne kadar yoğun olursa olsun, ilerleme durumu bilgileri (epoch, kayıp vb.) anlık ve akıcı bir şekilde `Dashboard`'a iletilmeye başlandı.
 
-**An itibarıyla AzuraForge Platformu, temel mimarisi, eklenti yapısı ve en önemlisi, kararlı ve ölçeklenebilir gerçek zamanlı takip yetenekleriyle "Checkpoint Alpha" kilometre taşına ulaşmıştır.**
+### Faz 9-10: Mimari Saflaştırma ve Otomatik Raporlama
+- **Mimari Düzeltme:** `Learner` sınıfının Redis'e olan doğrudan bağımlılığı, bir `RedisProgressCallback` sınıfı yazılarak kaldırıldı. Raporlama sorumluluğu `Worker` katmanına (Callback aracılığıyla) devredilerek `Learner` tekrar teknoloji-agnostik ve saf hale getirildi.
+- **Hata Ayıklama:** `AttributeError: 'Learner' object has no attribute 'predict'` ve `NameError: name 'json' is not defined` gibi, büyük bir refactoring sürecinde ortaya çıkan entegrasyon hataları adım adım tespit edilip çözüldü.
+- **BAŞARI (Otomatik Raporlama):** `Smart Learner` projesindeki raporlama yeteneği, `azuraforge-learner` kütüphanesine başarıyla entegre edildi. Artık her deneyin sonunda, `worker` servisi, deney metriklerini ve `matplotlib` ile çizilmiş grafikleri içeren zengin bir **`report.md` dosyasını otomatik olarak oluşturmaktadır.**
+
+**An itibarıyla AzuraForge Platformu, temel MLOps döngüsünü (Başlat -> Canlı İzle -> Eğit -> Değerlendir -> Raporla) tam ve kararlı bir şekilde tamamlamıştır. Bu, "Checkpoint Bravo" kilometre taşıdır.**
 
 ## 🗺️ Gelecek Fazlar ve Yol Haritası
 
 Bu sağlam temel üzerine inşa edilecek adımlar, AzuraForge'u daha da zenginleştirmeyi ve kapsamını genişletmeyi hedefleyecektir.
 
-### Faz 10: Otomatik Raporlama ve Pipeline Standardizasyonu
-- **`BasePipeline` Soyut Sınıfı:** `Smart Learner` projesindeki gibi, tüm eklentilerin miras alacağı, standart bir akış (veri yükle, işle, eğit, raporla) sunan bir temel sınıf oluşturulacak.
-- **Otomatik Markdown Raporlama:** `Worker`'ın, her deney sonunda, sonuçları ve grafikleri içeren detaylı bir Markdown raporu (`report.md`) oluşturmasını sağlayan bir `Callback` eklenecek.
-- **Dashboard'da Rapor Görüntüleme:** Kullanıcıların tamamlanmış deneylerin bu zengin raporlarını doğrudan arayüzden okuyabilmesi sağlanacak.
+### Faz 11: `BasePipeline` Standardizasyonu ve Geliştirici Deneyimi
+- **`BasePipeline` Soyut Sınıfı:** `app-stock-predictor` içinde manuel olarak yazılan `run` metodu, `azuraforge-learner` içindeki `BasePipeline` soyut sınıfına taşınacak. Eklenti geliştirmek, sadece `_load_data`, `_create_model` gibi birkaç metodu doldurmak kadar basit hale gelecek.
+- **Dashboard'da Rapor Görüntüleme:** Kullanıcıların tamamlanmış deneylerin `report.md` dosyalarını doğrudan arayüzden okuyabilmesi sağlanacak.
 
-### Faz 11: Yardımcı Modüllerin Entegrasyonu (`caching` vb.)
-- **Akıllı Önbellekleme (Caching):** `Smart Learner` projesindeki `caching.py` mantığı, yeni eklenti yapısına uygun şekilde entegre edilerek veri çekme işlemleri hızlandırılacak.
+### Faz 12: Yardımcı Modüllerin Entegrasyonu (`caching` vb.)
+- **Akıllı Önbellekleme (Caching):** `yf.download` gibi API çağrılarının sonuçları önbelleğe alınarak, aynı parametrelerle yapılan sonraki deneyler önemli ölçüde hızlandırılacak.
 
-### Faz 12: Yeni Veri Modaliteleri ve Gelişmiş Modeller
+### Faz 13: Yeni Veri Modaliteleri ve Gelişmiş Modeller
 - **Görüntü İşleme:** `Conv2D`, `MaxPool2D` gibi katmanların `core`'a eklenmesi ve `azuraforge-app-image-classifier` eklentisinin geliştirilmesi.
-- **Hiperparametre Optimizasyonu:** `azuraforge-hyper-tuner` aracının geliştirilmesi.

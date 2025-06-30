@@ -6,71 +6,42 @@ Bu depo, AzuraForge ekosistemindeki tüm ana servisleri (API, Worker, Dashboard)
 
 ## 🎯 Temel Amaçlar ve Felsefe
 
-*   **Sıfırdan İnşa:** Derin öğrenme motoru ve temel bileşenler sıfırdan geliştirilmiştir.
+*   **Sıfırdan İnşa:** Derin öğrenme motoru (`azuraforge-core`) ve temel bileşenler sıfırdan geliştirilmiştir.
 *   **Modülerlik ve Bağımsızlık:** Her bileşen (kütüphane, API, worker, UI, uygulama) kendi bağımsız repo'sunda yaşar ve kendi sorumluluğuna sahiptir.
-*   **Olay Güdümlü Mimari:** Servisler arası iletişim olay tabanlı (Celery, Redis Pub/Sub, WebSockets) gerçekleşir. Bu sayede, yoğun hesaplama görevleri bile kullanıcı arayüzünü bloklamaz ve **gerçek zamanlı ilerleme takibi** mümkün olur.
+*   **Olay Güdümlü Mimari:** Servisler arası iletişim olay tabanlı (Celery, Redis Pub/Sub, WebSockets) gerçekleşir. Bu sayede, yoğun hesaplama görevleri bile kullanıcı arayüzünü bloklamaz.
 *   **Eklenti Tabanlı:** Yeni yapay zeka modelleri ve uygulamaları, platformun çekirdek koduna dokunmadan birer eklenti (plugin) olarak eklenebilir.
-*   **Ölçeklenebilirlik:** Dağıtık servisler sayesinde yatayda ölçeklenebilir.
-*   **Profesyonel Geliştirici Deneyimi:** Otomatik kurulum, test ve dokümantasyon ile geliştirme sürecini kolaylaştırmak.
+*   **Zengin ve Otomatik Çıktılar:** Platform, sadece sayısal sonuçlar üretmekle kalmaz, her deneyin sonunda performans metriklerini ve görselleştirmeleri içeren **otomatik Markdown raporları** oluşturur.
 
 ## 🏛️ Mimari Genel Bakış
 
 AzuraForge platformu, aşağıdaki bağımsız GitHub depolarından oluşan bir mikroservis mimarisini benimser:
 
--   **`core`** (`azuraforge-core`): Otomatik türev yeteneklerine sahip temel matematik motoru (NumPy/CuPy).
--   **`learner`** (`azuraforge-learner`): `core` üzerinde geliştirilmiş yüksek seviyeli derin öğrenme kütüphanesi (Katmanlar, Optimizatörler, Kayıp Fonksiyonları, `Learner` sınıfı ve `Callback` sistemi).
--   **`applications`** (`azuraforge-applications`): Platform için resmi uygulama eklentilerinin katalogu (JSON dosyası).
--   **`app-stock-predictor`** (`azuraforge-app-stock-predictor`): Gerçek bir uygulama eklentisi örneği (Hisse Senedi Tahmini).
--   **`api`** (`azuraforge-api`): RESTful API ve WebSocket endpoint'leri sunan olay güdümlü iletişim katmanı.
--   **`worker`** (`azuraforge-worker`): Arka plan görevlerini işleyen ve uygulama eklentilerini çalıştıran işçi servisi.
--   **`dashboard`** (`azuraforge-dashboard`): Platform için web tabanlı, canlı takip yeteneklerine sahip kullanıcı arayüzü.
+-   **`core`**: Temel otomatik türev motoru.
+-   **`learner`**: `core` üzerinde geliştirilmiş yüksek seviyeli öğrenme kütüphanesi. `LSTM` gibi gelişmiş katmanları, `Adam` gibi optimizer'ları, `Callback` sistemini ve **otomatik raporlama araçlarını** içerir.
+-   **`applications`**: Platform için resmi uygulama eklentilerinin katalogu.
+-   **`app-stock-predictor`**: Gerçek bir uygulama eklentisi örneği.
+-   **`api`**: RESTful API ve WebSocket (Pub/Sub tabanlı) sunan iletişim katmanı.
+-   **`worker`**: Arka plan görevlerini işleyen ve raporları oluşturan işçi servisi.
+-   **`dashboard`**: Platform için web tabanlı, canlı takip yeteneklerine sahip kullanıcı arayüzü.
 
 Bu repo, tüm bu servisleri tek bir `docker-compose` komutuyla ayağa kaldıran ana orkestrasyon katmanıdır.
 
 ## 🚀 Hızlı Başlangıç (Docker Compose ile)
 
-Tüm platformu yerel makinenizde tek bir komutla başlatmak için:
-
 1.  **Docker Desktop'ın yüklü ve çalıştığından emin olun.**
-2.  **Bu repoyu klonlayın:**
-    ```bash
-    git clone https://github.com/AzuraForge/platform.git
-    cd platform
-    ```
-3.  **.env dosyasını oluşturun:**
-    Proje kök dizininde `.env` adında bir dosya oluşturun ve içine raporların kaydedileceği dizini belirtin.
-    ```
-    # .env
-    REDIS_URL=redis://redis:6379/0
-    # Rapor dizini: Worker'ın sonuçları yazacağı ve API'nin okuyacağı host makinedeki dizin
-    # Windows için C:/azuraforge_platform_reports veya ./reports
-    # Linux/macOS için: ./reports
-    REPORTS_DIR=./reports 
-    ```
-    **ÖNEMLİ:** Docker Compose'u çalıştırmadan önce bu dizini host makinenizde oluşturduğunuzdan emin olun. Örneğin, Linux/macOS'ta:
-    ```bash
-    mkdir -p ./reports
-    ```
-4.  **Platformu başlatın:**
-    ```bash
-    docker-compose up --build -d
-    ```
-    (`-d` parametresi arka planda çalıştırmayı sağlar.)
-
-5.  **Platforma erişin:**
+2.  **Bu repoyu klonlayın:** `git clone https://github.com/AzuraForge/platform.git`
+3.  **.env dosyasını oluşturun:** Proje kök dizininde `.env` oluşturup içine `REPORTS_DIR=./reports` ve `REDIS_URL=redis://redis:6379/0` yazın.
+4.  **Rapor Dizinini Oluşturun:** `mkdir -p ./reports`
+5.  **Platformu başlatın:** `docker-compose up --build -d`
+6.  **Platforma erişin:**
     -   **Dashboard:** `http://localhost:5173`
     -   **API Dokümantasyonu:** `http://localhost:8000/api/v1/docs`
+7.  **Deneyi Çalıştırın ve Raporu Görüntüleyin:** Dashboard'dan bir deney başlattıktan sonra, host makinenizdeki `./reports` klasörünü kontrol ederek oluşturulan `report.md` ve `images/` klasörünü inceleyin.
 
 ## 🛠️ Geliştirme Rehberi ve İç Detaylar
 
-Bu rehber, platformun nasıl çalıştığını, nasıl katkıda bulunacağınızı ve geliştirme ortamınızı nasıl yöneteceğinizi detaylandırır.
-
-**[Tam Geliştirme Rehberine Git](./docs/DEVELOPMENT_GUIDE.md)**
-
-## 🤝 Katkıda Bulunma
-
-Projenin gelişimine katkıda bulunmak için [CONTRIBUTING.md](./docs/CONTRIBUTING.md) dosyasını inceleyin.
+Platformun nasıl çalıştığını, nasıl katkıda bulunacağınızı ve geliştirme ortamınızı nasıl yöneteceğinizi öğrenmek için **[Geliştirme Rehberi](./docs/DEVELOPMENT_GUIDE.md)**'ne göz atın.
 
 ## 🗺️ Yol Haritası ve Gelecek Vizyonu
 
-Projenin tamamlanan aşamaları, mevcut durumu ve gelecek hedefleri hakkında bilgi almak için [PROJECT_JOURNEY.md](./docs/PROJECT_JOURNEY.md) dosyasını okuyun.
+Projenin tamamlanan aşamaları, mevcut durumu ve gelecek hedefleri hakkında bilgi almak için **[Proje Yolculuğu](./docs/PROJECT_JOURNEY.md)** belgesini okuyun.

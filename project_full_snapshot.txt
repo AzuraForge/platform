@@ -1,5 +1,5 @@
 PROJE KOD SNAPSHOT (TAM)
-Toplam 80 dosya bulundu ve eklendi.
+Toplam 82 dosya bulundu ve eklendi.
 Dahil Edilen Dizinler: .
 Dahil Edilen Uzantılar: .toml, .py, .yaml, .yml, .json, .md, .txt, html, .bat, .sh, .jsx, .js, .json, .css
 Hariç Tutulan Desenler/Yollar: __pycache__, .git, .venv, .vscode, .idea, build, dist, *.egg-info, *.pyc, *.so, *.pyd, .pytest_cache, .mypy_cache, .dataset, dataset, .logs, logs, .output, output, inputs, outputs, .tmp, checkpoints, reports, docs/_build, site, node_modules, .DS_Store, Thumbs.db, *.lock
@@ -116,76 +116,45 @@ Bu depo, AzuraForge ekosistemindeki tüm ana servisleri (API, Worker, Dashboard)
 
 ## 🎯 Temel Amaçlar ve Felsefe
 
-*   **Sıfırdan İnşa:** Derin öğrenme motoru ve temel bileşenler sıfırdan geliştirilmiştir.
+*   **Sıfırdan İnşa:** Derin öğrenme motoru (`azuraforge-core`) ve temel bileşenler sıfırdan geliştirilmiştir.
 *   **Modülerlik ve Bağımsızlık:** Her bileşen (kütüphane, API, worker, UI, uygulama) kendi bağımsız repo'sunda yaşar ve kendi sorumluluğuna sahiptir.
-*   **Olay Güdümlü Mimari:** Servisler arası iletişim olay tabanlı (Celery, Redis, WebSockets) gerçekleşir.
+*   **Olay Güdümlü Mimari:** Servisler arası iletişim olay tabanlı (Celery, Redis Pub/Sub, WebSockets) gerçekleşir. Bu sayede, yoğun hesaplama görevleri bile kullanıcı arayüzünü bloklamaz.
 *   **Eklenti Tabanlı:** Yeni yapay zeka modelleri ve uygulamaları, platformun çekirdek koduna dokunmadan birer eklenti (plugin) olarak eklenebilir.
-*   **Ölçeklenebilirlik:** Dağıtık servisler sayesinde yatayda ölçeklenebilir.
-*   **Profesyonel Geliştirici Deneyimi:** Otomatik kurulum, test ve dokümantasyon ile geliştirme sürecini kolaylaştırmak.
+*   **Zengin ve Otomatik Çıktılar:** Platform, sadece sayısal sonuçlar üretmekle kalmaz, her deneyin sonunda performans metriklerini ve görselleştirmeleri içeren **otomatik Markdown raporları** oluşturur.
 
 ## 🏛️ Mimari Genel Bakış
 
 AzuraForge platformu, aşağıdaki bağımsız GitHub depolarından oluşan bir mikroservis mimarisini benimser:
 
--   **`core`** (`azuraforge-core`): Otomatik türev yeteneklerine sahip temel matematik motoru (NumPy/CuPy).
--   **`learner`** (`azuraforge-learner`): `core` üzerinde geliştirilmiş yüksek seviyeli derin öğrenme kütüphanesi (Katmanlar, Optimizatörler, Kayıp Fonksiyonları, `Learner` sınıfı).
--   **`applications`** (`azuraforge-applications`): Platform için resmi uygulama eklentilerinin katalogu (JSON dosyası).
--   **`app-stock-predictor`** (`azuraforge-app-stock-predictor`): Gerçek bir uygulama eklentisi örneği (Hisse Senedi Tahmini).
--   **`api`** (`azuraforge-api`): RESTful API ve WebSocket endpoint'leri sunan iletişim katmanı.
--   **`worker`** (`azuraforge-worker`): Arka plan görevlerini işleyen ve uygulama eklentilerini çalıştıran işçi servisi.
--   **`dashboard`** (`azuraforge-dashboard`): Platform için web tabanlı kullanıcı arayüzü.
+-   **`core`**: Temel otomatik türev motoru.
+-   **`learner`**: `core` üzerinde geliştirilmiş yüksek seviyeli öğrenme kütüphanesi. `LSTM` gibi gelişmiş katmanları, `Adam` gibi optimizer'ları, `Callback` sistemini ve **otomatik raporlama araçlarını** içerir.
+-   **`applications`**: Platform için resmi uygulama eklentilerinin katalogu.
+-   **`app-stock-predictor`**: Gerçek bir uygulama eklentisi örneği.
+-   **`api`**: RESTful API ve WebSocket (Pub/Sub tabanlı) sunan iletişim katmanı.
+-   **`worker`**: Arka plan görevlerini işleyen ve raporları oluşturan işçi servisi.
+-   **`dashboard`**: Platform için web tabanlı, canlı takip yeteneklerine sahip kullanıcı arayüzü.
 
 Bu repo, tüm bu servisleri tek bir `docker-compose` komutuyla ayağa kaldıran ana orkestrasyon katmanıdır.
 
 ## 🚀 Hızlı Başlangıç (Docker Compose ile)
 
-Tüm platformu yerel makinenizde tek bir komutla başlatmak için:
-
 1.  **Docker Desktop'ın yüklü ve çalıştığından emin olun.**
-2.  **Bu repoyu klonlayın:**
-    ```bash
-    git clone https://github.com/AzuraForge/platform.git
-    cd platform
-    ```
-3.  **.env dosyasını oluşturun:**
-    Proje kök dizininde `.env` adında bir dosya oluşturun ve içine raporların kaydedileceği dizini belirtin.
-    ```
-    # .env
-    REDIS_URL=redis://redis:6379/0
-    # Rapor dizini: Worker'ın sonuçları yazacağı ve API'nin okuyacağı host makinedeki dizin
-    # Windows için C:/azuraforge_platform_reports veya ./reports
-    # Linux/macOS için: ./reports
-    REPORTS_DIR=./reports 
-    ```
-    **ÖNEMLİ:** Docker Compose'u çalıştırmadan önce bu dizini host makinenizde oluşturduğunuzdan emin olun. Örneğin, Linux/macOS'ta:
-    ```bash
-    mkdir -p ./reports
-    ```
-    (Windows kullanıyorsanız `REPORTS_DIR`'i `C:/azuraforge_platform_reports` gibi bir mutlak yola ayarlamanız ve bu klasörü oluşturmanız daha güvenli olabilir).
-4.  **Platformu başlatın:**
-    ```bash
-    docker-compose up --build -d
-    ```
-    (`-d` parametresi arka planda çalıştırmayı sağlar.)
-
-5.  **Platforma erişin:**
+2.  **Bu repoyu klonlayın:** `git clone https://github.com/AzuraForge/platform.git`
+3.  **.env dosyasını oluşturun:** Proje kök dizininde `.env` oluşturup içine `REPORTS_DIR=./reports` ve `REDIS_URL=redis://redis:6379/0` yazın.
+4.  **Rapor Dizinini Oluşturun:** `mkdir -p ./reports`
+5.  **Platformu başlatın:** `docker-compose up --build -d`
+6.  **Platforma erişin:**
     -   **Dashboard:** `http://localhost:5173`
     -   **API Dokümantasyonu:** `http://localhost:8000/api/v1/docs`
+7.  **Deneyi Çalıştırın ve Raporu Görüntüleyin:** Dashboard'dan bir deney başlattıktan sonra, host makinenizdeki `./reports` klasörünü kontrol ederek oluşturulan `report.md` ve `images/` klasörünü inceleyin.
 
 ## 🛠️ Geliştirme Rehberi ve İç Detaylar
 
-Bu rehber, platformun nasıl çalıştığını, nasıl katkıda bulunacağınızı ve geliştirme ortamınızı nasıl yöneteceğinizi detaylandırır.
-
-**[Tam Geliştirme Rehberine Git](./docs/DEVELOPMENT_GUIDE.md)**
-
-## 🤝 Katkıda Bulunma
-
-Projenin gelişimine katkıda bulunmak için [CONTRIBUTING.md](./docs/CONTRIBUTING.md) dosyasını inceleyin.
+Platformun nasıl çalıştığını, nasıl katkıda bulunacağınızı ve geliştirme ortamınızı nasıl yöneteceğinizi öğrenmek için **[Geliştirme Rehberi](./docs/DEVELOPMENT_GUIDE.md)**'ne göz atın.
 
 ## 🗺️ Yol Haritası ve Gelecek Vizyonu
 
-Projenin tamamlanan aşamaları, mevcut durumu ve gelecek hedefleri hakkında bilgi almak için [PROJECT_JOURNEY.md](./docs/PROJECT_JOURNEY.md) dosyasını okuyun.
-
+Projenin tamamlanan aşamaları, mevcut durumu ve gelecek hedefleri hakkında bilgi almak için **[Proje Yolculuğu](./docs/PROJECT_JOURNEY.md)** belgesini okuyun.
 ========== FILE: api/pyproject.toml ==========
 [build-system]
 requires = ["setuptools>=61.0"]
@@ -199,20 +168,14 @@ requires-python = ">=3.8"
 
 dependencies = [
     "azuraforge-learner @ git+https://github.com/AzuraForge/learner.git@main",
-    # Yeni önerilen: (PyPI'da olsaydı) ( Ancak şu an için henüz PyPI'da değil )
-    # "azuraforge-learner==0.1.1", # Belirli bir sürümü hedefle
-    # Veya hala yerel geliştirme için, ama geliştirme rehberindeki -e kurulumu öncelikli
-    # "azuraforge-learner @ git+https://github.com/AzuraForge/learner.git@v0.1.1", # Eğer tag'ler kullanılıyorsa
-
     "azuraforge-worker @ git+https://github.com/AzuraForge/worker.git@main",
-    # Yeni önerilen:
-    # "azuraforge-worker==0.1.0", # Belirli bir sürümü hedefle
-
     "azuraforge-applications @ git+https://github.com/AzuraForge/applications.git@main",
-    # Yeni önerilen:
-    # "azuraforge-applications==0.1.0", # Belirli bir sürümü hedefle
-
-    "fastapi", "uvicorn[standard]", "pydantic-settings", "python-dotenv", "pyyaml",
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic-settings",
+    "python-dotenv",
+    "pyyaml",
+    "redis" # YENİ BAĞIMLILIK
 ]
 
 [project.scripts]
@@ -340,59 +303,68 @@ def get_pipeline_default_config(pipeline_id: str):
 ========== FILE: api/src/azuraforge_api/routes/streaming.py ==========
 import asyncio
 import logging
+import json
+import os
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from celery.result import AsyncResult
-
-from azuraforge_worker import celery_app
+import redis.asyncio as redis
 
 router = APIRouter()
+
+async def redis_listener(websocket: WebSocket, task_id: str):
+    """Redis Pub/Sub kanalını dinler ve gelen mesajları WebSocket'e iletir."""
+    redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+    r = await redis.from_url(redis_url)
+    pubsub = r.pubsub()
+    channel = f"task-progress:{task_id}"
+    await pubsub.subscribe(channel)
+    
+    try:
+        while True:
+            # `listen` bir coroutine'dir, bu yüzden `await` edilmelidir.
+            message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
+            if message and message.get("type") == "message":
+                # Gelen veri bytes, string'e çevirip JSON olarak parse et.
+                data_str = message['data'].decode('utf-8')
+                progress_data = json.loads(data_str)
+                # UI'ın beklediği formatla gönder
+                await websocket.send_json({
+                    "state": "PROGRESS",
+                    "details": progress_data
+                })
+            # WebSocket bağlantısı hala açık mı kontrol et
+            # Bu, istemci bağlantıyı kapattığında döngüden çıkmayı sağlar.
+            await asyncio.sleep(0.1) # CPU'yu yormamak için kısa bir bekleme
+    except asyncio.CancelledError:
+        logging.info(f"Redis listener for task {task_id} cancelled.")
+    except Exception as e:
+        logging.error(f"Redis listener error for task {task_id}: {e}")
+    finally:
+        await pubsub.unsubscribe(channel)
+        await r.close()
+        logging.info(f"Redis listener for task {task_id} cleaned up.")
 
 @router.websocket("/ws/task_status/{task_id}")
 async def websocket_task_status(websocket: WebSocket, task_id: str):
     await websocket.accept()
     logging.info(f"WebSocket connection accepted for task: {task_id}")
     
-    task_result = AsyncResult(task_id, app=celery_app)
+    # Redis dinleyicisini bir arka plan görevi olarak başlat
+    listener_task = asyncio.create_task(redis_listener(websocket, task_id))
     
     try:
-        # DÜZELTME: Bağlantı kurulur kurulmaz ilk durumu gönder.
-        # Bu, hızlı biten görevlerin son durumunun anında UI'a ulaşmasını sağlar.
-        initial_status = {
-            "state": task_result.state,
-            "details": task_result.info if task_result.state == 'PROGRESS' else None,
-            "result": task_result.result if task_result.ready() else None
-        }
-        await websocket.send_json(initial_status)
-
-        # Görev tamamlanana kadar döngüde kal
-        while not task_result.ready():
-            if task_result.state == 'PROGRESS':
-                await websocket.send_json({
-                    "state": task_result.state,
-                    "details": task_result.info,
-                })
-            await asyncio.sleep(1)
-        
-        # Döngü bittiğinde son durumu tekrar gönder (garanti amaçlı)
-        await websocket.send_json({
-            "state": task_result.state,
-            "result": task_result.result,
-        })
-
+        # İstemcinin bağlantıyı kapatmasını bekle
+        # Bu döngü, bağlantı açık olduğu sürece çalışır.
+        while True:
+            await websocket.receive_text() # Bu satır aslında istemciden mesaj beklemez,
+                                           # sadece bağlantının kopup kopmadığını kontrol eder.
     except WebSocketDisconnect:
-        logging.warning(f"WebSocket disconnected for task: {task_id}")
-    except Exception as e:
-        logging.error(f"An error occurred in WebSocket for task {task_id}: {e}")
-        try:
-            await websocket.send_json({
-                "state": "ERROR",
-                "details": {"message": str(e), "task_id": task_id}
-            })
-        except Exception:
-            pass 
+        logging.warning(f"WebSocket disconnected by client for task: {task_id}")
     finally:
-        logging.info(f"Closing WebSocket for task {task_id}")
-        await websocket.close()
+        # İstemci bağlantıyı kapattığında, arka plandaki Redis dinleyicisini iptal et
+        listener_task.cancel()
+        # Görevin bitmesini bekle (kaynakların temizlenmesi için)
+        await listener_task
+        logging.info(f"Closing WebSocket connection for task {task_id}")
 ========== FILE: api/src/azuraforge_api/routes/__init__.py ==========
 
 ========== FILE: api/src/azuraforge_api/services/experiment_service.py ==========
@@ -588,100 +560,137 @@ setup(
     },
 )
 ========== FILE: app-stock-predictor/src/azuraforge_stockapp/pipeline.py ==========
+# app-stock-predictor/src/azuraforge_stockapp/pipeline.py
+
 import logging
-import yfinance as yf
-import numpy as np
-from sklearn.preprocessing import MinMaxScaler
-import os 
-from typing import Any
+from typing import Any, Dict, Tuple, Optional, List
 import yaml
-from importlib import resources # YENİ: Paket içi kaynak okumak için en güvenilir yol
+from importlib import resources
 
-from azuraforge_learner import Learner, Sequential, Linear, MSELoss, SGD, ReLU
+import numpy as np
+import pandas as pd
+import yfinance as yf
+from sklearn.preprocessing import MinMaxScaler
 
-def get_default_config():
-    """
-    Bu pipeline'ın varsayılan konfigürasyonunu bir Python sözlüğü olarak döndürür.
-    DÜZELTME: importlib.resources kullanarak dosya okuma hatasını giderir.
-    """
+from azuraforge_learner import Learner, Sequential, LSTM, Linear, Adam, SGD, MSELoss, Callback
+# DÜZELTME: Raporlama fonksiyonunu yeni yerinden import et
+from azuraforge_learner.reporting import generate_regression_report
+
+
+def create_sequences(data: np.ndarray, seq_length: int) -> Tuple[np.ndarray, np.ndarray]:
+    xs, ys = [], []
+    for i in range(len(data) - seq_length):
+        x = data[i:(i + seq_length)]
+        y = data[i + seq_length]
+        xs.append(x)
+        ys.append(y)
+    return np.array(xs), np.array(ys)
+
+def get_default_config() -> Dict[str, Any]:
     try:
-        # "azuraforge_stockapp.config" modülü içindeki dosyayı güvenli bir şekilde açar
         with resources.open_text("azuraforge_stockapp.config", "stock_predictor_config.yml") as f:
-            config = yaml.safe_load(f)
-        return config
-    except (FileNotFoundError, ModuleNotFoundError, Exception) as e:
+            return yaml.safe_load(f)
+    except Exception as e:
         logging.error(f"Error loading default config for stock_predictor: {e}", exc_info=True)
         return {"error": f"Could not load default config: {e}"}
 
 class StockPredictionPipeline:
-    def __init__(self, config: dict, celery_task: Any = None):
-        self.celery_task = celery_task
+    def __init__(self, config: dict):
         self.logger = logging.getLogger(self.__class__.__name__)
         logging.basicConfig(level="INFO", format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-        # Gelen konfigürasyonu varsayılanın üzerine yazarak tam bir config oluştur
+        
         default_config = get_default_config()
         if "error" in default_config:
-            self.logger.error("Could not load default config. Using only provided config.")
             self.config = config
         else:
-            # Derin birleştirme (nested dict'ler için)
-            def deep_merge(source, destination):
+            def deep_merge(source: dict, destination: dict) -> dict:
                 for key, value in source.items():
-                    if isinstance(value, dict):
-                        node = destination.setdefault(key, {})
-                        deep_merge(value, node)
-                    else:
+                    if isinstance(value, dict) and key in destination and isinstance(destination.get(key), dict):
+                        destination[key] = deep_merge(value, destination[key])
+                    elif value is not None: 
                         destination[key] = value
                 return destination
-            
-            # Önce varsayılanı al, sonra gelen config ile üzerine yaz
-            merged_config = default_config.copy()
-            self.config = deep_merge(config, merged_config)
+            self.config = deep_merge(config, default_config.copy())
+        
+        self.scaler = MinMaxScaler(feature_range=(-1, 1))
 
-    def run(self):
+    def run(self, callbacks: Optional[List[Callback]] = None):
         data_sourcing_config = self.config.get("data_sourcing", {})
         training_params_config = self.config.get("training_params", {})
+        model_params_config = self.config.get("model_params", {})
         
         ticker = data_sourcing_config.get("ticker", "MSFT")
-        start_date = data_sourcing_config.get("start_date", "2021-01-01")
-        epochs = int(training_params_config.get("epochs", 10)) # UI'dan string gelebilir, int'e çevir
-        lr = float(training_params_config.get("lr", 0.01)) # UI'dan string gelebilir, float'a çevir
+        epochs = int(training_params_config.get("epochs", 50)) 
+        lr = float(training_params_config.get("lr", 0.001)) 
+        optimizer_type = str(training_params_config.get("optimizer", "adam")).lower()
+        sequence_length = int(model_params_config.get("sequence_length", 60))
+        hidden_size = int(model_params_config.get("hidden_size", 50))
 
-        self.logger.info(f"--- Running Stock Prediction Pipeline for {ticker} ({epochs} epochs, lr={lr}) ---")
+        self.logger.info(f"--- Running LSTM Stock Prediction for {ticker} (period=max, epochs={epochs}) ---")
         
         try:
-            data = yf.download(ticker, start=start_date, progress=False, actions=False, auto_adjust=True)
+            data = yf.download(ticker, period="max", progress=False, actions=False, auto_adjust=True)
             if data.empty:
-                raise ValueError(f"No data downloaded for ticker: {ticker} from {start_date}")
+                raise ValueError(f"No data downloaded for ticker: {ticker}")
             self.logger.info(f"Downloaded {len(data)} rows of data.")
-            close_prices = data[['Close']].values.astype(np.float32)
+            close_prices_df = data[['Close']]
         except Exception as e:
             self.logger.error(f"Data download failed for {ticker}: {e}")
             raise 
 
-        scaler = MinMaxScaler(feature_range=(-1, 1))
-        scaled_prices = scaler.fit_transform(close_prices)
+        scaled_prices = self.scaler.fit_transform(close_prices_df)
         
-        if len(scaled_prices) < 2:
-            self.logger.warning("Not enough data to create sequences for training.")
-            return {"status": "completed", "ticker": ticker, "final_loss": float('inf'), "message": "Not enough data for training"}
+        if len(scaled_prices) <= sequence_length:
+            self.logger.warning(f"Not enough data for sequences.")
+            return {"status": "failed", "message": "Not enough data for training"}
+        
+        X, y = create_sequences(scaled_prices, sequence_length)
+        
+        if X.size == 0:
+            return {"status": "failed", "message": "Preprocessing resulted in empty dataset."}
 
-        X, y = scaled_prices[:-1], scaled_prices[1:]
+        test_size = training_params_config.get("test_size", 0.2)
+        split_idx = int(len(X) * (1 - test_size))
+        X_train, X_test = X[:split_idx], X[split_idx:]
+        y_train, y_test = y[:split_idx], y[split_idx:]
         
-        model = Sequential(Linear(1, 64), ReLU(), Linear(64, 1))
+        time_index_test = close_prices_df.index[split_idx + sequence_length:]
+
+        input_size = X_train.shape[2]
+        model = Sequential(LSTM(input_size=input_size, hidden_size=hidden_size), Linear(hidden_size, 1))
         criterion = MSELoss()
-        optimizer = SGD(model.parameters(), lr=lr)
+        optimizer = Adam(model.parameters(), lr=lr) if optimizer_type == "adam" else SGD(model.parameters(), lr=lr)
         
-        learner = Learner(model, criterion, optimizer, current_task=self.celery_task)
+        learner = Learner(model, criterion, optimizer, callbacks=callbacks)
 
-        self.logger.info(f"Starting training for {epochs} epochs...")
-        history = learner.fit(X, y, epochs=epochs)
+        self.logger.info(f"{epochs} epoch için model eğitimi başlıyor...")
+        history = learner.fit(X_train, y_train, epochs=epochs, pipeline_name=self.config.get("pipeline_name"))
         
-        final_loss = history['loss'][-1]
-        self.logger.info(f"Training complete. Final loss: {final_loss:.6f}")
+        self.logger.info("Model değerlendiriliyor...")
+        y_pred_scaled = learner.predict(X_test)
         
-        return {"status": "completed", "ticker": ticker, "final_loss": final_loss, "loss": history['loss']}
+        y_pred_unscaled = self.scaler.inverse_transform(y_pred_scaled)
+        y_test_unscaled = self.scaler.inverse_transform(y_test)
+
+        from sklearn.metrics import r2_score, mean_absolute_error
+        metrics = {
+            'r2_score': r2_score(y_test_unscaled, y_pred_unscaled),
+            'mae': mean_absolute_error(y_test_unscaled, y_pred_unscaled)
+        }
+        
+        final_results = {
+            "history": history, "metrics": metrics,
+            "y_true": y_test_unscaled, "y_pred": y_pred_unscaled,
+            "time_index": time_index_test, "y_label": "Hisse Fiyatı"
+        }
+
+        self.logger.info("Rapor oluşturuluyor...")
+        generate_regression_report(final_results, self.config)
+        
+        return {
+            "final_loss": history['loss'][-1] if history.get('loss') else None,
+            "metrics": metrics
+        }
 ========== FILE: app-stock-predictor/src/azuraforge_stockapp/__init__.py ==========
 
 ========== FILE: app-stock-predictor/src/azuraforge_stockapp/config/stock_predictor_config.yml ==========
@@ -689,12 +698,16 @@ pipeline_name: "stock_predictor"
 
 data_sourcing:
   ticker: "MSFT" # Microsoft
-  start_date: "2021-01-01"
+  start_date: "2010-01-01" # <- DEĞİŞİKLİK: Yeterli veriyi garanti altına almak için tarihi çok daha geriye çektik.
+
+model_params:
+  sequence_length: 60 # LSTM'in ne kadar geriye bakacağı
+  hidden_size: 50     # LSTM katmanındaki nöron sayısı
 
 training_params:
-  epochs: 10 # Test için kısa tutalım
-  lr: 0.01
-
+  epochs: 50 # <-- DEĞİŞİKLİK: Varsayılan epoch sayısını daha anlamlı bir eğitime izin verecek şekilde artırdık.
+  lr: 0.001 
+  optimizer: "adam"
 ========== FILE: app-stock-predictor/src/azuraforge_stockapp/config/__init__.py ==========
 
 ========== FILE: applications/pyproject.toml ==========
@@ -817,10 +830,17 @@ class Tensor:
             if v not in visited:
                 visited.add(v); [build_topo(child) for child in v._prev]; topo.append(v)
         build_topo(self)
+        # Gradyanları sıfırla
         for t in topo:
-            if t.grad is not None: t.grad.fill(0.0)
+            if t.grad is not None:
+                t.grad.fill(0.0)
+        
+        # Bu tensörün gradyanını başlat
         self.grad = xp.ones_like(self.data) if grad_output is None else xp.asarray(grad_output, dtype=np.float64).reshape(self.data.shape)
-        for v in reversed(topo): v._backward()
+        
+        # Topolojik sırayla geriye doğru git
+        for v in reversed(topo):
+            v._backward()
 
     def to_cpu(self) -> np.ndarray:
         if hasattr(self.data, 'get'): return self.data.get()
@@ -830,8 +850,8 @@ class Tensor:
         other = _ensure_tensor(other)
         out = Tensor(self.data + other.data, (self, other), "+", self.requires_grad or other.requires_grad)
         def _backward():
-            if self.requires_grad: self.grad += _unbroadcast_to(self.data.shape, out.grad)
-            if other.requires_grad: other.grad += _unbroadcast_to(other.data.shape, out.grad)
+            if self.requires_grad and self.grad is not None: self.grad += _unbroadcast_to(self.data.shape, out.grad)
+            if other.requires_grad and other.grad is not None: other.grad += _unbroadcast_to(other.data.shape, out.grad)
         out._backward = _backward
         return out
 
@@ -839,23 +859,24 @@ class Tensor:
         other = _ensure_tensor(other)
         out = Tensor(self.data * other.data, (self, other), "*", self.requires_grad or other.requires_grad)
         def _backward():
-            if self.requires_grad: self.grad += _unbroadcast_to(self.data.shape, other.data * out.grad)
-            if other.requires_grad: other.grad += _unbroadcast_to(other.data.shape, self.data * out.grad)
+            if self.requires_grad and self.grad is not None: self.grad += _unbroadcast_to(self.data.shape, other.data * out.grad)
+            if other.requires_grad and other.grad is not None: other.grad += _unbroadcast_to(other.data.shape, self.data * out.grad)
         out._backward = _backward
         return out
 
     def __pow__(self, power: float) -> "Tensor":
         out = Tensor(self.data ** power, (self,), f"**{power}", self.requires_grad)
         def _backward():
-            if self.requires_grad: self.grad += (power * (self.data ** (power - 1))) * out.grad
+            if self.requires_grad and self.grad is not None: self.grad += (power * (self.data ** (power - 1))) * out.grad
         out._backward = _backward
         return out
 
     def dot(self, other: "Tensor") -> "Tensor":
+        other = _ensure_tensor(other)
         out = Tensor(self.data @ other.data, (self, other), "@", self.requires_grad or other.requires_grad)
         def _backward():
-            if self.requires_grad: self.grad += out.grad @ other.data.T
-            if other.requires_grad: other.grad += self.data.T @ out.grad
+            if self.requires_grad and self.grad is not None: self.grad += out.grad @ other.data.T
+            if other.requires_grad and other.grad is not None: other.grad += self.data.T @ out.grad
         out._backward = _backward
         return out
 
@@ -866,7 +887,7 @@ class Tensor:
                 grad_val = out.grad
                 if _axis is not None and not _keepdims:
                     grad_val = xp.expand_dims(grad_val, axis=_axis)
-                self.grad += grad_val
+                self.grad += xp.ones_like(self.data) * grad_val
         out._backward = _backward
         return out
 
@@ -878,16 +899,25 @@ class Tensor:
     def relu(self) -> "Tensor":
         out = Tensor(xp.maximum(0, self.data), (self,), "ReLU", self.requires_grad)
         def _backward():
-            if self.requires_grad: self.grad += (self.data > 0) * out.grad
+            if self.requires_grad and self.grad is not None: self.grad += (self.data > 0) * out.grad
         out._backward = _backward
         return out
 
-    # YENİ: Sigmoid aktivasyon fonksiyonu
     def sigmoid(self) -> "Tensor":
         s = 1 / (1 + xp.exp(-self.data))
         out = Tensor(s, (self,), "Sigmoid", self.requires_grad)
         def _backward():
-            if self.requires_grad: self.grad += out.data * (1 - out.data) * out.grad
+            if self.requires_grad and self.grad is not None: self.grad += out.data * (1 - out.data) * out.grad
+        out._backward = _backward
+        return out
+    
+    # DÜZELTME: Tanh'a tam bir backward pass eklendi.
+    def tanh(self) -> "Tensor":
+        t = xp.tanh(self.data)
+        out = Tensor(t, (self,), "Tanh", self.requires_grad)
+        def _backward():
+            if self.requires_grad and self.grad is not None:
+                self.grad += (1 - t**2) * out.grad
         out._backward = _backward
         return out
         
@@ -904,19 +934,16 @@ def _ensure_tensor(val: Any) -> "Tensor":
     return val if isinstance(val, Tensor) else Tensor(val)
 
 def _unbroadcast_to(target_shape: Tuple[int, ...], grad: ArrayType) -> ArrayType:
-    """Bir gradyanı, orijinal tensörün (yayınlamadan önceki) şekline geri küçültür."""
     if target_shape == grad.shape:
         return grad
     
-    # Boyut sayısını eşitle
     ndim_diff = grad.ndim - len(target_shape)
     if ndim_diff > 0:
         grad = grad.sum(axis=tuple(range(ndim_diff)))
 
-    # Boyutu 1 olan eksenler boyunca topla
     axes_to_sum = []
     for i, dim in enumerate(target_shape):
-        if dim == 1:
+        if dim == 1 and grad.shape[i] > 1: # İkinci koşul önemli
             axes_to_sum.append(i)
     
     if axes_to_sum:
@@ -1577,21 +1604,27 @@ function ExperimentRow({ experiment, isSelected, onSelect, onReRun, setTrackingT
     toast.success('Konfigürasyon panoya kopyalandı!');
     setActionsOpen(false);
   };
+
   const isRunning = ['STARTED', 'PROGRESS', 'PENDING'].includes(status);
+
+  // DÜZELTME: Savunmacı (defensive) kodlama
+  const finalLoss = results?.final_loss;
+  const displayLoss = (finalLoss !== null && finalLoss !== undefined) ? finalLoss.toFixed(6) : 'N/A';
+
   return (
     <tr className={isSelected ? 'selected-row' : ''}>
       <td><input type="checkbox" checked={isSelected} onChange={onSelect} title="Karşılaştırmak için seç"/></td>
       <td><span className={`status-badge status-${status?.toLowerCase() || 'unknown'}`}>{status || 'Bilinmiyor'}</span></td>
       <td><div className="detail-cell"><strong>{config?.pipeline_name || 'N/A'}</strong><span className="exp-id">{experiment_id}</span></div></td>
       <td><div className="detail-cell"><span>Ticker: <strong>{config?.data_sourcing?.ticker || 'N/A'}</strong></span><span>Epochs: <strong>{config?.training_params?.epochs || 'N/A'}</strong>, LR: <strong>{config?.training_params?.lr || 'N/A'}</strong></span></div></td>
-      <td><div className="detail-cell"><span>Final Kayıp: <strong>{results?.final_loss !== undefined ? results.final_loss.toFixed(6) : 'N/A'}</strong></span></div></td>
+      <td><div className="detail-cell"><span>Final Kayıp: <strong>{displayLoss}</strong></span></div></td>
       <td><div className="detail-cell"><span>Başlangıç: {new Date(config.start_time).toLocaleString()}</span><span>Bitiş: {completed_at || failed_at ? new Date(completed_at || failed_at).toLocaleString() : 'N/A'}</span></div></td>
       <td className="actions-cell">
         <button className="actions-button" onClick={() => setActionsOpen(!actionsOpen)}>⋮</button>
         {actionsOpen && (
           <div className="actions-menu" onMouseLeave={() => setActionsOpen(false)}>
             {isRunning && <button onClick={() => { setTrackingTaskId(task_id); setActionsOpen(false); }}><Icon path={ICONS.satellite} /> Canlı İzle</button>}
-            <button onClick={() => { onReRun(); setActionsOpen(false); }}><Icon path={ICONS.rerun} /> Yeniden Çalıştır</button>
+            <button onClick={() => { onReRun(config); setActionsOpen(false); }}><Icon path={ICONS.rerun} /> Yeniden Çalıştır</button>
             <button onClick={handleCopyConfig}><Icon path={ICONS.copy} /> Config'i Kopyala</button>
           </div>
         )}
@@ -1642,62 +1675,58 @@ function ExperimentsList({ experiments, selectedIds, onSelect, onReRun, setTrack
 ExperimentsList.propTypes = { experiments: PropTypes.array.isRequired, selectedIds: PropTypes.object.isRequired, onSelect: PropTypes.func.isRequired, onReRun: PropTypes.func.isRequired, setTrackingTaskId: PropTypes.func.isRequired, };
 export default ExperimentsList;
 ========== FILE: dashboard/src/components/LiveTrackerPane.jsx ==========
-import { useState, useEffect, useRef, useMemo } from 'react';
+// dashboard/src/components/LiveTrackerPane.jsx
+
+import { useState, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Line } from 'react-chartjs-2';
-import { Chart } from 'chart.js';
-import 'chart.js/auto';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import { getCssVar } from '../utils/cssUtils';
 
-// Sabit başlangıç durumları
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+
 const initialStatus = { 
   state: 'CONNECTING', 
   details: { status_text: 'Worker\'a bağlanılıyor...' }
 };
 
 function LiveTrackerPane({ taskId, onClose }) {
-  // Tek bir state objesi
   const [liveData, setLiveData] = useState({ 
     status: initialStatus,
-    chart: { labels: [], datasets: [{ data: [] }] } // Başlangıçta boş
+    chart: { labels: [], datasets: [{ data: [] }] }
   });
   
-  const socketRef = useRef(null);
-  
-  const chartOptions = useMemo(() => {
-    return {
-      responsive: true, maintainAspectRatio: false,
-      animation: { duration: 300, easing: 'linear' },
-      plugins: { 
-        legend: { display: false }, 
-        tooltip: {
-          enabled: true, backgroundColor: getCssVar('--content-bg'),
-          titleColor: getCssVar('--text-color'), bodyColor: getCssVar('--text-color'),
-          borderColor: getCssVar('--border-color'), borderWidth: 1, padding: 10,
-          displayColors: false,
-          callbacks: {
-            title: (ctx) => ctx[0].label,
-            label: (ctx) => `Kayıp: ${ctx.parsed.y.toFixed(6)}`,
-          }
-        },
+  const chartOptions = useMemo(() => ({
+    responsive: true, maintainAspectRatio: false,
+    animation: { duration: 300, easing: 'linear' },
+    plugins: { 
+      legend: { display: false }, 
+      tooltip: {
+        enabled: true, backgroundColor: getCssVar('--content-bg'),
+        titleColor: getCssVar('--text-color'), bodyColor: getCssVar('--text-color'),
+        borderColor: getCssVar('--border-color'), borderWidth: 1, padding: 10,
+        displayColors: false,
+        callbacks: {
+          title: (ctx) => ctx[0].label,
+          label: (ctx) => `Kayıp: ${ctx.parsed.y.toFixed(6)}`,
+        }
       },
-      scales: { 
-        y: { 
-          grid: { color: getCssVar('--border-color'), borderDash: [2, 4], drawTicks: false },
-          ticks: { padding: 10, maxTicksLimit: 5, font: { size: 12 }, color: getCssVar('--text-color-darker') },
-        }, 
-        x: {
-          grid: { display: false },
-          ticks: { padding: 10, maxRotation: 0, autoSkip: true, maxTicksLimit: 7, font: { size: 12 }, color: getCssVar('--text-color-darker') },
-        } 
-      }
-    };
-  }, []);
+    },
+    scales: { 
+      y: { 
+        grid: { color: getCssVar('--border-color'), borderDash: [2, 4], drawTicks: false },
+        ticks: { padding: 10, maxTicksLimit: 5, font: { size: 12 }, color: getCssVar('--text-color-darker') },
+      }, 
+      x: {
+        grid: { display: false },
+        ticks: { padding: 10, maxRotation: 0, autoSkip: true, maxTicksLimit: 7, font: { size: 12 }, color: getCssVar('--text-color-darker') },
+      } 
+    }
+  }), []);
 
   useEffect(() => {
     if (!taskId) return;
 
-    // YENİ: Başlangıç chart state'ini renklerle birlikte burada ayarla
     const initialChartWithColors = {
       labels: [],
       datasets: [{
@@ -1715,11 +1744,9 @@ function LiveTrackerPane({ taskId, onClose }) {
     setLiveData({ status: initialStatus, chart: initialChartWithColors });
 
     const newSocket = new WebSocket(`ws://localhost:8000/ws/task_status/${taskId}`);
-    socketRef.current = newSocket;
     
     newSocket.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      
       setLiveData(prev => {
         let newChart = prev.chart;
         if (data.state === 'PROGRESS' && data.details?.loss !== undefined) {
@@ -1744,28 +1771,40 @@ function LiveTrackerPane({ taskId, onClose }) {
     newSocket.onerror = () => setLiveData(prev => ({ ...prev, status: { state: 'ERROR', details: { status_text: 'WebSocket bağlantı hatası!' } }}));
     newSocket.onclose = () => setLiveData(prev => (['SUCCESS', 'FAILURE', 'ERROR'].includes(prev.status.state)) ? prev : { ...prev, status: { ...prev.status, state: 'DISCONNECTED' }});
     
-    return () => { newSocket.close(1000, "Component unmounting"); };
+    return () => { if (newSocket.readyState === 1) newSocket.close(1000, "Component unmounting"); };
   }, [taskId]);
   
   const { state, details, result } = liveData.status;
-  const { pipeline_name, data_sourcing } = details?.config || result?.config || {};
+  const pipeline_name = details?.pipeline_name || result?.config?.pipeline_name || "Bilinmiyor";
   const { total_epochs, epoch, status_text } = details || {};
-  const progressPercent = state === 'SUCCESS' ? 100 : (total_epochs ? (epoch / total_epochs) * 100 : 0);
+  const progressPercent = (state === 'SUCCESS' || state === 'FAILURE') ? 100 : (total_epochs && epoch ? (epoch / total_epochs) * 100 : 0);
   
   return (
     <div className="live-tracker-pane">
       <button className="close-button" onClick={onClose}>×</button>
       <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px'}}>
-        <h4><span role="img" aria-label="satellite">🛰️</span> Canlı Takip: {pipeline_name || "..."} {data_sourcing?.ticker && `(${data_sourcing.ticker})`}</h4>
-        <div><span className="exp-id">ID: {taskId}</span><span className={`status-badge status-${state?.toLowerCase()}`}>{state}</span></div>
+        <h4><span role="img" aria-label="satellite">🛰️</span> Canlı Takip: {pipeline_name}</h4>
+        <span className={`status-badge status-${state?.toLowerCase()}`}>{state}</span>
       </div>
       <div style={{display: 'flex', gap: '20px', alignItems: 'center'}}>
-        <div style={{flex: 1}}><p>{status_text || state}</p><progress value={progressPercent} max="100" style={{width: '100%'}}></progress></div>
-        <div style={{flex: 2, height: '100px'}}>
-          {liveData.chart.labels.length > 0 && <Line data={liveData.chart} options={chartOptions} />}
+        <div style={{flex: 1}}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '5px' }}>
+                <p style={{ margin: 0, color: 'var(--text-color-darker)', fontSize: '0.9em' }}>{status_text || state}</p>
+                {epoch && total_epochs && (
+                    <span style={{ fontWeight: 'bold', fontFamily: 'var(--font-mono)' }}>{epoch} / {total_epochs}</span>
+                )}
+            </div>
+            <progress value={progressPercent} max="100" style={{width: '100%', height: '10px'}}></progress>
+        </div>
+        <div style={{flex: 2, height: '100px', position: 'relative'}}>
+          {liveData.chart.labels.length > 0 ? (
+            <Line data={liveData.chart} options={chartOptions} />
+          ) : (
+            <div style={{textAlign: 'center', color: 'var(--text-color-darker)'}}>Kayıp verisi bekleniyor...</div>
+          )}
         </div>
       </div>
-      {state === 'FAILURE' && result?.error && <p className="feedback error" style={{marginTop: '15px', whiteSpace: 'pre-wrap', maxHeight: '100px', overflowY: 'auto'}}>{result.error}</p>}
+      {state === 'FAILURE' && result?.error && <p style={{marginTop: '15px', color: 'var(--error-color)'}}>{result.error.message}</p>}
     </div>
   );
 }
@@ -2191,31 +2230,30 @@ AzuraForge projesine gösterdiğiniz ilgi ve katkılarınız için teşekkür ed
 
 ## 🚀 Hızlı Başlangıç
 
-Eğer henüz geliştirme ortamınızı kurmadıysanız, lütfen platform repo'sunun ana `README.md` dosyasındaki "Geliştirme Ortamı Kurulumu" bölümünü takip edin.
+Eğer henüz geliştirme ortamınızı kurmadıysanız, lütfen platformun ana [Geliştirme Rehberi](./DEVELOPMENT_GUIDE.md) belgesindeki "Geliştirme Ortamı Kurulumu" bölümünü takip edin.
 
 ## 🛠️ Kodlama Standartları
 
-Projeye eklenen her kodun aşağıdaki standartları karşılaması beklenmektedir:
+Projeye eklenen her kodun aşağıdaki standartları karşılaması beklenmektedir. Bu standartların birçoğu, ilgili reponun kök dizinindeki `pre-commit` hook'ları ile otomatik olarak kontrol edilir.
 
 1.  **Stil Kılavuzu (PEP8 & Black):**
     *   Tüm Python kodları, PEP8 stil kurallarına uymalıdır.
     *   Kodunuzu `black` ile otomatik formatlayın.
-    *   **Kontrol:** Değişikliklerinizi göndermeden önce `black <dosya_adı>` veya `black .` komutunu çalıştırın.
-    *   **Otomasyon:** `pre-commit` hook'ları otomatik formatlamayı zorunlu kılar.
+    *   **Kontrol:** `black .` komutunu çalıştırın.
+    *   **Otomasyon:** `pre-commit` hook'ları bu formatlamayı zorunlu kılar.
 
 2.  **Linting (`flake8`):**
     *   Tüm Python kodları, `flake8` denetiminden hatasız geçmelidir.
-    *   **Kontrol:** `flake8 <dosya_adı>` veya `flake8 src` komutunu çalıştırın.
+    *   **Kontrol:** İlgili repo içinde `flake8 src` komutunu çalıştırın.
     *   **Otomasyon:** `pre-commit` hook'ları linting'i zorunlu kılar.
 
 3.  **Tip İpuçları (Type Hinting & Mypy):**
     *   Tüm fonksiyon ve metod imzaları, parametreler ve dönüş değerleri için tip ipuçları (`typing` modülü kullanılarak) içermelidir.
-    *   **Kontrol:** `mypy src` komutunu çalıştırın.
+    *   **Kontrol:** İlgili repo içinde `mypy src` komutunu çalıştırın.
     *   **Otomasyon:** `pre-commit` hook'ları statik tip denetimini zorunlu kılar.
 
 4.  **Dokümantasyon (Docstrings):**
-    *   Tüm modüller, sınıflar, fonksiyonlar ve metodlar, ne işe yaradıklarını, aldıkları argümanları (`Args:`) ve ne döndürdüklerini (`Returns:`) açıklayan Google-style docstring'ler içermelidir.
-    *   Arayüz (API) repoları için `FastAPI`'nin otomatik dokümantasyonunu besleyecek docstring'ler kullanılmalıdır.
+    *   Tüm public modüller, sınıflar ve fonksiyonlar, ne işe yaradıklarını, aldıkları argümanları (`Args:`) ve ne döndürdüklerini (`Returns:`) açıklayan Google-style docstring'ler içermelidir.
 
 5.  **Testler (`pytest`):**
     *   Eklenen her yeni özellik veya fonksiyon için ilgili birim testleri (`unit tests`) `tests/` klasörüne eklenmelidir.
@@ -2236,19 +2274,19 @@ Commit mesajları, yapılan değişikliği net bir şekilde açıklamalıdır ve
 **Örnek Tipler:**
 *   `feat`: Yeni bir özellik ekler (Minor versiyon artırımı).
 *   `fix`: Bir hata düzeltmesi (Patch versiyon artırımı).
-*   `docs`: Sadece dokümantasyon değişiklikleri (Versiyon artırımı yok).
-*   `style`: Kod formatı, eksik noktalı virgül gibi stil düzeltmeleri (Kod mantığı değişmez, versiyon artırımı yok).
-*   `refactor`: Kodu yeniden yapılandırma, davranış değişikliği yok (Versiyon artırımı yok).
-*   `perf`: Performans iyileştirmesi yapan kod değişikliği (Versiyon artırımı olabilir).
-*   `test`: Eksik testlerin eklenmesi veya mevcut testlerin düzeltilmesi (Versiyon artırımı yok).
-*   `build`: Build sistemi veya dış bağımlılık değişiklikleri (Versiyon artırımı olabilir).
-*   `ci`: CI/CD yapılandırma dosyaları ve script'leri değişiklikleri (Versiyon artırımı yok).
+*   `docs`: Sadece dokümantasyon değişiklikleri.
+*   `style`: Kod formatı, eksik noktalı virgül gibi stil düzeltmeleri.
+*   `refactor`: Kodu yeniden yapılandırma, davranış değişikliği yok.
+*   `perf`: Performans iyileştirmesi yapan kod değişikliği.
+*   `test`: Eksik testlerin eklenmesi veya mevcut testlerin düzeltilmesi.
+*   `build`: Build sistemi veya dış bağımlılık değişiklikleri.
+*   `ci`: CI/CD yapılandırma dosyaları ve script'leri değişiklikleri.
 
 **Örnekler:**
-*   `feat(core): Add exponential function to Tensor`
-*   `fix(api): Resolve 307 redirect issues for endpoints`
-*   `docs(platform): Add initial development guide`
-*   `refactor(learner): Separate Layer and Model definitions`
+*   `feat(learner): Add LSTM backward pass implementation`
+*   `fix(api): Handle null values from experiment results`
+*   `docs(platform): Update development guide with Pub/Sub architecture`
+*   `refactor(worker): Extract Redis publishing logic into a callback`
 
 ## 🔄 Pull Request (PR) Süreci
 
@@ -2275,74 +2313,62 @@ Her repomuz, kendi başına yaşayan, kurulabilir ve test edilebilir bağımsız
 
 AzuraForge platformu, aşağıdaki bağımsız GitHub depolarından oluşur. Geliştirme yaparken bu repoların bir kısmını veya tamamını yerel makinenizde klonlamanız gerekecektir.
 
-*   **`core`** ([link](https://github.com/AzuraForge/core)): Temel otomatik türev motoru.
-*   **`learner`** ([link](https://github.com/AzuraForge/learner)): `core` üzerinde yüksek seviyeli öğrenme kütüphanesi.
-*   **`app-stock-predictor`** ([link](https://github.com/AzuraForge/app-stock-predictor)): Bir uygulama eklentisi örneği.
-*   **`applications`** ([link](https://github.com/AzuraForge/applications)): Resmi uygulama katalogu (sadece JSON veri içerir).
-*   **`api`** ([link](https://github.com/AzuraForge/api)): RESTful API ve WebSocket sunucusu.
-*   **`worker`** ([link](https://github.com/AzuraForge/worker)): Arka plan görevlerini (eğitimleri) işleyen Celery worker.
-*   **`dashboard`** ([link](https://github.com/AzuraForge/dashboard)): React tabanlı web kullanıcı arayüzü.
+*   **`core`**: Temel otomatik türev motoru.
+*   **`learner`**: `core` üzerinde yüksek seviyeli öğrenme kütüphanesi.
+*   **`app-stock-predictor`**: Bir uygulama eklentisi örneği.
+*   **`applications`**: Resmi uygulama katalogu.
+*   **`api`**: RESTful API ve WebSocket sunucusu (Redis Pub/Sub dinleyicisi).
+*   **`worker`**: Arka plan görevlerini işleyen Celery worker (Redis Pub/Sub yayıncısı).
+*   **`dashboard`**: React tabanlı web kullanıcı arayüzü.
+*   **`platform`**: Tüm servisleri bir araya getiren ana orkestrasyon deposu (bu repo).
 
 ## ⚙️ Geliştirme Ortamı Kurulumu
 
 Bu adımlar, platformun tüm parçalarını yerel geliştirme için hazır hale getirir.
 
-1.  **Gerekli Araçlar:**
-    *   **Git:** Repoları klonlamak için.
-    *   **Python 3.8+:** Tüm Python bileşenleri için.
-    *   **Node.js & npm:** Frontend bileşeni için.
-    *   **Docker Desktop:** Redis ve Dockerize edilmiş ortamda test için (alternatifler belirtilecektir).
+1.  **Gerekli Araçlar:** Git, Python 3.8+, Node.js & npm, Docker Desktop.
 
 2.  **Repoları Klonlama:**
-    Platformda geliştirmek için tüm ilgili repoları aynı seviyede bir klasöre klonlamanız önerilir:
+    Tüm ilgili repoları aynı seviyede bir klasöre klonlayın:
     ```bash
     mkdir azuraforge-dev
     cd azuraforge-dev
 
+    git clone https://github.com/AzuraForge/platform.git
     git clone https://github.com/AzuraForge/core.git
     git clone https://github.com/AzuraForge/learner.git
-    git clone https://github.com/AzuraForge/app-stock-predictor.git
     git clone https://github.com/AzuraForge/applications.git
+    git clone https://github.com/AzuraForge/app-stock-predictor.git
     git clone https://github.com/AzuraForge/api.git
     git clone https://github.com/AzuraForge/worker.git
     git clone https://github.com/AzuraForge/dashboard.git
-    git clone https://github.com/AzuraForge/platform.git # Orkestrasyon için
     ```
 
-3.  **Sanal Ortam Kurulumu (Python):**
-    Her Python projesinin kendi sanal ortamı olabilir veya merkezi bir tane kullanabiliriz. Yerel geliştirme için, **`api` projesinin** kök dizininde tek bir sanal ortam oluşturmak ve tüm Python bağımlılıklarını oraya kurmak en pratik yoldur.
+3.  **Sanal Ortam ve Bağımlılıklar (Python):**
+    Yerel geliştirme için, **`platform` projesinin** kök dizininde tek bir sanal ortam oluşturup tüm Python bağımlılıklarını oraya kurmak en pratik yoldur.
 
     ```bash
-    cd api # `api` reposunun içine gir
+    cd platform # Ana `platform` reposunun içine gir
     python -m venv .venv
-    .\.venv\Scripts\activate # Windows için
-    # source ./.venv/bin/activate # Linux/macOS için
+    # Windows: .\.venv\Scripts\activate | Linux/macOS: source ./.venv/bin/activate
     ```
-
-4.  **Python Bağımlılıklarını Kurma (Tüm Python Repoları için):**
-    Sanal ortam aktifken, tüm Python repolarını "düzenlenebilir" (editable) modda kurmalıyız. Bu, kodda yaptığınız değişikliklerin anında yansımasını sağlar. **`api` projesinin** kök dizininde olduğunuzdan emin olun.
-
+    # Tüm Python repolarını "düzenlenebilir" modda kur
     ```bash
-    # Önce en alt seviyeden başlayarak kütüphaneleri kurun
     pip install -e ../core 
     pip install -e ../learner
-    pip install -e ../app-stock-predictor # İlk uygulama eklentisi
-    pip install -e ../applications       # Uygulama katalogu
-    
-    # Sonra API ve Worker'ı kurun
-    pip install -e .                     # `api` projesini kurar
-    pip install -e ../worker             # `worker` projesini kurar
+    pip install -e ../applications
+    pip install -e ../app-stock-predictor
+    pip install -e ../api
+    pip install -e ../worker
     ```
-    Bu komutlar, her bir reponun `pyproject.toml` dosyasını okuyacak ve tüm bağımlılık zincirini doğru bir şekilde çözecektir.
 
-5.  **JavaScript Bağımlılıklarını Kurma (Dashboard için):**
+4.  **JavaScript Bağımlılıkları (Dashboard):**
     ```bash
     cd ../dashboard # `dashboard` reposunun içine gir
     npm install
     ```
 
-6.  **Redis Kurulumu:**
-    Platform, bir Redis sunucusuna ihtiyaç duyar. En kolay yol Docker kullanmaktır:
+5.  **Redis Kurulumu (Docker ile):**
     ```bash
     docker run -d -p 6379:6379 --name azuraforge_redis redis
     ```
@@ -2353,64 +2379,61 @@ Sanal ortamınız aktifken ve Redis çalışırken, her servisi ayrı bir termin
 
 1.  **API Sunucusu (`api` reposundan):**
     ```bash
-    cd api
-    .\.venv\Scripts\activate # Sanal ortam aktif değilse
+    cd ../api # veya bulunduğunuz yere göre ayarlayın
+    # Gerekirse sanal ortamı aktive et
     start-api
     ```
-    (Tarayıcıda `http://localhost:8000/api/v1/docs` adresini kontrol edin.)
 
 2.  **Worker Servisi (`worker` reposundan):**
     ```bash
-    cd worker
-    .\.venv\Scripts\activate
+    cd ../worker
+    # Gerekirse sanal ortamı aktive et
     start-worker
     ```
-    (Worker terminalinde "Discovered pipeline..." loglarını kontrol edin.)
 
 3.  **Dashboard (`dashboard` reposundan):**
     ```bash
-    cd dashboard
+    cd ../dashboard
     npm run dev
     ```
-    (Tarayıcıda `http://localhost:5173` adresini açın.)
 
-## 🧪 Test Etme ve Hata Ayıklama
-
-*   **Uçtan Uca Akış:** Dashboard'dan yeni bir deney başlatarak tüm sistemin (`Dashboard -> API -> Worker -> Uygulama Eklentisi -> Kütüphane`) sorunsuz çalıştığını doğrulayın. Canlı takip ekranını ve kayıp grafiğini izleyin.
-*   **API Testleri:** `http://localhost:8000/api/v1/docs` adresinden API endpoint'lerini test edin.
-*   **Birim Testleri:** Her bir repoda (örn: `core`, `learner`, `app-stock-predictor`) kendi `pytest` testlerini çalıştırın.
-    ```bash
-    cd core # veya learner, app-stock-predictor
-    .\.venv\Scripts\activate
-    pytest
-    ```
-    (Bu testleri koşabilmek için ilgili repoda `pip install -e ".[dev]"` yapmış olmanız gerekir.)
-
-## 🔄 İteratif Geliştirme Akışı
+##  🔄 İteratif Geliştirme Akışı
 
 Çoğu zaman, kodda küçük değişiklikler yapıp bunları hızla test etmek istersiniz.
 
 1.  **Kütüphanede Değişiklik (örn: `core/src/azuraforge_core/tensor.py`):**
     *   Değişikliği yapın ve kaydedin.
-    *   Bu değişikliğin `learner` veya diğer kütüphanelerde anında etkili olması için **ekstra bir `pip install` komutuna GEREK YOKTUR**, çünkü `pip install -e` ile kuruldukları için doğrudan kaynak dosyayı kullanırlar.
-    *   `core` projesine geri dönüp `pytest` ile kendi testlerini koşun.
+    *   Bu değişikliğin diğer kütüphanelerde anında etkili olması için **ekstra bir `pip install` komutuna GEREK YOKTUR**, çünkü `-e` ile kuruldukları için doğrudan kaynak dosyayı kullanırlar.
+    *   `core` projesine geri dönüp birim testlerini (`pytest`) koşarak değişikliği doğrulayın.
     *   Değişikliği `commit`'leyin ve `push`'layın.
 
 2.  **Uygulama/Servis Değişikliği (örn: `app-stock-predictor/src/azuraforge_stockapp/pipeline.py`):**
     *   Değişikliği yapın ve kaydedin.
-    *   `api` veya `worker` servisleri otomatik olarak `reload` (yeniden yükleme) yapacaktır (eğer `uvicorn --reload` ile çalışıyorlarsa).
-    *   `api` ve `worker`'ı yeniden başlatmak genellikle yeterlidir.
+    *   `api` veya `worker` servisleri otomatik olarak `reload` (yeniden yükleme) yapacaktır (eğer `uvicorn --reload` ile çalışıyorlarsa). Değişikliğin etkisini görmek için genellikle ilgili servisi (API veya Worker) yeniden başlatmak yeterlidir.
     *   Değişikliği `commit`'leyin ve `push`'layın.
 
 3.  **Yeni Bir Bağımlılık Eklendiğinde (`pyproject.toml` değiştiğinde):**
-    *   İlgili reponun kök dizinine gidin (örn: `api`).
-    *   Sanal ortamınızı aktive edin.
-    *   `pip install -e .` komutunu tekrar çalıştırın. `pip`, sadece eksik olan yeni bağımlılıkları ekleyecektir.
+    *   Bir reponun (örn: `learner`) `pyproject.toml` dosyasına yeni bir bağımlılık (örn: `pandas`) eklediyseniz, bu değişikliğin diğer repolar tarafından tanınması için **bağımlılık zincirini yeniden kurmanız gerekir.**
+    *   `platform` klasöründeki ana sanal ortamınızı aktive edin.
+    *   `pip install -e ../learner` komutunu tekrar çalıştırın. `pip`, sadece eksik olan yeni bağımlılıkları (`pandas`) ekleyecektir.
+
+##  Canlı Takip Mimarisi Nasıl Çalışır?
+
+1.  `Dashboard`, `API`'ye bir `/experiments` POST isteği atar.
+2.  `API`, görevi `Celery` kuyruğuna bırakır ve `Dashboard`'a bir `task_id` döner.
+3.  `Dashboard`, bu `task_id` ile `API`'nin `/ws/task_status/{task_id}` WebSocket endpoint'ine bağlanır.
+4.  `API`, bu bağlantı için bir Redis istemcisi oluşturur ve `task-progress:{task_id}` kanalına **abone (subscribe)** olur.
+5.  `Worker`, görevi kuyruktan alır ve `Learner`'ı, içine `RedisProgressCallback` enjekte edilmiş şekilde çalıştırır.
+6.  `Learner`, her epoch sonunda `on_epoch_end` olayını yayınlar.
+7.  `RedisProgressCallback`, bu olayı yakalar ve ilerleme verisini (epoch, loss) Redis'teki `task-progress:{task_id}` kanalına **yayınlar (publish)**.
+8.  `API`, abone olduğu kanalda yeni bir mesaj duyar, onu alır ve WebSocket üzerinden anında `Dashboard`'a iletir.
+9.  `Dashboard`'daki `LiveTrackerPane` bileşeni, gelen bu veriyle kendini günceller.
+
+Bu yapı, `Worker`'ın CPU kullanımı ne kadar yoğun olursa olsun, raporlama ve arayüz güncellemesinin bloklanmadan, anlık olarak gerçekleşmesini sağlar.
 
 ## 🤝 Katkıda Bulunma
 
 Bu proje bir açık kaynak projesi olarak geliştirilmektedir. Katkıda bulunmak için lütfen `platform/docs/CONTRIBUTING.md` dosyasını inceleyin.
-
 ========== FILE: docs/PROJECT_JOURNEY.md ==========
 # 🗺️ Proje Yolculuğu: AzuraForge'un Gelişim Hikayesi ve Gelecek Vizyonu
 
@@ -2428,67 +2451,51 @@ AzuraForge'un her aşamasında, kalitesini ve sürdürülebilirliğini sağlamak
 6.  **Otomatik Kalite Kontrolü:** Kod kalitesi (linting, type checking, unit tests) ve versiyonlama süreçleri (CI/CD) otomatikleştirilmiştir.
 
 ## ✅ Tamamlanan Fazlar ve Elde Edilen Başarılar
+### Faz 0: Fikir ve İlk Denemeler (Monolitik "Smart Learner" Prototipi)
+- **Düşünce:** Mevcut ML araçlarının karmaşıklığına bir tepki olarak, sıfırdan bir derin öğrenme motoru (`mininn`) inşa etme fikri doğdu.
+- **Kanıt:** LSTM mimarisi, hava durumu ve hisse senedi verileriyle test edildi ve yüksek başarı oranları elde edildi.
+- **Öğrenilen Ders:** Monolitik yapı hızlı prototipleme sağlasa da, ölçeklenebilirlik ve yönetim zorlukları ortaya çıkardı.
 
-### Faz 0: Fikir ve İlk Denemeler (Monolitik Yaklaşım)
+### Faz 1-3: Mikroservis Mimarisine Geçiş ve Temel Yapının İnşası
+- **Karar:** Uzun vadeli sürdürülebilirlik için platform, bağımsız repolara (`azuraforge-core`, `learner`, `api`, `worker`, `dashboard` vb.) sahip bir mikroservis mimarisine dönüştürüldü.
+- **Yapı:** `docker-compose` ile orkestrasyon, `pip install -e` ile yerel geliştirme ve `git+https` ile repo'lar arası bağımlılıklar kuruldu.
+- **İlk Başarı:** `Dashboard` -> `API` -> `Worker` -> `Uygulama` -> `Learner` -> `Core` şeklindeki temel görev akışı başarıyla çalıştırıldı.
 
-*   **Düşünce:** Mevcut ML araçlarının karmaşıklığına ve bağımlılıklarına bir tepki olarak, sıfırdan bir derin öğrenme motoru (`mininn`) inşa etme fikri doğdu.
-*   **İlk Uygulama:** Hava durumu tahmini ve hisse senedi tahmini gibi basit uygulamalarla `mininn`'in yetenekleri test edildi.
-*   **Öğrenilen Ders:** Monolitik bir yaklaşımla (her şey tek bir repo'da) hızlı prototipleme mümkün olsa da, ölçeklenebilirlik ve yönetim zorlukları ortaya çıktı.
+### Faz 4-7: Canlı Takip Entegrasyonu ve Kararlılık Mücadelesi
+- **İlk Deneme (`task.update_state`):** `Learner` içerisinden doğrudan Celery'nin görev durumunu güncelleme denendi.
+- **Sorun 1 (Worker Çökmesi):** `LSTM` katmanının geriye yayılım (`backward`) implementasyonunun eksik olduğu ve `loss.backward()` çağrıldığında worker'ı çökerttiği tespit edildi.
+- **Çözüm 1:** `LSTM` katmanına ve `Tensor` objesine (`tanh` vb.) tam bir geriye yayılım desteği eklendi. Worker artık çökmüyordu.
+- **Sorun 2 (UI "Donması"):** Worker, CPU-yoğun eğitim görevi nedeniyle o kadar meşgul oluyordu ki, durum güncelleme mesajlarını (`task.update_state`) göndermeye fırsat bulamıyordu. UI, tüm güncellemeleri eğitimin sonunda toplu olarak alıyordu.
+- **Geçici Deneme (`time.sleep`):** Eğitim döngüsüne küçük bir bekleme ekleyerek I/O işlemlerine zaman tanıma denendi, ancak bu hem yetersiz kaldı hem de mimari olarak yanlıştı.
 
-### Faz 1: Multi-Repo ve Mikroservis Mimarisine Geçiş
+### Faz 8: Pub/Sub Mimarisi ile Gerçek Zamanlı Akışın Sağlanması (Dönüm Noktası)
+- **Karar:** Hesaplama ve raporlama görevlerini tamamen ayırmak için Redis Pub/Sub modeline geçildi.
+- **Yeni Mimari:**
+    1.  **`Learner`:** Artık sadece olayları (`on_epoch_end`) yayınlayan, teknoloji-agnostik ve saf bir bileşen haline getirildi.
+    2.  **`RedisProgressCallback`:** `Worker` tarafında, `Learner`'dan gelen olayları dinleyen ve ilerleme verisini bir Redis kanalına yayınlayan özel bir `Callback` sınıfı oluşturuldu.
+    3.  **`API`:** `WebSocket` bağlantısı kurulduğunda bu Redis kanalını dinleyen (`subscribe`) ve gelen her mesajı anında `Dashboard`'a ileten bir yapıya dönüştürüldü.
+- **BAŞARI:** Bu mimari değişiklik sayesinde, worker'ın CPU kullanımı ne kadar yoğun olursa olsun, ilerleme durumu bilgileri (epoch, kayıp vb.) anlık ve akıcı bir şekilde `Dashboard`'a iletilmeye başlandı.
 
-*   **Karar:** Uzun vadeli sürdürülebilirlik, ölçeklenebilirlik ve profesyonellik için, platformu bağımsız repolara sahip bir mikroservis mimarisine dönüştürme kararı alındı.
-*   **Zorluk:** Python'da çoklu repolar arası bağımlılık yönetimi ve yol (path) sorunları.
-*   **Çözüm:** `pip`'in `editable` kurulumu (`-e`) ve `git+https` bağımlılıklarını kullanarak, her reponun kendi `pyproject.toml` ve `setup.py` dosyalarıyla kurulabilir bir paket olması sağlandı. `importlib.resources` ile paket içi dosya erişimi çözüldü.
+### Faz 9-10: Mimari Saflaştırma ve Otomatik Raporlama
+- **Mimari Düzeltme:** `Learner` sınıfının Redis'e olan doğrudan bağımlılığı, bir `RedisProgressCallback` sınıfı yazılarak kaldırıldı. Raporlama sorumluluğu `Worker` katmanına (Callback aracılığıyla) devredilerek `Learner` tekrar teknoloji-agnostik ve saf hale getirildi.
+- **Hata Ayıklama:** `AttributeError: 'Learner' object has no attribute 'predict'` ve `NameError: name 'json' is not defined` gibi, büyük bir refactoring sürecinde ortaya çıkan entegrasyon hataları adım adım tespit edilip çözüldü.
+- **BAŞARI (Otomatik Raporlama):** `Smart Learner` projesindeki raporlama yeteneği, `azuraforge-learner` kütüphanesine başarıyla entegre edildi. Artık her deneyin sonunda, `worker` servisi, deney metriklerini ve `matplotlib` ile çizilmiş grafikleri içeren zengin bir **`report.md` dosyasını otomatik olarak oluşturmaktadır.**
 
-### Faz 2: Temel Kütüphanelerin İnşası ve Kanıtı
-
-*   **`AzuraForge/core` (Matematik Motoru):** `Tensor` objesi ve otomatik türev yetenekleri sıfırdan inşa edildi. `pytest` ile birim testleri (dot, sum, add, mul, relu backward pass) başarıyla yazıldı ve geçti. **`to_cpu` ve `_unbroadcast_to` hataları bu fazda tespit edilip düzeltildi.**
-*   **`AzuraForge/learner` (Öğrenme Kütüphanesi):** `azuraforge-core`'a bağımlı olarak `Layer`, `Linear`, `Loss`, `MSELoss`, `Sequential`, `Optimizer`, `SGD` gibi temel öğrenme bileşenleri inşa edildi. `pytest` ile basit regresyon testi (`test_learner_fit_simple_regression`) başarıyla geçti.
-
-### Faz 3: Dağıtık Servisler ve Eklenti Mimarisi
-
-*   **`AzuraForge/applications` (Katalog):** Uygulama eklentilerinin JSON kataloğunu barındıran basit bir Python paketi olarak yapılandırıldı.
-*   **`AzuraForge/app-stock-predictor` (İlk Eklenti):** `azuraforge-learner`'ı kullanan ve platforma `entry_points` (`azuraforge.pipelines`) ile kendini tanıtan ilk uygulama eklentisi inşa edildi.
-*   **`AzuraForge/worker` (İşçi Servisi):** `celery[redis]` kullanarak arka plan görevlerini işleyen ve `importlib.metadata` ile sisteme kurulu tüm `azuraforge.pipelines` eklentilerini **otomatik olarak keşfeden** ve çalıştıran worker servisi kuruldu.
-*   **`AzuraForge/api` (API Servisi):** `FastAPI` ile RESTful API endpoint'leri (`/experiments`, `/pipelines`) sunan ve `worker`'a görev gönderen iletişim katmanı inşa edildi. API rotalarının `prefix` yönetimi ve `307 Redirect` sorunları bu fazda çözüldü.
-*   **Başarı:** `api` üzerinden gönderilen bir "stock_predictor" görevinin, `worker` tarafından alınıp, `app-stock-predictor` eklentisinin keşfedilip, `learner` kütüphanesi kullanılarak **gerçek bir model eğitiminin başarıyla tamamlandığı** kanıtlandı.
-
-### Faz 4: Kullanıcı Arayüzü ve Canlı Takip
-
-*   **`AzuraForge/dashboard` (Web UI):** React tabanlı, `api` servisinden deney ve pipeline listelerini çeken, yeni deneyler başlatmayı sağlayan temel bir web arayüzü inşa edildi.
-*   **Canlı Takip (WebSocket Entegrasyonu):**
-    *   `worker`, eğitim sırasında `Celery task.update_state` ile ilerleme durumunu Redis'e raporladı.
-    *   `api`, `FastAPI WebSocket` endpoint'i üzerinden bu ilerlemeyi `dashboard`'a anlık olarak iletti.
-    *   `dashboard`, gelen `PROGRESS` mesajlarıyla bir **ilerleme çubuğunu ve kayıp grafiğini canlı olarak güncelledi.**
-
-**An itibarıyla AzuraForge Platform 1.0, tüm temel mimarisi ve uçtan uca çalışan canlı takip yetenekleriyle TAMAMLANMIŞTIR!**
+**An itibarıyla AzuraForge Platformu, temel MLOps döngüsünü (Başlat -> Canlı İzle -> Eğit -> Değerlendir -> Raporla) tam ve kararlı bir şekilde tamamlamıştır. Bu, "Checkpoint Bravo" kilometre taşıdır.**
 
 ## 🗺️ Gelecek Fazlar ve Yol Haritası
 
 Bu sağlam temel üzerine inşa edilecek adımlar, AzuraForge'u daha da zenginleştirmeyi ve kapsamını genişletmeyi hedefleyecektir.
 
-### Faz 5: Deney Yönetimini Derinleştirme
+### Faz 11: `BasePipeline` Standardizasyonu ve Geliştirici Deneyimi
+- **`BasePipeline` Soyut Sınıfı:** `app-stock-predictor` içinde manuel olarak yazılan `run` metodu, `azuraforge-learner` içindeki `BasePipeline` soyut sınıfına taşınacak. Eklenti geliştirmek, sadece `_load_data`, `_create_model` gibi birkaç metodu doldurmak kadar basit hale gelecek.
+- **Dashboard'da Rapor Görüntüleme:** Kullanıcıların tamamlanmış deneylerin `report.md` dosyalarını doğrudan arayüzden okuyabilmesi sağlanacak.
 
-*   **Kalıcı Sonuçlar:** `worker`'ın `results.json`'a kaydettiği tüm detaylı veriyi (eğitim geçmişi, metrikler, konfigürasyon) `api` üzerinden okuyup Dashboard'da görselleştirme.
-*   **Deney Detay Sayfası:** Dashboard'da her deney için ayrı bir detay sayfası oluşturma.
-*   **Model Yönetimi:** Eğitilen modellerin kaydedilmesi, listelenmesi ve daha sonra çıkarım için yüklenebilmesi.
+### Faz 12: Yardımcı Modüllerin Entegrasyonu (`caching` vb.)
+- **Akıllı Önbellekleme (Caching):** `yf.download` gibi API çağrılarının sonuçları önbelleğe alınarak, aynı parametrelerle yapılan sonraki deneyler önemli ölçüde hızlandırılacak.
 
-### Faz 6: Yeni Veri Modalitelerine Açılım (Görüntü İşleme)
-
-*   **`core` Genişletme:** `Conv2D`, `MaxPool2D`, `Flatten` gibi CNN katmanlarını `core` kütüphanesine ekleme.
-*   **Yeni Uygulama Eklentisi:** `azuraforge-app-image-classifier` (örn: MNIST için) oluşturma.
-
-### Faz 7: Hiperparametre Optimizasyonu
-
-*   **`azuraforge-hyper-tuner`:** Farklı hiperparametre kombinasyonlarıyla otomatik deneyler yapabilen yeni bir uygulama eklentisi.
-*   **Dashboard Entegrasyonu:** Dashboard'dan hiperparametre optimizasyonu işleri başlatma.
-
-### Faz 8: Üretim Ortamı Hazırlığı (Deployment)
-
-*   **`platform` Orkestrasyonu:** `docker-compose.yml`'ı daha sağlam hale getirme (Nginx, HTTPS, Load Balancing).
-*   **CI/CD Pipeline'ları:** Tüm repolar için otomatik test, versiyonlama ve yayınlama (PyPI/GitHub Packages) pipeline'ları kurma.
-
+### Faz 13: Yeni Veri Modaliteleri ve Gelişmiş Modeller
+- **Görüntü İşleme:** `Conv2D`, `MaxPool2D` gibi katmanların `core`'a eklenmesi ve `azuraforge-app-image-classifier` eklentisinin geliştirilmesi.
 ========== FILE: learner/pyproject.toml ==========
 [build-system]
 requires = ["setuptools>=61.0"]
@@ -2496,22 +2503,23 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "azuraforge-learner"
-version = "0.1.1"
+version = "0.1.2" # Sürüm artırımı
 authors = [{ name = "Azmi Sahin" }]
 description = "High-level deep learning library for model training and management, using the AzuraForge Core engine."
 readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "MIT" }
 dependencies = [
-    # Çekirdek motorumuza olan bağımlılığımız.
     "azuraforge-core @ git+https://github.com/AzuraForge/core.git@main",
     "scikit-learn",
-    "numpy" # scikit-learn için explicit belirtmek iyi bir pratik
+    "numpy",
+    "redis",
+    "matplotlib", # YENİ BAĞIMLILIK
+    "pandas"      # YENİ BAĞIMLILIK (raporlama için)
 ]
 
 [project.optional-dependencies]
 dev = ["pytest"]
-
 ========== FILE: learner/README.md ==========
 # AzuraForge Learner 🧠
 
@@ -2633,9 +2641,9 @@ class Event:
     payload: Dict[str, Any] = field(default_factory=dict)
 
 ========== FILE: learner/src/azuraforge_learner/layers.py ==========
-from typing import List
+from typing import List, Tuple, Optional
 import numpy as np
-from azuraforge_core import Tensor, xp
+from azuraforge_core import Tensor, xp, ArrayType
 
 class Layer:
     def forward(self, x: Tensor) -> Tensor: raise NotImplementedError
@@ -2656,14 +2664,141 @@ class ReLU(Layer):
     def forward(self, x: Tensor) -> Tensor:
         return x.relu()
 
-# YENİ: Sigmoid Katmanı
 class Sigmoid(Layer):
     def forward(self, x: Tensor) -> Tensor:
         return x.sigmoid()
+
+# DÜZELTME: LSTM katmanı tam backward pass ile yeniden yazıldı.
+class LSTM(Layer):
+    def __init__(self, input_size: int, hidden_size: int):
+        super().__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        H = hidden_size
+        D = input_size
+        
+        limit = np.sqrt(1.0 / H)
+        self.W_x = Tensor(xp.random.randn(D, H * 4) * limit, requires_grad=True)
+        self.W_h = Tensor(xp.random.randn(H, H * 4) * limit, requires_grad=True)
+        self.b = Tensor(xp.zeros(H * 4), requires_grad=True)
+        
+        self.cache: Optional[Tuple] = None
+
+    def parameters(self) -> List[Tensor]:
+        return [self.W_x, self.W_h, self.b]
+
+    def forward(self, x: Tensor) -> Tensor:
+        N, T, D = x.data.shape
+        H = self.hidden_size
+
+        h_prev = xp.zeros((N, H))
+        c_prev = xp.zeros((N, H))
+        
+        h_all = xp.zeros((N, T, H))
+        c_all = xp.zeros((N, T, H))
+        gates_all = xp.zeros((N, T, 4 * H))
+        i_all = xp.zeros((N, T, H))
+        f_all = xp.zeros((N, T, H))
+        o_all = xp.zeros((N, T, H))
+        g_all = xp.zeros((N, T, H))
+
+        for t in range(T):
+            x_t = x.data[:, t, :]
+            gates = x_t @ self.W_x.data + h_prev @ self.W_h.data + self.b.data
+            
+            i = 1 / (1 + xp.exp(-gates[:, :H]))
+            f = 1 / (1 + xp.exp(-gates[:, H:2*H]))
+            o = 1 / (1 + xp.exp(-gates[:, 2*H:3*H]))
+            g = xp.tanh(gates[:, 3*H:])
+            
+            c_next = f * c_prev + i * g
+            h_next = o * xp.tanh(c_next)
+
+            h_prev, c_prev = h_next, c_next
+            
+            h_all[:, t, :] = h_next
+            c_all[:, t, :] = c_next
+            gates_all[:, t, :] = gates
+            i_all[:, t, :] = i
+            f_all[:, t, :] = f
+            o_all[:, t, :] = o
+            g_all[:, t, :] = g
+
+        # Çıktı olarak tüm zaman adımlarındaki gizli durumları döndür
+        out = Tensor(h_all, _children=(x, self.W_x, self.W_h, self.b), _op="lstm", requires_grad=x.requires_grad)
+        
+        # Geriye yayılım için gerekli tüm ara değerleri sakla
+        self.cache = (x.data, h_all, c_all, i_all, f_all, o_all, g_all)
+
+        def _backward():
+            if not out.requires_grad or out.grad is None: return
+            assert self.cache is not None, "Cache is not set"
+            
+            x_data, h_data, c_data, i_data, f_data, o_data, g_data = self.cache
+            _N, _T, _D = x_data.shape
+            _H = self.hidden_size
+            
+            # Başlangıç gradyanları
+            dx = xp.zeros_like(x_data)
+            dW_x = xp.zeros_like(self.W_x.data)
+            dW_h = xp.zeros_like(self.W_h.data)
+            db = xp.zeros_like(self.b.data)
+            
+            dh_next = xp.zeros((_N, _H))
+            dc_next = xp.zeros((_N, _H))
+
+            for t in reversed(range(_T)):
+                dh = out.grad[:, t, :] + dh_next
+                
+                # Geriye yayılım adımları
+                dc = dc_next + dh * o_data[:, t, :] * (1 - xp.tanh(c_data[:, t, :])**2)
+                
+                di = dc * g_data[:, t, :]
+                df = dc * (c_data[:, t-1, :] if t > 0 else 0)
+                do = dh * xp.tanh(c_data[:, t, :])
+                dg = dc * i_data[:, t, :]
+                
+                d_gates_i = di * i_data[:, t, :] * (1 - i_data[:, t, :])
+                d_gates_f = df * f_data[:, t, :] * (1 - f_data[:, t, :])
+                d_gates_o = do * o_data[:, t, :] * (1 - o_data[:, t, :])
+                d_gates_g = dg * (1 - g_data[:, t, :]**2)
+                
+                dgates = xp.concatenate((d_gates_i, d_gates_f, d_gates_o, d_gates_g), axis=1)
+
+                # Gradyanları biriktir
+                x_t = x_data[:, t, :]
+                h_prev = h_data[:, t-1, :] if t > 0 else xp.zeros((_N, _H))
+                
+                dx[:, t, :] = dgates @ self.W_x.data.T
+                dh_next = dgates @ self.W_h.data.T
+                dc_next = dc * f_data[:, t, :]
+                
+                dW_x += x_t.T @ dgates
+                dW_h += h_prev.T @ dgates
+                db += xp.sum(dgates, axis=0)
+
+            # Hesaplanan gradyanları tensörlere ata
+            if x.requires_grad and x.grad is not None: x.grad += dx
+            if self.W_x.requires_grad and self.W_x.grad is not None: self.W_x.grad += dW_x
+            if self.W_h.requires_grad and self.W_h.grad is not None: self.W_h.grad += dW_h
+            if self.b.requires_grad and self.b.grad is not None: self.b.grad += db
+
+        out._backward = _backward
+        # Sadece son gizli durumu döndürerek uyumluluğu koru
+        return Tensor(h_all[:, -1, :], _children=(out,), _op="lstm_last_step")
+
+
+    def forward_old(self, x: Tensor) -> Tensor:
+        # Eski forward metodu referans için burada bırakılabilir
+        # ...
+        pass
 ========== FILE: learner/src/azuraforge_learner/learner.py ==========
-import pickle
+# learner/src/azuraforge_learner/learner.py
+
+import time
 from typing import Any, Dict, List, Optional
 import numpy as np
+
 from azuraforge_core import Tensor
 from .events import Event
 from .models import Sequential
@@ -2672,40 +2807,34 @@ from .optimizers import Optimizer
 from .callbacks import Callback
 
 class Learner:
-    def __init__(self, model: Sequential, criterion: Loss, optimizer: Optimizer, callbacks: Optional[List[Callback]] = None, current_task: Optional[Any] = None):
+    def __init__(self, model: Sequential, criterion: Loss, optimizer: Optimizer, callbacks: Optional[List[Callback]] = None):
         self.model = model
         self.criterion = criterion
         self.optimizer = optimizer
         self.callbacks = callbacks or []
+        for cb in self.callbacks:
+            if hasattr(cb, 'set_learner'):
+                 cb.set_learner(self)
+                 
         self.history: Dict[str, List[float]] = {}
         self.stop_training: bool = False
-        self.current_task = current_task # Celery Task referansı
 
     def _publish(self, event_name: str, payload: Optional[Dict[str, Any]] = None):
         event = Event(name=event_name, learner=self, payload=payload or {})
-        for cb in self.callbacks: cb(event)
-        
-        # --- KRİTİK DÜZELTME: Celery Task durumunu güncelle ---
-        if self.current_task and hasattr(self.current_task, 'update_state'):
-            # Celery'ye PROGRESS durumu ve meta verileri gönder
-            # payload, epoch_logs'u içeriyor
-            self.current_task.update_state(state='PROGRESS', meta=payload)
+        for cb in self.callbacks:
+            cb(event)
 
-    def fit(self, X_train: np.ndarray, y_train: np.ndarray, epochs: int):
-        self.history = {} # Her fit çağrısında geçmişi sıfırla
-        
-        # History'yi başlat
-        for key in ["loss", "val_loss", "val_r2"]: # Ekleyeceğimiz metrikler için yer açalım
-             self.history[key] = []
-
+    def fit(self, X_train: np.ndarray, y_train: np.ndarray, epochs: int, pipeline_name: str = "Bilinmiyor"):
+        self.history = {"loss": []}
         X_train_t, y_train_t = Tensor(X_train), Tensor(y_train)
         
-        self._publish("train_begin", payload={"total_epochs": epochs}) # Toplam epoch sayısını gönder
+        self._publish("train_begin", payload={"total_epochs": epochs, "status_text": "Eğitim başlıyor...", "pipeline_name": pipeline_name})
+        
         for epoch in range(epochs):
-            if self.stop_training: break
+            if self.stop_training:
+                break
             
-            # Epoch başlangıcı olayını yayınla
-            self._publish("epoch_begin", payload={"epoch": epoch, "total_epochs": epochs})
+            self._publish("epoch_begin", payload={"epoch": epoch, "total_epochs": epochs, "pipeline_name": pipeline_name})
             
             # Eğitim adımı
             y_pred = self.model(X_train_t)
@@ -2715,38 +2844,57 @@ class Learner:
             loss.backward()
             self.optimizer.step()
             
+            current_loss = loss.to_cpu().item() if hasattr(loss, 'to_cpu') else float(loss.data)
+            
             epoch_logs = {
-                "epoch": epoch + 1, # Epoch sayısını 1'den başlatalım
-                "total_epochs": epochs,
-                "loss": loss.data.item(),
-                "status_text": f"Epoch {epoch+1}/{epochs} completed..."
+                "epoch": epoch + 1, "total_epochs": epochs, "loss": current_loss,
+                "status_text": f"Epoch {epoch + 1}/{epochs} tamamlandı, Kayıp: {current_loss:.6f}",
+                "pipeline_name": pipeline_name
             }
             
-            # History'ye ekle
-            self.history["loss"].append(epoch_logs["loss"])
-            
-            # Epoch sonu olayını yayınla (payload olarak tüm epoch loglarını gönder)
+            self.history["loss"].append(current_loss)
             self._publish("epoch_end", payload=epoch_logs)
-        self._publish("train_end")
+            
+        self._publish("train_end", payload={"status_text": "Eğitim tamamlandı.", "pipeline_name": pipeline_name})
         return self.history
 
+    # YENİ: predict metodu eklendi
     def predict(self, X_test: np.ndarray) -> np.ndarray:
-        return self.model(Tensor(X_test)).to_cpu()
+        """
+        Verilen girdi verisi (X_test) için model tahminleri yapar.
+        """
+        if not isinstance(X_test, np.ndarray):
+            raise TypeError("Girdi (X_test) bir NumPy dizisi olmalıdır.")
+        
+        # Modeli Tensor'a çevir ve tahmin yap
+        input_tensor = Tensor(X_test)
+        predictions_tensor = self.model(input_tensor)
+        
+        # Sonucu CPU'ya çekip NumPy dizisi olarak döndür
+        return predictions_tensor.to_cpu()
 
+    # YENİ: evaluate metodu eklendi
     def evaluate(self, X_val: np.ndarray, y_val: np.ndarray) -> Dict[str, float]:
+        """
+        Verilen doğrulama seti üzerinde modelin performansını değerlendirir.
+        Şimdilik sadece regresyon metriklerini destekliyor.
+        """
         from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
+        
         y_val_t = Tensor(y_val)
-        y_pred = self.model(Tensor(X_val))
+        y_pred_t = self.model(Tensor(X_val))
         
-        val_loss = self.criterion(y_pred, y_val_t).data.item()
-        y_pred_np = y_pred.to_cpu()
+        val_loss = self.criterion(y_pred_t, y_val_t).to_cpu().item()
+        y_pred_np = y_pred_t.to_cpu()
         
-        val_r2 = r2_score(y_val, y_pred_np)
-        val_mae = mean_absolute_error(y_val, y_pred_np)
-        val_rmse = np.sqrt(mean_squared_error(y_val, y_pred_np))
+        # y_val'in NumPy olduğundan emin ol
+        y_val_np = y_val if isinstance(y_val, np.ndarray) else np.array(y_val)
+        
+        val_r2 = r2_score(y_val_np, y_pred_np)
+        val_mae = mean_absolute_error(y_val_np, y_pred_np)
+        val_rmse = np.sqrt(mean_squared_error(y_val_np, y_pred_np))
 
         return {"val_loss": val_loss, "val_r2": val_r2, "val_mae": val_mae, "val_rmse": val_rmse}
-
 ========== FILE: learner/src/azuraforge_learner/losses.py ==========
 from azuraforge_core import Tensor
 
@@ -2790,22 +2938,269 @@ class SGD(Optimizer):
         for p in self.params:
             if p.grad is not None: p.data -= self.lr * p.grad
 
+# YENİ: Adam Optimizer eklendi
+class Adam(Optimizer):
+    def __init__(self, params: List[Tensor], lr: float = 0.001, beta1: float = 0.9, beta2: float = 0.999, epsilon: float = 1e-8):
+        super().__init__(params, lr)
+        from azuraforge_core import xp # xp'yi burada import ediyoruz
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.epsilon = epsilon
+        self.m = {id(p): xp.zeros_like(p.data) for p in self.params}
+        self.v = {id(p): xp.zeros_like(p.data) for p in self.params}
+        self.t = 0
+
+    def step(self) -> None:
+        self.t += 1
+        from azuraforge_core import xp # xp'yi burada import ediyoruz
+        for p in self.params:
+            if p.grad is not None:
+                param_id = id(p)
+                self.m[param_id] = self.beta1 * self.m[param_id] + (1 - self.beta1) * p.grad
+                self.v[param_id] = self.beta2 * self.v[param_id] + (1 - self.beta2) * (p.grad**2)
+
+                m_hat = self.m[param_id] / (1 - self.beta1**self.t)
+                v_hat = self.v[param_id] / (1 - self.beta2**self.t)
+
+                update_val = self.lr * m_hat / (xp.sqrt(v_hat) + self.epsilon)
+                p.data -= update_val
+========== FILE: learner/src/azuraforge_learner/pipelines.py ==========
+# learner/src/azuraforge_learner/pipelines.py
+
+import logging
+from abc import ABC, abstractmethod
+from typing import Dict, Any, Tuple, Optional, List
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+from .learner import Learner, Callback
+from .models import Sequential
+from .reporting import generate_regression_report
+
+class BasePipeline(ABC):
+    """
+    Tüm AzuraForge pipeline eklentileri için temel soyut sınıf.
+    Bir deneyin standart yaşam döngüsünü yönetir.
+    """
+    def __init__(self, config: Dict[str, Any]):
+        self.config = config
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.scaler = StandardScaler()
+
+    @abstractmethod
+    def _load_data(self) -> Any:
+        """Uygulamaya özel veri yükleme mantığı."""
+        pass
+
+    @abstractmethod
+    def _preprocess(self, data: Any) -> Tuple[np.ndarray, np.ndarray]:
+        """Veriyi X ve y olarak ayırıp ön işleme tabi tutar."""
+        pass
+    
+    @abstractmethod
+    def _create_model(self, input_shape: Tuple) -> Sequential:
+        """Uygulamaya özel modeli oluşturur."""
+        pass
+
+    @abstractmethod
+    def _create_learner(self, model: Sequential, callbacks: Optional[List[Callback]]) -> Learner:
+        """Uygulamaya özel Learner ve Optimizer'ı oluşturur."""
+        pass
+    
+    def _postprocess_and_evaluate(self, learner: Learner, X_test: np.ndarray, y_test: np.ndarray) -> Dict[str, Any]:
+        """
+        Tahminleri yapar, ölçeklemeyi geri alır ve metrikleri hesaplar.
+        Varsayılan implementasyon regresyon içindir. Gerekirse override edilebilir.
+        """
+        from sklearn.metrics import r2_score, mean_absolute_error
+
+        y_pred = learner.predict(X_test)
+        
+        # Varsayılan olarak y'nin tek bir sütun olduğunu varsayıyoruz
+        # Ölçeklemeyi geri almak için, scaler'ın n_features_in_ özelliğini kullanıyoruz
+        if hasattr(self.scaler, 'n_features_in_'):
+            dummy_test = np.zeros((len(y_test), self.scaler.n_features_in_))
+            dummy_pred = np.zeros((len(y_pred), self.scaler.n_features_in_))
+
+            dummy_test[:, -1] = y_test.flatten()
+            dummy_pred[:, -1] = y_pred.flatten()
+
+            y_test_unscaled = self.scaler.inverse_transform(dummy_test)[:, -1]
+            y_pred_unscaled = self.scaler.inverse_transform(dummy_pred)[:, -1]
+        else:
+            # Scaler hiç kullanılmamışsa
+            y_test_unscaled = y_test
+            y_pred_unscaled = y_pred
+
+        metrics = {
+            'r2_score': r2_score(y_test_unscaled, y_pred_unscaled),
+            'mae': mean_absolute_error(y_test_unscaled, y_pred_unscaled)
+        }
+        
+        return {
+            "metrics": metrics,
+            "y_true": y_test_unscaled,
+            "y_pred": y_pred_unscaled
+        }
+
+    def run(self, callbacks: Optional[List[Callback]] = None) -> Dict[str, Any]:
+        """Deneyin tam yaşam döngüsünü çalıştırır."""
+        self.logger.info("Pipeline başlatılıyor...")
+        
+        raw_data = self._load_data()
+        X, y = self._preprocess(raw_data)
+
+        # Veriyi ölçekle ve böl
+        X_scaled = self.scaler.fit_transform(X)
+        X_train, X_test, y_train, y_test = train_test_split(
+            X_scaled, y, test_size=0.2, random_state=42, shuffle=False
+        )
+
+        model = self._create_model(X_train.shape)
+        learner = self._create_learner(model, callbacks)
+
+        self.logger.info("Model eğitimi başlıyor...")
+        history = learner.fit(X_train, y_train.reshape(-1, 1))
+        
+        self.logger.info("Model değerlendiriliyor...")
+        final_results = self._postprocess_and_evaluate(learner, X_test, y_test)
+        final_results['history'] = history
+
+        self.logger.info("Rapor oluşturuluyor...")
+        generate_regression_report(final_results, self.config)
+        
+        # Worker'a döndürülecek nihai sonuç
+        return {
+            "final_loss": history['loss'][-1],
+            "metrics": final_results['metrics']
+        }
+========== FILE: learner/src/azuraforge_learner/reporting.py ==========
+# learner/src/azuraforge_learner/reporting.py
+
+import os
+import logging
+import json # EKSİK OLAN IMPORT EKLENDİ
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
+def set_professional_style():
+    """Matplotlib için profesyonel bir stil ayarlar."""
+    try:
+        plt.style.use('seaborn-v0_8-whitegrid')
+        plt.rcParams.update({
+            'font.family': 'sans-serif', 'font.sans-serif': 'DejaVu Sans',
+            'figure.figsize': (12, 7), 'axes.labelweight': 'bold',
+            'axes.titleweight': 'bold', 'grid.color': '#dddddd'
+        })
+    except Exception as e:
+        logging.warning(f"Matplotlib stili yüklenemedi: {e}. Varsayılan kullanılacak.")
+
+def plot_loss_history(history: Dict[str, List[float]], save_path: str):
+    set_professional_style()
+    fig, ax = plt.subplots()
+    ax.plot(history.get('loss', []), label='Eğitim Kaybı')
+    if 'val_loss' in history:
+        ax.plot(history['val_loss'], label='Doğrulama Kaybı')
+    ax.set_title('Model Öğrenme Eğrisi')
+    ax.set_xlabel('Epoch')
+    ax.set_ylabel('Kayıp (Loss)')
+    ax.legend()
+    ax.grid(True)
+    fig.savefig(save_path)
+    plt.close(fig)
+
+def plot_prediction_comparison(y_true: np.ndarray, y_pred: np.ndarray, time_index: pd.Index, save_path: str, y_label: str):
+    set_professional_style()
+    fig, ax = plt.subplots()
+    ax.plot(time_index, y_true, label='Gerçek Değerler', marker='.', markersize=4, linestyle='-')
+    ax.plot(time_index, y_pred, label='Tahmin Edilen Değerler', linestyle='--')
+    ax.set_title('Tahmin vs Gerçek Değerler')
+    ax.set_xlabel('Tarih')
+    ax.set_ylabel(y_label)
+    ax.legend()
+    ax.grid(True)
+    plt.xticks(rotation=45)
+    fig.tight_layout()
+    fig.savefig(save_path)
+    plt.close(fig)
+
+def generate_regression_report(results: Dict[str, Any], config: Dict[str, Any]):
+    experiment_dir = config.get('experiment_dir')
+    if not experiment_dir:
+        logging.error("Rapor oluşturmak için 'experiment_dir' konfigürasyonda bulunamadı.")
+        return
+        
+    report_name = config.get('pipeline_name', 'Bilinmeyen Deney')
+    
+    img_dir = os.path.join(experiment_dir, "images")
+    os.makedirs(img_dir, exist_ok=True)
+    report_path = os.path.join(experiment_dir, "report.md")
+    logging.info(f"Regresyon raporu oluşturuluyor: {report_path}")
+
+    loss_img_path = os.path.join(img_dir, "loss_history.png")
+    if 'history' in results and results['history'].get('loss'):
+        plot_loss_history(results['history'], save_path=loss_img_path)
+
+    comparison_img_path = os.path.join(img_dir, "prediction_comparison.png")
+    if 'y_true' in results and 'y_pred' in results and 'time_index' in results:
+        plot_prediction_comparison(
+            y_true=np.asarray(results['y_true']), y_pred=np.asarray(results['y_pred']),
+            time_index=results['time_index'], save_path=comparison_img_path,
+            y_label=results.get('y_label', 'Değer')
+        )
+
+    metrics = results.get('metrics', {})
+    r2 = metrics.get('r2_score')
+    mae = metrics.get('mae')
+    
+    with open(report_path, "w", encoding="utf-8") as f:
+        f.write(f"# Regresyon Analiz Raporu: {report_name}\n\n")
+        f.write(f"**Rapor Tarihi:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+        f.write("## 1. Performans Özeti\n\n")
+        if r2 is not None:
+            f.write(f"- **R² Skoru:** `{r2:.4f}`\n")
+        if mae is not None:
+            f.write(f"- **Ortalama Mutlak Hata (MAE):** `{mae:.4f}`\n\n")
+
+        f.write("## 2. Tahmin Karşılaştırması\n\n")
+        f.write("Aşağıdaki grafik, modelin test seti üzerindeki tahminlerini (turuncu) gerçek değerlerle (mavi) karşılaştırır.\n\n")
+        if os.path.exists(comparison_img_path):
+            f.write(f"![Tahmin Karşılaştırma Grafiği](images/{os.path.basename(comparison_img_path)})\n\n")
+        
+        f.write("## 3. Eğitim Süreci\n\n")
+        f.write("Bu grafik, modelin eğitim sırasındaki kayıp değerinin epoch'lara göre değişimini gösterir.\n\n")
+        if os.path.exists(loss_img_path):
+            f.write(f"![Eğitim Kaybı](images/{os.path.basename(loss_img_path)})\n\n")
+
+        f.write("## 4. Deney Konfigürasyonu\n\n")
+        f.write("```json\n")
+        f.write(json.dumps(config, indent=4, default=str))
+        f.write("\n```\n")
 ========== FILE: learner/src/azuraforge_learner/__init__.py ==========
+# learner/src/azuraforge_learner/__init__.py
+
 from .events import Event
 from .callbacks import Callback, ModelCheckpoint, EarlyStopping
 from .losses import Loss, MSELoss
-from .layers import Layer, Linear, ReLU, Sigmoid # Sigmoid eklendi
+from .layers import Layer, Linear, ReLU, Sigmoid, LSTM
 from .models import Sequential
-from .optimizers import Optimizer, SGD
+from .optimizers import Optimizer, SGD, Adam
 from .learner import Learner
+from .pipelines import BasePipeline # YENİ
 
 __all__ = [
     "Event", "Callback", "ModelCheckpoint", "EarlyStopping",
-    "Loss", "MSELoss", "Layer", "Linear", "ReLU", "Sigmoid", # Sigmoid eklendi
-    "Sequential", "Optimizer", "SGD", "Learner",
+    "Loss", "MSELoss", 
+    "Layer", "Linear", "ReLU", "Sigmoid", "LSTM",
+    "Sequential", 
+    "Optimizer", "SGD", "Adam",
+    "Learner",
+    "BasePipeline" # YENİ
 ]
-========== FILE: learner/src/azuraforge_learner/utils/__init__.py ==========
-
 ========== FILE: learner/tests/azuraforge_learner/test_learner_components.py ==========
 import pytest
 import numpy as np
@@ -3301,6 +3696,51 @@ setup(
     packages=find_packages(where="src"),
 )
 
+========== FILE: worker/src/azuraforge_worker/callbacks.py ==========
+# worker/src/azuraforge_worker/callbacks.py
+
+import json
+import os
+from typing import Any, Optional
+import redis
+from azuraforge_learner import Callback
+
+class RedisProgressCallback(Callback):
+    """
+    Learner'dan gelen olayları dinler ve Redis Pub/Sub kanalı üzerinden
+    ilerleme durumunu yayınlar.
+    """
+    def __init__(self, task_id: str):
+        super().__init__()
+        self.task_id = task_id
+        self._redis_client: Optional[redis.Redis] = None
+        try:
+            # Worker konteyneri içinden Redis URL'sini ortam değişkeninden alır.
+            redis_url = os.environ.get("REDIS_URL", "redis://redis:6379/0")
+            self._redis_client = redis.from_url(redis_url)
+        except Exception as e:
+            print(f"HATA: RedisProgressCallback içinde Redis'e bağlanılamadı: {e}")
+
+    def on_epoch_end(self, event: Any) -> None:
+        """
+        Her epoch sonunda Learner tarafından tetiklenir ve
+        ilerleme verisini ilgili Redis kanalına yayınlar.
+        """
+        if not self._redis_client or not self.task_id:
+            return
+            
+        # Learner tarafından _publish metodu ile gönderilen payload'u (epoch_logs) alır.
+        payload = event.payload
+        if not payload:
+            return
+
+        try:
+            channel = f"task-progress:{self.task_id}"
+            message = json.dumps(payload)
+            self._redis_client.publish(channel, message)
+        except Exception as e:
+            # Eğitimi durdurmamak için hatayı sadece logluyoruz.
+            print(f"HATA: Redis'e ilerleme durumu yayınlanamadı: {e}")
 ========== FILE: worker/src/azuraforge_worker/celery_app.py ==========
 from celery import Celery
 import os
@@ -3338,36 +3778,28 @@ from .celery_app import celery_app
 __all__ = ("celery_app",)
 
 ========== FILE: worker/src/azuraforge_worker/tasks/training_tasks.py ==========
+# worker/src/azuraforge_worker/tasks/training_tasks.py
+
 import logging
 import os
 import json
 from datetime import datetime
 from importlib.metadata import entry_points
-from celery import current_task # Görevin durumunu güncellemek için
-import time # Simülasyon için
-import traceback # Hata detaylarını yakalamak için
+import traceback
 
 from ..celery_app import celery_app
-# applications reposundan pipeline'ı import etmek için bu kodun olduğu yerde değil,
-# pip tarafından paket olarak kurulmuş azuraforge_stockapp'tan import edilecek.
+from ..callbacks import RedisProgressCallback
 
-# --- Eklenti Keşfi ---
 def discover_pipelines():
-    """
-    Sisteme kurulmuş tüm AzuraForge pipeline'larını ve varsa varsayılan konfigürasyon
-    fonksiyonlarını keşfeder.
-    Dönüş değeri: { 'pipeline_id': { 'pipeline_class': Class, 'get_config_func': Function | None } }
-    """
+    # ... (kod aynı)
     logging.info("Worker: Discovering installed AzuraForge pipeline plugins and configurations...")
     discovered = {}
     try:
-        # Pipeline sınıflarını keşfet
         pipeline_entry_points = entry_points(group='azuraforge.pipelines')
         for ep in pipeline_entry_points:
             logging.info(f"Worker: Found pipeline plugin: '{ep.name}' -> points to '{ep.value}'")
             discovered[ep.name] = {'pipeline_class': ep.load()} 
         
-        # Konfigürasyon fonksiyonlarını keşfet (aynı isimle eşleşmeli)
         config_entry_points = entry_points(group='azuraforge.configs')
         for ep in config_entry_points:
             logging.info(f"Worker: Found config entry point: '{ep.name}' -> points to '{ep.value}'")
@@ -3375,69 +3807,64 @@ def discover_pipelines():
                 discovered[ep.name]['get_config_func'] = ep.load()
             else:
                 logging.warning(f"Worker: Found config for '{ep.name}' but no corresponding pipeline. Skipping config.")
-                
     except Exception as e:
         logging.error(f"Worker: Error discovering pipelines or configs: {e}", exc_info=True)
     
-    # Debug için keşfedilenleri logla
     for p_id, p_info in discovered.items():
         logging.info(f"Worker: Discovered pipeline '{p_id}' (Config available: {'get_config_func' in p_info})")
-
     return discovered
 
-AVAILABLE_PIPELINES_AND_CONFIGS = discover_pipelines() # Değiştirildi
-if not AVAILABLE_PIPELINES_AND_CONFIGS: # Değiştirildi
-    logging.warning("Worker: No AzuraForge pipelines found! Please install a pipeline plugin, e.g., 'azuraforge-app-stock-predictor'.")
+AVAILABLE_PIPELINES_AND_CONFIGS = discover_pipelines()
+if not AVAILABLE_PIPELINES_AND_CONFIGS:
+    logging.warning("Worker: No AzuraForge pipelines found!")
 
 REPORTS_BASE_DIR = os.path.abspath(os.getenv("REPORTS_DIR", "/app/reports"))
-os.makedirs(REPORTS_BASE_DIR, exist_ok=True) # Dizinin var olduğundan emin ol
+os.makedirs(REPORTS_BASE_DIR, exist_ok=True)
 
 @celery_app.task(bind=True, name="start_training_pipeline")
 def start_training_pipeline(self, config: dict):
     pipeline_name = config.get("pipeline_name")
     
-    # Değiştirildi: AVAILABLE_PIPELINES_AND_CONFIGS kullan
     if not pipeline_name or pipeline_name not in AVAILABLE_PIPELINES_AND_CONFIGS:
         raise ValueError(f"Pipeline '{pipeline_name}' not found or installed.")
 
-    PipelineInfo = AVAILABLE_PIPELINES_AND_CONFIGS[pipeline_name]
-    PipelineClass = PipelineInfo['pipeline_class']
+    PipelineClass = AVAILABLE_PIPELINES_AND_CONFIGS[pipeline_name]['pipeline_class']
 
-    # --- Deney için benzersiz bir klasör ve ID oluştur ---
+    task_id = self.request.id
     run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    experiment_id = f"{pipeline_name}_{run_timestamp}_{self.request.id}" 
+    experiment_id = f"{pipeline_name}_{run_timestamp}_{task_id}" 
     
-    pipeline_specific_report_dir = os.path.join(REPORTS_BASE_DIR, pipeline_name)
-    os.makedirs(pipeline_specific_report_dir, exist_ok=True)
-    experiment_dir = os.path.join(pipeline_specific_report_dir, experiment_id)
+    experiment_dir = os.path.join(REPORTS_BASE_DIR, pipeline_name, experiment_id)
     os.makedirs(experiment_dir, exist_ok=True)
     
     config['experiment_id'] = experiment_id
-    config['task_id'] = self.request.id
+    config['task_id'] = task_id
     config['experiment_dir'] = experiment_dir
-    config['start_time'] = datetime.now().isoformat() # Yeni: Başlangıç zamanını ekle
+    config['start_time'] = datetime.now().isoformat()
 
     logging.info(f"Worker: Instantiating pipeline '{PipelineClass.__name__}' for experiment {experiment_id}")
     
-    initial_report_data = {
-        "task_id": self.request.id, "experiment_id": experiment_id, "status": "STARTED", "config": config, "results": {}
-    }
+    initial_report_data = {"task_id": task_id, "experiment_id": experiment_id, "status": "STARTED", "config": config, "results": {}}
     with open(os.path.join(experiment_dir, "results.json"), 'w') as f:
         json.dump(initial_report_data, f, indent=4, default=str)
 
     try:
-        # --- KRİTİK DÜZELTME: Pipeline'a Celery Task objesini iletiyoruz ---
-        # Bu, pipeline'ın içindeki Learner'ın Celery state'i güncelleyebilmesini sağlar.
-        pipeline_instance = PipelineClass(config, celery_task=self) # <- Yeni parametre
-        results = pipeline_instance.run() 
+        # Pipeline'ı konfigürasyon ile başlat
+        pipeline_instance = PipelineClass(config)
+        
+        # Raporlama için callback'i oluştur
+        redis_callback = RedisProgressCallback(task_id=task_id)
+        
+        # Pipeline'ın standart run metodunu çağır ve callback'i parametre olarak geçir.
+        # Bu, BasePipeline'de henüz tam desteklenmiyor, bu yüzden eklenti bunu kendi yönetmeli.
+        # Bu nedenle, eklentinin `run` metodunu `callbacks` alacak şekilde güncelledik.
+        results = pipeline_instance.run(callbacks=[redis_callback])
 
-        final_report_data = {
-            "task_id": self.request.id, "experiment_id": experiment_id, "status": "SUCCESS", "config": config, "results": results, "completed_at": datetime.now().isoformat()
-        }
+        final_report_data = {"task_id": task_id, "experiment_id": experiment_id, "status": "SUCCESS", "config": config, "results": results, "completed_at": datetime.now().isoformat()}
         with open(os.path.join(experiment_dir, "results.json"), 'w') as f:
             json.dump(final_report_data, f, indent=4, default=str)
             
-        logging.info(f"Worker: Task {self.request.id} for pipeline '{pipeline_name}' completed successfully. Results in {experiment_dir}")
+        logging.info(f"Worker: Task {task_id} completed successfully.")
         return final_report_data
 
     except Exception as e:
@@ -3447,11 +3874,9 @@ def start_training_pipeline(self, config: dict):
         
         self.update_state(state='FAILURE', meta={'error_message': str(e), 'traceback': error_traceback})
         
-        error_report_data = {
-            "task_id": self.request.id, "experiment_id": experiment_id, "status": "FAILURE", "config": config, "error": error_message, "failed_at": datetime.now().isoformat()
-        }
+        error_report_data = {"task_id": task_id, "experiment_id": experiment_id, "status": "FAILURE", "config": config, "error": error_message, "failed_at": datetime.now().isoformat()}
         with open(os.path.join(experiment_dir, "results.json"), 'w') as f:
-            json.dump(error_report_data, f, indent=4)
+            json.dump(error_report_data, f, indent=4, default=str)
             
         raise e
 ========== FILE: worker/src/azuraforge_worker/tasks/__init__.py ==========
