@@ -50,23 +50,24 @@ AzuraForge'un her aşamasında, kalitesini ve sürdürülebilirliğini sağlamak
 - **BAŞARI (İnteraktif Raporlama):** `Dashboard`'daki rapor sayfası, artık statik Markdown dosyalarını değil, bu dinamik JSON verisini kullanarak, `Chart.js` ile çizilmiş **interaktif ve canlı grafikler** sunar hale getirildi.
 - **BAŞARI (Canlı Tahmin Grafiği):** `LiveTrackerPane`, eğitim sırasında her `n` epoch'ta bir güncellenen "Tahmin vs Gerçek" grafiğini canlı olarak gösterecek şekilde geliştirildi.
 
-### Faz 15-16: Merkezi Caching Mimarisi ile Performans Optimizasyonu
-- **Hedef:** Harici API çağrılarını azaltarak deney başlatma süresini kısaltmak ve platformu daha verimli hale getirmek.
-- **Mimari Karar:** Her eklentinin kendi caching mantığını yazması yerine, bu sorumluluk `azuraforge-learner` kütüphanesi içine taşındı.
-- **BAŞARI:** `TimeSeriesPipeline`, artık bir deneyi çalıştırmadan önce, deney parametrelerine göre bir önbellek anahtarı oluşturup verinin yerel diskte (`.cache` dizini) olup olmadığını kontrol eder. Veri mevcut ve güncelse, API çağrısı atlanır ve deney saniyeler içinde başlar. Bu, hem geliştirici deneyimini iyileştirir hem de harici API'lerin kullanımını azaltır.
+### Faz 15-17: Gelişmiş Yetenekler ve Mimari Olgunluk
+- **Standardizasyon (`BasePipeline`):** `Smart Learner` projesindeki pipeline soyutlama fikri, `azuraforge-learner` içinde `TimeSeriesPipeline` adıyla hayata geçirildi. Bu, eklenti geliştirmeyi standartlaştırdı ve `app-stock-predictor`'ın kodunu önemli ölçüde basitleştirdi.
+- **Performans Optimizasyonu (Caching):** Harici API çağrılarını önbelleğe alan merkezi bir caching mekanizması, `azuraforge-learner` kütüphanesine eklendi. Bu sayede, tekrarlanan deneyler için veri çekme adımı atlanarak platformun hızı ve verimliliği artırıldı.
+- **Akıllı Ön İşleme (Log Dönüşümü):** `TimeSeriesPipeline`, artık konfigürasyondan okuduğu `target_col_transform: "log"` ayarına göre, hedef değişkene otomatik olarak logaritmik dönüşüm ve tahminlere ters dönüşüm uygulayabilmektedir. Bu, model performansını artırmak için güçlü ve standart bir yöntem sunar.
+- **Hata Ayıklama ve Sağlamlaştırma:** `prefork` havuzunda karşılaşılan "sessiz çökme" sorunları, detaylı loglama ve bellek optimizasyonu teknikleri kullanılarak tespit edilip, `Learner` ve `Callback` arasındaki veri akışı düzeltilerek giderildi.
 
-**An itibarıyla AzuraForge Platformu, kararlı, canlı takip yetenekli, dinamik raporlama sunan ve verimli bir önbellekleme mekanizmasına sahip "Checkpoint Delta" kilometre taşına ulaşmıştır. Platformun temel vizyonu tamamlanmıştır.**
+**An itibarıyla AzuraForge Platformu, kararlı, canlı takip yetenekli, dinamik raporlama sunan, verimli bir önbellekleme mekanizmasına ve gelişmiş ön işleme yeteneklerine sahip "Checkpoint Echo" kilometre taşına ulaşmıştır. Platformun temel vizyonu tamamlanmış ve olgunlaşmıştır.**
 
-## 🗺️ Gelecek Vizyonu: Genişleme ve Olgunlaşma
+## 🗺️ Gelecek Vizyonu: Genişleme ve Kullanıcı Odaklı Geliştirmeler
 
 Bu sağlam temel üzerine inşa edilecek adımlar, AzuraForge'u daha da zenginleştirmeyi ve kapsamını genişletmeyi hedefleyecektir.
 
-### **Grup 1: Mevcut Yapıyı Zenginleştirme**
-- **Gelişmiş Ön İşleme:** `target_col_transform: "log"` gibi kanıtlanmış ön işleme adımlarını `BasePipeline`'e entegre etmek.
+### **Grup 1: Mevcut Deneyimi Mükemmelleştirme**
 - **Model Yönetimi:** `ModelCheckpoint` callback'ini kullanarak en iyi modelleri kaydetme ve bu modellere API üzerinden erişim sağlama.
 - **Hiperparametre Optimizasyonu:** `hyper_tuner` aracını, API üzerinden otomatik olarak yüzlerce deney başlatacak şekilde modernize etmek.
+- **UI Geliştirmeleri:** "Anlık Kayıp" gibi ek metriklerin ana deney listesinde gösterilmesi.
 
-### **Grup 2: Yeni Yetenekler ve Eklentiler**
+### **Grup 2: Yeni Eklentiler ve Yetenek Kanıtı**
 - **`app-weather-forecaster`:** `TimeSeriesPipeline`'in gücünü kanıtlamak için hava durumu tahmincisi eklentisi, yeni standartlara uygun olarak hızla geliştirilecek.
 - **Sınıflandırma Problemleri:** Sınıflandırma görevleri için yeni bir `BaseClassificationPipeline` ve buna uygun raporlama (örn: Karışıklık Matrisi) araçları geliştirilecek.
 

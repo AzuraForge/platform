@@ -20,42 +20,42 @@ services:
   # API ve Worker Dockerfile'ları onları zaten pip ile çeker.
   # Buradaki tanımlar, onların da build edildiğini doğrulamak içindir.
 
-  # 2. Core Kütüphanesi
-  core_lib:
-    container_name: azuraforge_core_lib_build_test
-    build:
-      context: ./core # 'core' reposunun bulunduğu klasörü göster
-      dockerfile: Dockerfile # 'core' reposunun içindeki Dockerfile
-    command: python -c "import azuraforge_core; print('AzuraForge Core built and imported successfully in Docker!')"
-    # volumes: - ./core:/app # Geliştirme sırasında kodu anında yansıtmak için
-    # Bu servis sadece build ediliyor, çalıştırılmıyor. Mount'a gerek yok.
+  # # 2. Core Kütüphanesi
+  # core_lib:
+  #   container_name: azuraforge_core_lib_build_test
+  #   build:
+  #     context: ./core # 'core' reposunun bulunduğu klasörü göster
+  #     dockerfile: Dockerfile # 'core' reposunun içindeki Dockerfile
+  #   command: python -c "import azuraforge_core; print('AzuraForge Core built and imported successfully in Docker!')"
+  #   # volumes: - ./core:/app # Geliştirme sırasında kodu anında yansıtmak için
+  #   # Bu servis sadece build ediliyor, çalıştırılmıyor. Mount'a gerek yok.
 
-  # 3. Learner Kütüphanesi
-  learner_lib:
-    container_name: azuraforge_learner_lib_build_test
-    build:
-      context: ./learner
-      dockerfile: Dockerfile
-    command: python -c "import azuraforge_learner; print('AzuraForge Learner built and imported successfully in Docker!')"
-    # volumes: - ./learner:/app # Sadece build ediliyor.
+  # # 3. Learner Kütüphanesi
+  # learner_lib:
+  #   container_name: azuraforge_learner_lib_build_test
+  #   build:
+  #     context: ./learner
+  #     dockerfile: Dockerfile
+  #   command: python -c "import azuraforge_learner; print('AzuraForge Learner built and imported successfully in Docker!')"
+  #   # volumes: - ./learner:/app # Sadece build ediliyor.
 
-  # 4. Applications Katalogu
-  applications_catalog:
-    container_name: azuraforge_applications_catalog_build_test
-    build:
-      context: ./applications
-      dockerfile: Dockerfile
-    command: python -c "import azuraforge_applications; print('AzuraForge Applications Catalog built and imported successfully in Docker!')"
-    # volumes: - ./applications:/app # Sadece build ediliyor.
+  # # 4. Applications Katalogu
+  # applications_catalog:
+  #   container_name: azuraforge_applications_catalog_build_test
+  #   build:
+  #     context: ./applications
+  #     dockerfile: Dockerfile
+  #   command: python -c "import azuraforge_applications; print('AzuraForge Applications Catalog built and imported successfully in Docker!')"
+  #   # volumes: - ./applications:/app # Sadece build ediliyor.
 
-  # 5. App Stock Predictor (Uygulama Eklentisi)
-  app_stock_predictor:
-    container_name: azuraforge_app_stock_predictor_build_test
-    build:
-      context: ./app-stock-predictor
-      dockerfile: Dockerfile
-    command: python -c "import azuraforge_stockapp; print('AzuraForge App Stock Predictor built and imported successfully in Docker!')"
-    # volumes: - ./app-stock-predictor:/app # Sadece build ediliyor.
+  # # 5. App Stock Predictor (Uygulama Eklentisi)
+  # app_stock_predictor:
+  #   container_name: azuraforge_app_stock_predictor_build_test
+  #   build:
+  #     context: ./app-stock-predictor
+  #     dockerfile: Dockerfile
+  #   command: python -c "import azuraforge_stockapp; print('AzuraForge App Stock Predictor built and imported successfully in Docker!')"
+  #   # volumes: - ./app-stock-predictor:/app # Sadece build ediliyor.
 
   # --- ANA PLATFORM SERVİSLERİ ---
   # Bu servisler, tüm ekosistemin temelidir ve diğer kütüphanelere bağımlıdır.
@@ -553,6 +553,8 @@ setup(
     },
 )
 ========== FILE: app-stock-predictor/src/azuraforge_stockapp/pipeline.py ==========
+# app-stock-predictor/src/azuraforge_stockapp/pipeline.py
+
 import logging
 from typing import Any, Dict, Tuple, List
 
@@ -569,20 +571,25 @@ def get_default_config() -> Dict[str, Any]:
         with resources.open_text("azuraforge_stockapp.config", "stock_predictor_config.yml") as f:
             return yaml.safe_load(f)
     except Exception as e:
+        # Bu log, worker'ın ana sürecinde görünmeli
         logging.error(f"Hisse senedi uygulaması için varsayılan config yüklenemedi: {e}", exc_info=True)
         return {"error": f"Varsayılan konfigürasyon yüklenemedi: {e}"}
 
 class StockPredictionPipeline(TimeSeriesPipeline):
-    # DÜZELTME: Artık __init__ metoduna gerek yok, çünkü BasePipeline'in __init__'i
-    # bizim için logger'ı zaten ayarlıyor.
-    
+    # DÜZELTME: __init__ metodunu, temel sınıfı çağırmak ve loglamayı doğrulamak için geri ekliyoruz.
+    def __init__(self, config: Dict[str, Any]):
+        # Bu, BasePipeline'in __init__'ini çağıracak ve self.logger'ı ayarlayacaktır.
+        super().__init__(config)
+        self.logger.info(f"StockPredictionPipeline (Eklenti) başarıyla başlatıldı.")
+
     def _load_data_from_source(self) -> pd.DataFrame:
         """Sadece yfinance'ten veri çekme işini yapar. Caching bu metodun dışındadır."""
         ticker = self.config.get("data_sourcing", {}).get("ticker", "MSFT")
-        self.logger.info(f"'{ticker}' için yfinance'ten veri çekiliyor (period=max)...")
+        self.logger.info(f"'_load_data_from_source' çağrıldı. Ticker: {ticker}")
         
         data = yf.download(ticker, period="max", progress=False, actions=False, auto_adjust=True)
         if data.empty:
+            self.logger.error(f"'{ticker}' için yfinance'ten boş veri döndü.")
             raise ValueError(f"'{ticker}' için veri indirilemedi.")
             
         self.logger.info(f"{len(data)} satır veri indirildi.")
@@ -590,21 +597,27 @@ class StockPredictionPipeline(TimeSeriesPipeline):
 
     def get_caching_params(self) -> Dict[str, Any]:
         """Önbellek anahtarı için sadece ticker'ın yeterli olduğunu belirtir."""
-        return {"ticker": self.config.get("data_sourcing", {}).get("ticker", "MSFT")}
+        ticker = self.config.get("data_sourcing", {}).get("ticker", "MSFT")
+        self.logger.info(f"'get_caching_params' çağrıldı. Ticker: {ticker}")
+        return {"ticker": ticker}
 
     def _get_target_and_feature_cols(self) -> Tuple[str, List[str]]:
         """Bu basit model için hedef ve özellik aynı sütundur: 'Close'."""
+        self.logger.info("'_get_target_and_feature_cols' çağrıldı. Hedef: Close")
         return "Close", ["Close"]
 
     def _create_model(self, input_shape: Tuple) -> Sequential:
         """LSTM ve bir Linear katmandan oluşan modeli oluşturur."""
+        self.logger.info(f"'_create_model' çağrıldı. Girdi şekli: {input_shape}")
         input_size = input_shape[2] 
         hidden_size = self.config.get("model_params", {}).get("hidden_size", 50)
         
-        return Sequential(
+        model = Sequential(
             LSTM(input_size=input_size, hidden_size=hidden_size),
             Linear(hidden_size, 1)
         )
+        self.logger.info("LSTM modeli başarıyla oluşturuldu.")
+        return model
 ========== FILE: app-stock-predictor/src/azuraforge_stockapp/__init__.py ==========
 
 ========== FILE: app-stock-predictor/src/azuraforge_stockapp/config/stock_predictor_config.yml ==========
@@ -615,6 +628,10 @@ pipeline_name: "stock_predictor"
 data_sourcing:
   ticker: "MSFT"
 
+# YENİ: Özellik mühendisliği ve dönüşüm ayarları
+feature_engineering:
+  target_col_transform: "log" # "log" veya "none" olabilir
+
 model_params:
   sequence_length: 60
   hidden_size: 50
@@ -624,11 +641,8 @@ training_params:
   lr: 0.001
   optimizer: "adam"
   test_size: 0.2
-  validate_every: 5 # Her 5 epoch'ta bir canlı tahmin grafiğini güncelle
+  validate_every: 5
 
-# YENİ: Merkezi sistem ayarları artık burada değil, 
-# .env ve docker-compose.yml'de yönetiliyor.
-# Ancak eklenti seviyesinde caching'i açıp kapatmak için bu flag'i tutabiliriz.
 system:
   caching_enabled: true
   cache_max_age_hours: 24
@@ -2613,23 +2627,24 @@ AzuraForge'un her aşamasında, kalitesini ve sürdürülebilirliğini sağlamak
 - **BAŞARI (İnteraktif Raporlama):** `Dashboard`'daki rapor sayfası, artık statik Markdown dosyalarını değil, bu dinamik JSON verisini kullanarak, `Chart.js` ile çizilmiş **interaktif ve canlı grafikler** sunar hale getirildi.
 - **BAŞARI (Canlı Tahmin Grafiği):** `LiveTrackerPane`, eğitim sırasında her `n` epoch'ta bir güncellenen "Tahmin vs Gerçek" grafiğini canlı olarak gösterecek şekilde geliştirildi.
 
-### Faz 15-16: Merkezi Caching Mimarisi ile Performans Optimizasyonu
-- **Hedef:** Harici API çağrılarını azaltarak deney başlatma süresini kısaltmak ve platformu daha verimli hale getirmek.
-- **Mimari Karar:** Her eklentinin kendi caching mantığını yazması yerine, bu sorumluluk `azuraforge-learner` kütüphanesi içine taşındı.
-- **BAŞARI:** `TimeSeriesPipeline`, artık bir deneyi çalıştırmadan önce, deney parametrelerine göre bir önbellek anahtarı oluşturup verinin yerel diskte (`.cache` dizini) olup olmadığını kontrol eder. Veri mevcut ve güncelse, API çağrısı atlanır ve deney saniyeler içinde başlar. Bu, hem geliştirici deneyimini iyileştirir hem de harici API'lerin kullanımını azaltır.
+### Faz 15-17: Gelişmiş Yetenekler ve Mimari Olgunluk
+- **Standardizasyon (`BasePipeline`):** `Smart Learner` projesindeki pipeline soyutlama fikri, `azuraforge-learner` içinde `TimeSeriesPipeline` adıyla hayata geçirildi. Bu, eklenti geliştirmeyi standartlaştırdı ve `app-stock-predictor`'ın kodunu önemli ölçüde basitleştirdi.
+- **Performans Optimizasyonu (Caching):** Harici API çağrılarını önbelleğe alan merkezi bir caching mekanizması, `azuraforge-learner` kütüphanesine eklendi. Bu sayede, tekrarlanan deneyler için veri çekme adımı atlanarak platformun hızı ve verimliliği artırıldı.
+- **Akıllı Ön İşleme (Log Dönüşümü):** `TimeSeriesPipeline`, artık konfigürasyondan okuduğu `target_col_transform: "log"` ayarına göre, hedef değişkene otomatik olarak logaritmik dönüşüm ve tahminlere ters dönüşüm uygulayabilmektedir. Bu, model performansını artırmak için güçlü ve standart bir yöntem sunar.
+- **Hata Ayıklama ve Sağlamlaştırma:** `prefork` havuzunda karşılaşılan "sessiz çökme" sorunları, detaylı loglama ve bellek optimizasyonu teknikleri kullanılarak tespit edilip, `Learner` ve `Callback` arasındaki veri akışı düzeltilerek giderildi.
 
-**An itibarıyla AzuraForge Platformu, kararlı, canlı takip yetenekli, dinamik raporlama sunan ve verimli bir önbellekleme mekanizmasına sahip "Checkpoint Delta" kilometre taşına ulaşmıştır. Platformun temel vizyonu tamamlanmıştır.**
+**An itibarıyla AzuraForge Platformu, kararlı, canlı takip yetenekli, dinamik raporlama sunan, verimli bir önbellekleme mekanizmasına ve gelişmiş ön işleme yeteneklerine sahip "Checkpoint Echo" kilometre taşına ulaşmıştır. Platformun temel vizyonu tamamlanmış ve olgunlaşmıştır.**
 
-## 🗺️ Gelecek Vizyonu: Genişleme ve Olgunlaşma
+## 🗺️ Gelecek Vizyonu: Genişleme ve Kullanıcı Odaklı Geliştirmeler
 
 Bu sağlam temel üzerine inşa edilecek adımlar, AzuraForge'u daha da zenginleştirmeyi ve kapsamını genişletmeyi hedefleyecektir.
 
-### **Grup 1: Mevcut Yapıyı Zenginleştirme**
-- **Gelişmiş Ön İşleme:** `target_col_transform: "log"` gibi kanıtlanmış ön işleme adımlarını `BasePipeline`'e entegre etmek.
+### **Grup 1: Mevcut Deneyimi Mükemmelleştirme**
 - **Model Yönetimi:** `ModelCheckpoint` callback'ini kullanarak en iyi modelleri kaydetme ve bu modellere API üzerinden erişim sağlama.
 - **Hiperparametre Optimizasyonu:** `hyper_tuner` aracını, API üzerinden otomatik olarak yüzlerce deney başlatacak şekilde modernize etmek.
+- **UI Geliştirmeleri:** "Anlık Kayıp" gibi ek metriklerin ana deney listesinde gösterilmesi.
 
-### **Grup 2: Yeni Yetenekler ve Eklentiler**
+### **Grup 2: Yeni Eklentiler ve Yetenek Kanıtı**
 - **`app-weather-forecaster`:** `TimeSeriesPipeline`'in gücünü kanıtlamak için hava durumu tahmincisi eklentisi, yeni standartlara uygun olarak hızla geliştirilecek.
 - **Sınıflandırma Problemleri:** Sınıflandırma görevleri için yeni bir `BaseClassificationPipeline` ve buna uygun raporlama (örn: Karışıklık Matrisi) araçları geliştirilecek.
 
@@ -3198,6 +3213,8 @@ class Adam(Optimizer):
                 update_val = self.lr * m_hat / (xp.sqrt(v_hat) + self.epsilon)
                 p.data -= update_val
 ========== FILE: learner/src/azuraforge_learner/pipelines.py ==========
+# learner/src/azuraforge_learner/pipelines.py
+
 import logging
 import os
 from abc import ABC, abstractmethod
@@ -3222,12 +3239,12 @@ def _create_sequences(data: np.ndarray, seq_length: int) -> Tuple[np.ndarray, np
         y = data[i + seq_length]
         xs.append(x)
         ys.append(y)
-    return np.array(xs), np.array(ys)
+    # DÜZELTME: y'nin her zaman (samples, features) şeklinde olmasını sağla
+    return np.array(xs), np.array(ys).reshape(-1, data.shape[1])
 
 class BasePipeline(ABC):
     def __init__(self, config: Dict[str, Any]):
         self.config = config
-        # DÜZELTME: Sadece logger'ı al, yapılandırmayı yapma.
         self.logger = logging.getLogger(self.__class__.__name__)
 
     @abstractmethod
@@ -3235,13 +3252,13 @@ class BasePipeline(ABC):
         pass
 
 class LivePredictionCallback(Callback):
-    def __init__(self, pipeline: 'TimeSeriesPipeline', X_val: np.ndarray, y_val: np.ndarray, time_index_val: pd.Index, validate_every_n_epochs: int):
+    def __init__(self, pipeline: 'TimeSeriesPipeline', X_val: np.ndarray, y_val: np.ndarray, time_index_val: pd.Index):
         super().__init__()
         self.pipeline = pipeline
         self.X_val = X_val
         self.y_val = y_val
         self.time_index_val = time_index_val
-        self.validate_every = validate_every_n_epochs
+        self.validate_every = self.pipeline.config.get("training_params", {}).get("validate_every", 5)
         self.last_results: Dict[str, Any] = {}
 
     def on_epoch_end(self, event: Event) -> None:
@@ -3253,20 +3270,14 @@ class LivePredictionCallback(Callback):
 
             y_pred_scaled = self.learner.predict(self.X_val)
             
-            target_col, feature_cols = self.pipeline._get_target_and_feature_cols()
-            target_idx = feature_cols.index(target_col)
+            y_test_unscaled, y_pred_unscaled = self.pipeline._inverse_transform_all(
+                self.y_val, y_pred_scaled
+            )
             
-            dummy_pred = np.zeros((len(y_pred_scaled), len(feature_cols)))
-            dummy_test = np.zeros((len(self.y_val), len(feature_cols)))
-            dummy_pred[:, target_idx] = y_pred_scaled.flatten()
-            dummy_test[:, target_idx] = self.y_val.flatten()
-            y_pred_unscaled = self.pipeline.scaler.inverse_transform(dummy_pred)[:, target_idx]
-            y_test_unscaled = self.pipeline.scaler.inverse_transform(dummy_test)[:, target_idx]
-
             validation_payload = {
                 "x_axis": [d.isoformat() for d in self.time_index_val],
                 "y_true": y_test_unscaled.tolist(), "y_pred": y_pred_unscaled.tolist(),
-                "x_label": "Tarih", "y_label": target_col
+                "x_label": "Tarih", "y_label": self.pipeline._get_target_and_feature_cols()[0]
             }
             event.payload['validation_data'] = validation_payload
             
@@ -3278,14 +3289,18 @@ class LivePredictionCallback(Callback):
                     'mae': mean_absolute_error(y_test_unscaled, y_pred_unscaled)
                 },
                 "y_true": y_test_unscaled, "y_pred": y_pred_unscaled,
-                "time_index": self.time_index_val, "y_label": target_col
+                "time_index": self.time_index_val, "y_label": self.pipeline._get_target_and_feature_cols()[0]
             }
 
 class TimeSeriesPipeline(BasePipeline):
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
         self.scaler = MinMaxScaler(feature_range=(-1, 1))
+        self.feature_scaler = MinMaxScaler(feature_range=(-1, 1))
         self.learner: Optional[Learner] = None
+        self.X_test: Optional[np.ndarray] = None
+        self.y_test: Optional[np.ndarray] = None
+        self.time_index_test: Optional[pd.Index] = None
 
     @abstractmethod
     def _load_data_from_source(self) -> pd.DataFrame:
@@ -3309,36 +3324,55 @@ class TimeSeriesPipeline(BasePipeline):
         optimizer = Adam(model.parameters(), lr=lr) if optimizer_type == "adam" else SGD(model.parameters(), lr=lr)
         return Learner(model, MSELoss(), optimizer, callbacks=callbacks)
 
+    def _inverse_transform_all(self, y_true_scaled, y_pred_scaled):
+        y_true_unscaled_transformed = self.scaler.inverse_transform(y_true_scaled)
+        y_pred_unscaled_transformed = self.scaler.inverse_transform(y_pred_scaled)
+
+        target_transform = self.config.get("feature_engineering", {}).get("target_col_transform")
+        if target_transform == 'log':
+            y_true_final = np.expm1(y_true_unscaled_transformed)
+            y_pred_final = np.expm1(y_pred_unscaled_transformed)
+        else:
+            y_true_final = y_true_unscaled_transformed
+            y_pred_final = y_pred_unscaled_transformed
+            
+        return y_true_final.flatten(), y_pred_final.flatten()
+
     def run(self, callbacks: Optional[List[Callback]] = None) -> Dict[str, Any]:
         self.logger.info(f"'{self.config.get('pipeline_name')}' pipeline başlatılıyor...")
         
         system_config = self.config.get("system", {})
         cache_enabled = system_config.get("caching_enabled", True)
-        cache_dir = os.getenv("CACHE_DIR", system_config.get("cache_dir", ".cache"))
+        cache_dir = os.getenv("CACHE_DIR", ".cache")
         cache_max_age = system_config.get("cache_max_age_hours", 24)
         
         cache_params = self.get_caching_params()
         cache_filepath = get_cache_filepath(cache_dir, self.config.get('pipeline_name', 'default_context'), cache_params)
 
         raw_data = None
-        if cache_enabled:
-            raw_data = load_from_cache(cache_filepath, cache_max_age)
-
+        if cache_enabled: raw_data = load_from_cache(cache_filepath, cache_max_age)
         if raw_data is None:
             self.logger.info("Önbellek boş veya geçersiz. Veri kaynaktan çekiliyor...")
             raw_data = self._load_data_from_source()
             if cache_enabled and isinstance(raw_data, pd.DataFrame) and not raw_data.empty:
                 save_to_cache(raw_data, cache_filepath)
-        
+
         target_col, feature_cols = self._get_target_and_feature_cols()
         
-        if not all(col in raw_data.columns for col in feature_cols):
-            raise ValueError(f"Yapılandırılan özellik sütunları ({feature_cols}) indirilen veride bulunamadı.")
-            
-        data_to_process = raw_data[feature_cols]
-        sequence_length = self.config.get("model_params", {}).get("sequence_length", 60)
-        scaled_data = self.scaler.fit_transform(data_to_process)
+        features_df = raw_data[feature_cols].copy()
+        target_series = raw_data[target_col].copy()
+
+        target_transform = self.config.get("feature_engineering", {}).get("target_col_transform")
+        if target_transform == 'log':
+            self.logger.info(f"'{target_col}' sütununa log(1+x) dönüşümü uygulanıyor.")
+            target_series = np.log1p(target_series)
         
+        scaled_features = self.feature_scaler.fit_transform(features_df)
+        scaled_target = self.scaler.fit_transform(target_series.values.reshape(-1, 1))
+        
+        scaled_data = np.concatenate([scaled_features, scaled_target], axis=1)
+
+        sequence_length = self.config.get("model_params", {}).get("sequence_length", 60)
         if len(scaled_data) <= sequence_length:
             return {"status": "failed", "message": "Sekans oluşturmak için yeterli veri yok."}
         
@@ -3349,23 +3383,20 @@ class TimeSeriesPipeline(BasePipeline):
         
         test_size = self.config.get("training_params", {}).get("test_size", 0.2)
         split_idx = int(len(X) * (1 - test_size))
-        X_train, X_test = X[:split_idx], X[split_idx:]
-        y_train, y_test = y[:split_idx], y[split_idx:]
-        time_index_test = raw_data.index[split_idx + sequence_length:]
+        X_train, self.X_test = X[:split_idx], X[split_idx:]
+        y_train, self.y_test = y[:split_idx], y[split_idx:]
+        self.time_index_test = raw_data.index[split_idx + sequence_length:]
 
         model = self._create_model(X_train.shape)
         
-        live_predict_cb = LivePredictionCallback(
-            pipeline=self, X_val=X_test, y_val=y_test, 
-            time_index_val=time_index_test,
-            validate_every_n_epochs=self.config.get("training_params", {}).get("validate_every", 5)
-        )
+        live_predict_cb = LivePredictionCallback(pipeline=self, X_val=self.X_test, y_val=self.y_test, time_index_val=self.time_index_test)
         all_callbacks = (callbacks or []) + [live_predict_cb]
         
         self.learner = self._create_learner(model, all_callbacks)
 
         epochs = int(self.config.get("training_params", {}).get("epochs", 50))
         self.logger.info(f"{epochs} epoch için model eğitimi başlıyor...")
+        # KRİTİK DÜZELTME: fit metoduna y_test yerine y_train veriyoruz.
         history = self.learner.fit(X_train, y_train, epochs=epochs, pipeline_name=self.config.get("pipeline_name"))
         
         final_results = live_predict_cb.last_results
@@ -4071,29 +4102,60 @@ celery_app = Celery(
 
 import subprocess
 import sys
-import logging # YENİ
+import platform
+import logging
+import multiprocessing
+
+def determine_pool_and_concurrency():
+    """İşletim sistemine göre uygun pool ve concurrency değerini belirler."""
+    current_platform = platform.system()
+
+    # --- HATA AYIKLAMA İÇİN GEÇİCİ DEĞİŞİKLİK ---
+    # Sorunun 'prefork' ile ilgili olup olmadığını anlamak için,
+    # geçici olarak her zaman 'solo' kullanmaya zorluyoruz.
+    logging.warning("!!! HATA AYIKLAMA MODU: Worker 'solo' pool ile çalışmaya zorlanıyor. !!!")
+    return "solo", 1
+    # ---------------------------------------------
+
+    # Orjinal kod:
+    # if current_platform == "Windows":
+    #     pool_type = "solo"
+    #     concurrency = 1
+    # else:
+    #     pool_type = "prefork"
+    #     concurrency = multiprocessing.cpu_count()
+    # return pool_type, concurrency
+
 
 def run_celery_worker():
     """'start-worker' komutu için giriş noktası."""
-    
-    # YENİ: Platform genelinde loglama yapılandırmasını burada yap
+
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(name)s:%(lineno)d - %(levelname)s - %(message)s',
-        stream=sys.stdout  # Logların konsola basıldığından emin ol
+        stream=sys.stdout
     )
-    
+
     logging.info("👷‍♂️ Starting AzuraForge Worker...")
+
+    pool_type, concurrency = determine_pool_and_concurrency()
+
+    logging.info(f"Platform: {platform.system()} - Using pool: {pool_type}, concurrency: {concurrency}")
+
     command = [
         sys.executable, "-m", "celery",
         "-A", "azuraforge_worker.celery_app:celery_app",
         "worker",
-        "--pool=solo",
-        "--loglevel=INFO"
+        f"--pool={pool_type}",
+        "--loglevel=INFO",
+        f"--concurrency={concurrency}"
     ]
-    # Celery'nin kendi log formatını kullanmasını engellemek için --logfile= olmadan çalıştırıyoruz
-    # ve kendi yapılandırmamıza güveniyoruz.
+
     subprocess.run(command)
+
+
+if __name__ == "__main__":
+    run_celery_worker()
 ========== FILE: worker/src/azuraforge_worker/__init__.py ==========
 from .celery_app import celery_app
 
@@ -4114,7 +4176,6 @@ from ..celery_app import celery_app
 from ..callbacks import RedisProgressCallback
 
 def discover_pipelines():
-    # ... (kod aynı)
     logging.info("Worker: Discovering installed AzuraForge pipeline plugins and configurations...")
     discovered = {}
     try:
@@ -4146,41 +4207,36 @@ os.makedirs(REPORTS_BASE_DIR, exist_ok=True)
 
 @celery_app.task(bind=True, name="start_training_pipeline")
 def start_training_pipeline(self, config: dict):
-    pipeline_name = config.get("pipeline_name")
-    
-    if not pipeline_name or pipeline_name not in AVAILABLE_PIPELINES_AND_CONFIGS:
-        raise ValueError(f"Pipeline '{pipeline_name}' not found or installed.")
-
-    PipelineClass = AVAILABLE_PIPELINES_AND_CONFIGS[pipeline_name]['pipeline_class']
-
     task_id = self.request.id
-    run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    experiment_id = f"{pipeline_name}_{run_timestamp}_{task_id}" 
-    
-    experiment_dir = os.path.join(REPORTS_BASE_DIR, pipeline_name, experiment_id)
-    os.makedirs(experiment_dir, exist_ok=True)
-    
-    config['experiment_id'] = experiment_id
-    config['task_id'] = task_id
-    config['experiment_dir'] = experiment_dir
-    config['start_time'] = datetime.now().isoformat()
-
-    logging.info(f"Worker: Instantiating pipeline '{PipelineClass.__name__}' for experiment {experiment_id}")
-    
-    initial_report_data = {"task_id": task_id, "experiment_id": experiment_id, "status": "STARTED", "config": config, "results": {}}
-    with open(os.path.join(experiment_dir, "results.json"), 'w') as f:
-        json.dump(initial_report_data, f, indent=4, default=str)
+    pipeline_name = config.get("pipeline_name", "unknown_pipeline")
+    experiment_id = "" # Hata durumunda bile ID'nin var olması için başlat
 
     try:
-        # Pipeline'ı konfigürasyon ile başlat
-        pipeline_instance = PipelineClass(config)
+        if not pipeline_name or pipeline_name not in AVAILABLE_PIPELINES_AND_CONFIGS:
+            raise ValueError(f"Pipeline '{pipeline_name}' not found or installed.")
+
+        PipelineClass = AVAILABLE_PIPELINES_AND_CONFIGS[pipeline_name]['pipeline_class']
+
+        run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        experiment_id = f"{pipeline_name}_{run_timestamp}_{task_id}" 
         
-        # Raporlama için callback'i oluştur
+        experiment_dir = os.path.join(REPORTS_BASE_DIR, pipeline_name, experiment_id)
+        os.makedirs(experiment_dir, exist_ok=True)
+        
+        config['experiment_id'] = experiment_id
+        config['task_id'] = task_id
+        config['experiment_dir'] = experiment_dir
+        config['start_time'] = datetime.now().isoformat()
+
+        logging.info(f"Worker: Instantiating pipeline '{PipelineClass.__name__}' for experiment {experiment_id}")
+        
+        initial_report_data = {"task_id": task_id, "experiment_id": experiment_id, "status": "STARTED", "config": config, "results": {}}
+        with open(os.path.join(experiment_dir, "results.json"), 'w') as f:
+            json.dump(initial_report_data, f, indent=4, default=str)
+
+        pipeline_instance = PipelineClass(config)
         redis_callback = RedisProgressCallback(task_id=task_id)
         
-        # Pipeline'ın standart run metodunu çağır ve callback'i parametre olarak geçir.
-        # Bu, BasePipeline'de henüz tam desteklenmiyor, bu yüzden eklenti bunu kendi yönetmeli.
-        # Bu nedenle, eklentinin `run` metodunu `callbacks` alacak şekilde güncelledik.
         results = pipeline_instance.run(callbacks=[redis_callback])
 
         final_report_data = {"task_id": task_id, "experiment_id": experiment_id, "status": "SUCCESS", "config": config, "results": results, "completed_at": datetime.now().isoformat()}
@@ -4191,15 +4247,22 @@ def start_training_pipeline(self, config: dict):
         return final_report_data
 
     except Exception as e:
-        error_traceback = traceback.format_exc()
-        error_message = f"Pipeline execution failed for {pipeline_name}: {e}\n{error_traceback}"
-        logging.error(error_message)
+        tb_str = traceback.format_exc()
+        logging.error(f"PIPELINE CRITICAL FAILURE in task {task_id} (experiment: {experiment_id}): {e}")
+        logging.error(f"FULL TRACEBACK:\n{tb_str}")
         
-        self.update_state(state='FAILURE', meta={'error_message': str(e), 'traceback': error_traceback})
+        # Hata durumunda bile results.json'ı güncelle
+        error_report_data = {
+            "task_id": task_id, "experiment_id": experiment_id, "status": "FAILURE", 
+            "config": config, "error": {"message": str(e), "traceback": tb_str}, 
+            "failed_at": datetime.now().isoformat()
+        }
+        if experiment_id: # Eğer experiment_id oluşturulduysa dosyayı yaz
+            error_report_path = os.path.join(REPORTS_BASE_DIR, pipeline_name, experiment_id, "results.json")
+            os.makedirs(os.path.dirname(error_report_path), exist_ok=True)
+            with open(error_report_path, 'w') as f:
+                json.dump(error_report_data, f, indent=4)
         
-        error_report_data = {"task_id": task_id, "experiment_id": experiment_id, "status": "FAILURE", "config": config, "error": error_message, "failed_at": datetime.now().isoformat()}
-        with open(os.path.join(experiment_dir, "results.json"), 'w') as f:
-            json.dump(error_report_data, f, indent=4, default=str)
-            
+        # Celery'nin hatayı düzgün işlemesi için yeniden fırlat
         raise e
 ========== FILE: worker/src/azuraforge_worker/tasks/__init__.py ==========
