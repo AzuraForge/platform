@@ -1,6 +1,7 @@
-# 🤝 AzuraForge Platforma Katkıda Bulunma Rehberi
+========== FILE: docs/CONTRIBUTING.md ==========
+# 🤝 AzuraForge Platformuna Katkıda Bulunma Rehberi
 
-AzuraForge projesine gösterdiğiniz ilgi ve katkılarınız için teşekkür ederiz! Bu rehber, kod tabanının tutarlı, okunabilir, sürdürülebilir ve yüksek kalitede kalmasını sağlamak için benimsediğimiz çalışma prensiplerini ve standartlarını açıklamaktadır.
+AzuraForge projesine gösterdiğiniz ilgi ve katkılarınız için teşekkür ederiz! Bu proje, modern yapay zeka sistemlerinin nasıl inşa edilmesi gerektiğine dair bir vizyonu hayata geçirmeyi amaçlamaktadır. Bu rehber, kod tabanının tutarlı, okunabilir, sürdürülebilir ve yüksek kalitede kalmasını sağlamak için benimsediğimiz çalışma prensiplerini ve standartlarını açıklamaktadır.
 
 ## 🚀 Hızlı Başlangıç
 

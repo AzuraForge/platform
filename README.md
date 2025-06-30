@@ -1,10 +1,19 @@
 # AzuraForge Platform 🚀
 
-**AzuraForge Platform**, yapay zeka modellerini sıfırdan oluşturmak, eğitmek, canlı olarak takip etmek ve sonuçlarını interaktif raporlarla analiz etmek için tasarlanmış modüler, dağıtık ve eklenti tabanlı bir MLOps platformudur.
+**AzuraForge**, yapay zeka modellerini sıfırdan oluşturmak, eğitmek, canlı olarak takip etmek ve sonuçlarını interaktif raporlarla analiz etmek için tasarlanmış, **olay güdümlü, eklenti tabanlı ve dağıtık bir MLOps platformudur.**
 
 Bu depo, AzuraForge ekosistemindeki tüm ana servisleri (API, Worker, Dashboard) ve kütüphaneleri (Core, Learner, Applications) bir araya getiren **orkestrasyon katmanıdır**.
 
-## ✨ Platform Yetenekleri
+## ✨ Platform Felsefesi
+
+Platformumuz iki temel prensip üzerine kuruludur:
+
+1.  **Sıfırdan İnşa ve Derin Anlayış:** Temel algoritmaları sıfırdan yazarak sistem üzerinde tam kontrol ve derinlemesine bir anlayış sağlıyoruz.
+2.  **Modüler ve Ölçeklenebilir Ekosistem:** Bağımsız servisler, olaylar (Redis Pub/Sub) ve görevler (Celery) üzerinden haberleşerek sağlam, esnek ve büyümeye açık bir yapı oluşturur.
+
+Projemizin felsefesini, evrimini ve detaylı yol haritasını öğrenmek için **[Proje Yolculuğu](./docs/PROJECT_JOURNEY.md)** belgemizi inceleyin.
+
+## 🌟 Platform Yetenekleri
 
 *   **Sıfırdan İnşa Edilmiş Çekirdek:** Otomatik türev, `LSTM` gibi gelişmiş katmanlar ve `Adam` optimizer içeren, saf Python/NumPy tabanlı bir derin öğrenme motoru.
 *   **Modüler Mikroservis Mimarisi:** Her bileşen (`api`, `worker`, `learner` vb.) kendi bağımsız reposunda yaşar, bağımsız olarak geliştirilebilir ve kurulabilir.
@@ -17,8 +26,8 @@ Bu depo, AzuraForge ekosistemindeki tüm ana servisleri (API, Worker, Dashboard)
 
 AzuraForge, aşağıdaki bağımsız GitHub depolarından oluşur:
 
--   **`core`**: Temel matematik motoru.
--   **`learner`**: Yüksek seviyeli öğrenme kütüphanesi (`Learner`, `Callback` sistemi, `BasePipeline` ve raporlama araçları).
+-   **`core`**: Temel matematik motoru (`Tensor`).
+-   **`learner`**: Yüksek seviyeli öğrenme kütüphanesi (`Learner`, `Callback` sistemi, `BasePipeline`).
 -   **`applications`**: Resmi uygulama katalogu.
 -   **`app-stock-predictor`**: Gerçek bir uygulama eklentisi örneği.
 -   **`api`**: RESTful API ve WebSocket (Pub/Sub tabanlı) sunan iletişim katmanı.
@@ -29,18 +38,22 @@ AzuraForge, aşağıdaki bağımsız GitHub depolarından oluşur:
 
 1.  **Docker Desktop'ın yüklü ve çalıştığından emin olun.**
 2.  **Bu repoyu klonlayın:** `git clone https://github.com/AzuraForge/platform.git`
-3.  **.env dosyasını oluşturun:** Proje kök dizininde `.env` oluşturup içine `REPORTS_DIR=./reports` ve `REDIS_URL=redis://redis:6379/0` yazın.
-4.  **Rapor Dizinini Oluşturun:** `mkdir -p ./reports`
+3.  **.env dosyasını oluşturun:** Proje kök dizininde `.env` oluşturup içine aşağıdaki satırları ekleyin:
+    ```
+    REDIS_URL=redis://redis:6379/0
+    REPORTS_DIR=./reports
+    CACHE_DIR=./.cache
+    ```
+4.  **Gerekli Dizinleri Oluşturun:** `mkdir -p ./reports ./.cache`
 5.  **Platformu başlatın:** `docker-compose up --build -d`
 6.  **Platforma erişin:**
     -   **Dashboard:** `http://localhost:5173`
     -   **API Dokümantasyonu:** `http://localhost:8000/api/v1/docs`
 7.  **Deneyin ve Keşfedin:** Dashboard'dan bir deney başlatın, canlı takip panelini izleyin ve deney bittiğinde "Raporu Görüntüle" butonuyla interaktif sonuçları inceleyin.
 
-## 🛠️ Geliştirme Rehberi ve İç Detaylar
+## 🛠️ Geliştirme Rehberi ve Katkıda Bulunma
 
-Platformun nasıl çalıştığını, nasıl katkıda bulunacağınızı ve geliştirme ortamınızı nasıl yöneteceğinizi öğrenmek için **[Geliştirme Rehberi](./docs/DEVELOPMENT_GUIDE.md)**'ne göz atın.
+Platformun nasıl çalıştığını, nasıl katkıda bulunacağınızı ve geliştirme ortamınızı nasıl yöneteceğinizi öğrenmek için aşağıdaki belgelere göz atın:
 
-## 🗺️ Yol Haritası ve Gelecek Vizyonu
-
-Projenin tamamlanan aşamaları, mevcut durumu ve gelecek hedefleri hakkında bilgi almak için **[Proje Yolculuğu](./docs/PROJECT_JOURNEY.md)** belgesini okuyun.
+-   **[Geliştirme Rehberi](./docs/DEVELOPMENT_GUIDE.md)**
+-   **[Katkıda Bulunma Rehberi](./docs/CONTRIBUTING.md)**

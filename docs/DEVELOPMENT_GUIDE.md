@@ -1,8 +1,15 @@
+========== FILE: docs/DEVELOPMENT_GUIDE.md ==========
 # 🛠️ AzuraForge Platform Geliştirme Rehberi
 
 Bu belge, AzuraForge platformunda geliştirme yapmak isteyenler için adım adım kurulum, çalışma prensipleri ve katkıda bulunma yönergelerini içerir.
 
 ## 🎯 Temel Felsefemiz
+
+AzuraForge'da geliştirme yaparken, iki temel prensibi aklımızda tutarız:
+
+1.  **Bağımsız Paketler:** Her repo (`core`, `learner`, `api` vb.), kendi başına yaşayan, kurulabilir ve test edilebilir bağımsız bir Python/JavaScript paketidir.
+2.  **Düzenlenebilir Kurulum:** Repolar arası bağımlılıklar, yerel geliştirmeyi hızlandırmak için `pip install -e` (editable) komutuyla kurulur. Bu sayede bir kütüphanede yaptığınız değişiklik, diğerlerine anında yansır.
+
 
 Her repomuz, kendi başına yaşayan, kurulabilir ve test edilebilir bağımsız bir Python/JavaScript paketidir. Repolar arası bağımlılıklar, Git adresleri (`@git+https://...`) üzerinden kurulur.
 

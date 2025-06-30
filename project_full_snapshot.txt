@@ -114,11 +114,20 @@ volumes:
 ========== FILE: README.md ==========
 # AzuraForge Platform 🚀
 
-**AzuraForge Platform**, yapay zeka modellerini sıfırdan oluşturmak, eğitmek, canlı olarak takip etmek ve sonuçlarını interaktif raporlarla analiz etmek için tasarlanmış modüler, dağıtık ve eklenti tabanlı bir MLOps platformudur.
+**AzuraForge**, yapay zeka modellerini sıfırdan oluşturmak, eğitmek, canlı olarak takip etmek ve sonuçlarını interaktif raporlarla analiz etmek için tasarlanmış, **olay güdümlü, eklenti tabanlı ve dağıtık bir MLOps platformudur.**
 
 Bu depo, AzuraForge ekosistemindeki tüm ana servisleri (API, Worker, Dashboard) ve kütüphaneleri (Core, Learner, Applications) bir araya getiren **orkestrasyon katmanıdır**.
 
-## ✨ Platform Yetenekleri
+## ✨ Platform Felsefesi
+
+Platformumuz iki temel prensip üzerine kuruludur:
+
+1.  **Sıfırdan İnşa ve Derin Anlayış:** Temel algoritmaları sıfırdan yazarak sistem üzerinde tam kontrol ve derinlemesine bir anlayış sağlıyoruz.
+2.  **Modüler ve Ölçeklenebilir Ekosistem:** Bağımsız servisler, olaylar (Redis Pub/Sub) ve görevler (Celery) üzerinden haberleşerek sağlam, esnek ve büyümeye açık bir yapı oluşturur.
+
+Projemizin felsefesini, evrimini ve detaylı yol haritasını öğrenmek için **[Proje Yolculuğu](./docs/PROJECT_JOURNEY.md)** belgemizi inceleyin.
+
+## 🌟 Platform Yetenekleri
 
 *   **Sıfırdan İnşa Edilmiş Çekirdek:** Otomatik türev, `LSTM` gibi gelişmiş katmanlar ve `Adam` optimizer içeren, saf Python/NumPy tabanlı bir derin öğrenme motoru.
 *   **Modüler Mikroservis Mimarisi:** Her bileşen (`api`, `worker`, `learner` vb.) kendi bağımsız reposunda yaşar, bağımsız olarak geliştirilebilir ve kurulabilir.
@@ -131,8 +140,8 @@ Bu depo, AzuraForge ekosistemindeki tüm ana servisleri (API, Worker, Dashboard)
 
 AzuraForge, aşağıdaki bağımsız GitHub depolarından oluşur:
 
--   **`core`**: Temel matematik motoru.
--   **`learner`**: Yüksek seviyeli öğrenme kütüphanesi (`Learner`, `Callback` sistemi, `BasePipeline` ve raporlama araçları).
+-   **`core`**: Temel matematik motoru (`Tensor`).
+-   **`learner`**: Yüksek seviyeli öğrenme kütüphanesi (`Learner`, `Callback` sistemi, `BasePipeline`).
 -   **`applications`**: Resmi uygulama katalogu.
 -   **`app-stock-predictor`**: Gerçek bir uygulama eklentisi örneği.
 -   **`api`**: RESTful API ve WebSocket (Pub/Sub tabanlı) sunan iletişim katmanı.
@@ -143,21 +152,25 @@ AzuraForge, aşağıdaki bağımsız GitHub depolarından oluşur:
 
 1.  **Docker Desktop'ın yüklü ve çalıştığından emin olun.**
 2.  **Bu repoyu klonlayın:** `git clone https://github.com/AzuraForge/platform.git`
-3.  **.env dosyasını oluşturun:** Proje kök dizininde `.env` oluşturup içine `REPORTS_DIR=./reports` ve `REDIS_URL=redis://redis:6379/0` yazın.
-4.  **Rapor Dizinini Oluşturun:** `mkdir -p ./reports`
+3.  **.env dosyasını oluşturun:** Proje kök dizininde `.env` oluşturup içine aşağıdaki satırları ekleyin:
+    ```
+    REDIS_URL=redis://redis:6379/0
+    REPORTS_DIR=./reports
+    CACHE_DIR=./.cache
+    ```
+4.  **Gerekli Dizinleri Oluşturun:** `mkdir -p ./reports ./.cache`
 5.  **Platformu başlatın:** `docker-compose up --build -d`
 6.  **Platforma erişin:**
     -   **Dashboard:** `http://localhost:5173`
     -   **API Dokümantasyonu:** `http://localhost:8000/api/v1/docs`
 7.  **Deneyin ve Keşfedin:** Dashboard'dan bir deney başlatın, canlı takip panelini izleyin ve deney bittiğinde "Raporu Görüntüle" butonuyla interaktif sonuçları inceleyin.
 
-## 🛠️ Geliştirme Rehberi ve İç Detaylar
+## 🛠️ Geliştirme Rehberi ve Katkıda Bulunma
 
-Platformun nasıl çalıştığını, nasıl katkıda bulunacağınızı ve geliştirme ortamınızı nasıl yöneteceğinizi öğrenmek için **[Geliştirme Rehberi](./docs/DEVELOPMENT_GUIDE.md)**'ne göz atın.
+Platformun nasıl çalıştığını, nasıl katkıda bulunacağınızı ve geliştirme ortamınızı nasıl yöneteceğinizi öğrenmek için aşağıdaki belgelere göz atın:
 
-## 🗺️ Yol Haritası ve Gelecek Vizyonu
-
-Projenin tamamlanan aşamaları, mevcut durumu ve gelecek hedefleri hakkında bilgi almak için **[Proje Yolculuğu](./docs/PROJECT_JOURNEY.md)** belgesini okuyun.
+-   **[Geliştirme Rehberi](./docs/DEVELOPMENT_GUIDE.md)**
+-   **[Katkıda Bulunma Rehberi](./docs/CONTRIBUTING.md)**
 ========== FILE: api/pyproject.toml ==========
 [build-system]
 requires = ["setuptools>=61.0"]
@@ -2330,9 +2343,10 @@ export const getCssVar = (varName) => {
   return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
 };
 ========== FILE: docs/CONTRIBUTING.md ==========
-# 🤝 AzuraForge Platforma Katkıda Bulunma Rehberi
+========== FILE: docs/CONTRIBUTING.md ==========
+# 🤝 AzuraForge Platformuna Katkıda Bulunma Rehberi
 
-AzuraForge projesine gösterdiğiniz ilgi ve katkılarınız için teşekkür ederiz! Bu rehber, kod tabanının tutarlı, okunabilir, sürdürülebilir ve yüksek kalitede kalmasını sağlamak için benimsediğimiz çalışma prensiplerini ve standartlarını açıklamaktadır.
+AzuraForge projesine gösterdiğiniz ilgi ve katkılarınız için teşekkür ederiz! Bu proje, modern yapay zeka sistemlerinin nasıl inşa edilmesi gerektiğine dair bir vizyonu hayata geçirmeyi amaçlamaktadır. Bu rehber, kod tabanının tutarlı, okunabilir, sürdürülebilir ve yüksek kalitede kalmasını sağlamak için benimsediğimiz çalışma prensiplerini ve standartlarını açıklamaktadır.
 
 ## 🚀 Hızlı Başlangıç
 
@@ -2407,11 +2421,18 @@ Commit mesajları, yapılan değişikliği net bir şekilde açıklamalıdır ve
 Bu standartlara uyarak, AzuraForge platformunun uzun vadede sağlıklı, sürdürülebilir ve yüksek kalitede kalmasına yardımcı olursunuz.
 
 ========== FILE: docs/DEVELOPMENT_GUIDE.md ==========
+========== FILE: docs/DEVELOPMENT_GUIDE.md ==========
 # 🛠️ AzuraForge Platform Geliştirme Rehberi
 
 Bu belge, AzuraForge platformunda geliştirme yapmak isteyenler için adım adım kurulum, çalışma prensipleri ve katkıda bulunma yönergelerini içerir.
 
 ## 🎯 Temel Felsefemiz
+
+AzuraForge'da geliştirme yaparken, iki temel prensibi aklımızda tutarız:
+
+1.  **Bağımsız Paketler:** Her repo (`core`, `learner`, `api` vb.), kendi başına yaşayan, kurulabilir ve test edilebilir bağımsız bir Python/JavaScript paketidir.
+2.  **Düzenlenebilir Kurulum:** Repolar arası bağımlılıklar, yerel geliştirmeyi hızlandırmak için `pip install -e` (editable) komutuyla kurulur. Bu sayede bir kütüphanede yaptığınız değişiklik, diğerlerine anında yansır.
+
 
 Her repomuz, kendi başına yaşayan, kurulabilir ve test edilebilir bağımsız bir Python/JavaScript paketidir. Repolar arası bağımlılıklar, Git adresleri (`@git+https://...`) üzerinden kurulur.
 
@@ -2577,80 +2598,103 @@ Bu proje bir açık kaynak projesi olarak geliştirilmektedir. Katkıda bulunmak
 ========== FILE: docs/PROJECT_JOURNEY.md ==========
 # 🗺️ Proje Yolculuğu: AzuraForge'un Gelişim Hikayesi ve Gelecek Vizyonu
 
-Bu belge, AzuraForge platformunun başlangıcından mevcut durumuna kadar olan gelişim sürecini, karşılaşılan zorlukları, bulunan çözümleri ve projenin **modüler, ölçeklenebilir ve ihtiyaç odaklı bir yapay zeka geliştirme platformuna** dönüşme vizyonunu özetlemektedir.
+Bu belge, AzuraForge platformunun başlangıcından mevcut durumuna kadar olan gelişim sürecini, karşılaşılan zorlukları, bulunan çözümleri ve projenin **kendi kendini anlayan, sıfırdan inşa edilmiş, eklenti tabanlı ve evrensel bir yapay zeka geliştirme platformuna** dönüşme vizyonunu özetlemektedir.
 
-## 🎯 Proje Felsefesi ve Çıkış Hikayesi
+## 🚀 Proje Vizyonu ve Felsefesi
 
-AzuraForge'un her aşamasında, kalitesini ve sürdürülebilirliğini sağlamak için şu temel prensipleri benimsedik:
+AzuraForge, basit bir araç seti olmanın ötesinde, bir felsefeyi temsil eder: **Ferrari motorunu (kanıtlanmış, sıfırdan inşa edilmiş AI gücü) alıp, modüler ve genişletilebilir bir uzay gemisi şasisine (dağıtık MLOps mimarisi) monte etmek.** Bu uzay gemisi, yeni eklentilerle (`app-xx`) sürekli geliştirilerek farklı görevleri yerine getirebilen, akıllı ve kendi kendini yönetebilen bir yapıya dönüşür.
 
-1.  **Sıfırdan İnşa ve Tam Kontrol:** Temel algoritmaları ve yapıları (`Tensor` gibi) mümkün olduğunca sıfırdan implemente ederek, sistem üzerinde tam kontrol sağlamak ve derinlemesine öğrenmek.
-2.  **Modülerlik ve Sorumluluk Ayrımı (Microservices):** Her bileşenin (çekirdek kütüphane, API, worker, uygulama eklentisi, UI) tek ve net bir görevi vardır ve kendi bağımsız repo'sunda yaşar.
-3.  **Olay Güdümlü Mimari:** Bileşenler arası iletişim, bağımlılıkları azaltmak ve gerçek zamanlı yetenekler sağlamak için olaylar (Celery, Redis Pub/Sub, WebSockets) üzerinden gerçekleşir.
-4.  **Eklenti Tabanlı (Plug-in Architecture):** Yeni özellikler ve uygulamalar, mevcut platform koduna dokunmadan birer eklenti olarak kolayca eklenebilir.
-5.  **Kanıt Odaklı Geliştirme:** Her büyük özellik veya yetenek, gerçek dünya verisi üzerinde kabul edilebilir bir performansla kanıtlanmalıdır.
-6.  **Otomatik Kalite Kontrolü:** Kod kalitesi (linting, type checking, unit tests) ve versiyonlama süreçleri (CI/CD) otomatikleştirilmiştir.
+Bu vizyonu gerçekleştirmek için iki temel anayasal prensibe bağlıyız:
+
+1.  **Çekirdek Bağımsızlığı ve Derin Anlayış ("Smart Learner" Ruhu):**
+    Platformun kalbindeki (`azuraforge-core`, `azuraforge-learner`) algoritmalar ve yapılar, dış kütüphanelere minimal bağımlılıkla, temel prensipleri anlaşılarak sıfırdan inşa edilir. Bu bize tam kontrol, esneklik, şeffaflık ve derinlemesine bir "know-how" sağlar.
+
+2.  **Modüler ve Ölçeklenebilir Ekosistem ("AzuraForge" Mimarisi):**
+    Çekirdeğin saf gücü; dağıtık, asenkron, olay güdümlü ve eklenti tabanlı bir mimariyle sunulur. Bu sayede platform; sağlam, esnek, büyümeye açık ve modern mühendislik standartlarına uygun kalır.
+
+---
 
 ## ✅ Tamamlanan Fazlar ve Elde Edilen Başarılar
-### Faz 0: Fikir ve İlk Denemeler (Monolitik "Smart Learner" Prototipi)
-- **Düşünce:** Mevcut ML araçlarının karmaşıklığına bir tepki olarak, sıfırdan bir derin öğrenme motoru (`mininn`) inşa etme fikri doğdu.
-- **Kanıt:** LSTM mimarisi, hava durumu ve hisse senedi verileriyle test edildi ve yüksek başarı oranları elde edildi.
-- **Öğrenilen Ders:** Monolitik yapı hızlı prototipleme sağlasa da, ölçeklenebilirlik ve yönetim zorlukları ortaya çıkardı.
+
+### Faz 0: Fikir ve Prototip ("Smart Learner" Projesi)
+- **Düşünce:** Mevcut ML araçlarının karmaşıklığına, "kara kutu" yapısına ve aşırı bağımlılıklarına bir tepki olarak, sıfırdan bir derin öğrenme motoru (`mininn`) inşa etme fikri doğdu.
+- **Kanıt:** Monolitik bir prototip olan "Smart Learner" projesi geliştirildi. Sıfırdan yazılan `LSTM` mimarisi, hava durumu tahmininde **R² > 0.98**, hisse senedi fiyat tahmininde ise **R² ≈ 0.73** gibi somut ve etkileyici başarılar elde etti.
+- **Öğrenilen Ders:** Monolitik yapı hızlı prototipleme sağlasa da, ölçeklenebilirlik, canlı takip ve modüler genişleme için yetersizdi. Daha büyük bir vizyon için paradigma değişimi gerekiyordu.
 
 ### Faz 1-3: Mikroservis Mimarisine Geçiş ve Temel Yapının İnşası
 - **Karar:** Uzun vadeli sürdürülebilirlik için platform, bağımsız repolara (`azuraforge-core`, `learner`, `api`, `worker`, `dashboard` vb.) sahip bir mikroservis mimarisine dönüştürüldü.
 - **Yapı:** `docker-compose` ile orkestrasyon, `pip install -e` ile yerel geliştirme ve `git+https` ile repo'lar arası bağımlılıklar kuruldu.
 - **İlk Başarı:** `Dashboard` -> `API` -> `Worker` -> `Uygulama` -> `Learner` -> `Core` şeklindeki temel görev akışı başarıyla çalıştırıldı.
 
-### Faz 4-7: Canlı Takip Entegrasyonu ve Kararlılık Mücadelesi
-- **İlk Deneme (`task.update_state`):** `Learner` içerisinden doğrudan Celery'nin görev durumunu güncelleme denendi.
-- **Sorun 1 (Worker Çökmesi):** `LSTM` katmanının geriye yayılım (`backward`) implementasyonunun eksik olduğu ve `loss.backward()` çağrıldığında worker'ı çökerttiği tespit edildi.
-- **Çözüm 1:** `LSTM` katmanına ve `Tensor` objesine (`tanh` vb.) tam bir geriye yayılım desteği eklendi. Worker artık çökmüyordu.
-- **Sorun 2 (UI "Donması"):** Worker, CPU-yoğun eğitim görevi nedeniyle o kadar meşgul oluyordu ki, durum güncelleme mesajlarını (`task.update_state`) göndermeye fırsat bulamıyordu. UI, tüm güncellemeleri eğitimin sonunda toplu olarak alıyordu.
-- **Geçici Deneme (`time.sleep`):** Eğitim döngüsüne küçük bir bekleme ekleyerek I/O işlemlerine zaman tanıma denendi, ancak bu hem yetersiz kaldı hem de mimari olarak yanlıştı.
+### Faz 4-8: Gerçek Zamanlı Akışın Sağlanması (Pub/Sub Mimarisi - Dönüm Noktası)
+- **Sorun:** CPU-yoğun eğitim görevleri, Worker'ın durum güncelleme mesajlarını göndermesini engelleyerek arayüzün "donmasına" neden oluyordu.
+- **Çözüm:** Hesaplama ve raporlama görevlerini tamamen ayırmak için Redis Pub/Sub modeline geçildi.
+    - `Learner` sadece olay (`on_epoch_end`) yayınlayan saf bir bileşen haline getirildi.
+    - `Worker`, `RedisProgressCallback` aracılığıyla bu olayları dinleyip bir Redis kanalına yayınlar hale geldi.
+    - `API`, bu kanala abone olup, gelen her mesajı WebSocket üzerinden anında `Dashboard`'a iletir hale geldi.
+- **BAŞARI:** Bu mimari değişiklik sayesinde, anlık ve akıcı bir canlı takip deneyimi mümkün oldu.
 
-### Faz 8: Pub/Sub Mimarisi ile Gerçek Zamanlı Akışın Sağlanması (Dönüm Noktası)
-- **Karar:** Hesaplama ve raporlama görevlerini tamamen ayırmak için Redis Pub/Sub modeline geçildi.
-- **Yeni Mimari:**
-    1.  **`Learner`:** Artık sadece olayları (`on_epoch_end`) yayınlayan, teknoloji-agnostik ve saf bir bileşen haline getirildi.
-    2.  **`RedisProgressCallback`:** `Worker` tarafında, `Learner`'dan gelen olayları dinleyen ve ilerleme verisini bir Redis kanalına yayınlayan özel bir `Callback` sınıfı oluşturuldu.
-    3.  **`API`:** `WebSocket` bağlantısı kurulduğunda bu Redis kanalını dinleyen (`subscribe`) ve gelen her mesajı anında `Dashboard`'a ileten bir yapıya dönüştürüldü.
-- **BAŞARI:** Bu mimari değişiklik sayesinde, worker'ın CPU kullanımı ne kadar yoğun olursa olsun, ilerleme durumu bilgileri (epoch, kayıp vb.) anlık ve akıcı bir şekilde `Dashboard`'a iletilmeye başlandı.
+### Faz 9-17: Mimari Olgunluk ve Gelişmiş Yetenekler ("Checkpoint Echo")
+- **Standardizasyon (`BasePipeline`):** Uygulama eklentisi geliştirmeyi standartlaştıran `TimeSeriesPipeline` soyut sınıfı oluşturuldu.
+- **Verimlilik (Caching):** Harici API çağrılarını önbelleğe alan merkezi bir caching mekanizması eklendi.
+- **Akıllı Ön İşleme:** `TimeSeriesPipeline`'a, hedef değişkene otomatik logaritmik dönüşüm ve ters dönüşüm uygulama yeteneği kazandırıldı.
+- **Dinamik Raporlama:** Raporlama, statik Markdown dosyalarından, `results.json` verisini kullanan, `Chart.js` ile çizilmiş **interaktif ve canlı grafikler** sunan bir yapıya dönüştürüldü.
+- **BAŞARI:** Platform, kararlı, canlı takip yetenekli, dinamik raporlama sunan, verimli bir önbellekleme mekanizmasına ve gelişmiş ön işleme yeteneklerine sahip "Checkpoint Echo" kilometre taşına ulaştı.
 
-### Faz 9-11: Mimari Saflaştırma ve Standardizasyon
-- **Mimari Düzeltme:** `Learner` sınıfının Redis'e olan doğrudan bağımlılığı, bir `RedisProgressCallback` sınıfı yazılarak kaldırıldı. Raporlama sorumluluğu `Worker` katmanına (Callback aracılığıyla) devredilerek `Learner` tekrar teknoloji-agnostik ve saf hale getirildi.
-- **Hata Ayıklama:** `AttributeError` ve `NameError` gibi, büyük bir refactoring sürecinde ortaya çıkan entegrasyon hataları adım adım çözüldü.
-- **`BasePipeline` Mimarisi:** `Smart Learner` projesindeki pipeline soyutlama fikri, `azuraforge-learner` kütüphanesi içinde `TimeSeriesPipeline` adıyla yeniden hayata geçirildi. Bu, eklenti geliştirmeyi standartlaştıran ve kod tekrarını önleyen bir yapı sağladı. `app-stock-predictor` eklentisi bu yeni yapıya başarıyla uyarlandı.
+---
 
-### Faz 12-14: Dinamik ve İnteraktif Raporlama
-- **Veri Akışının Tamamlanması:** `Worker`'ın, deney sonunda sadece metrikleri değil, aynı zamanda grafik çizimi için gerekli olan tüm ham veriyi (`history`, `y_true`, `y_pred`, `time_index`) `results.json` dosyasına yazması sağlandı.
-- **Dinamik Rapor Endpoint'i:** `API`'ye, bir deneyin tüm bu zenginleştirilmiş JSON verisini döndüren bir `/details` endpoint'i eklendi.
-- **BAŞARI (İnteraktif Raporlama):** `Dashboard`'daki rapor sayfası, artık statik Markdown dosyalarını değil, bu dinamik JSON verisini kullanarak, `Chart.js` ile çizilmiş **interaktif ve canlı grafikler** sunar hale getirildi.
-- **BAŞARI (Canlı Tahmin Grafiği):** `LiveTrackerPane`, eğitim sırasında her `n` epoch'ta bir güncellenen "Tahmin vs Gerçek" grafiğini canlı olarak gösterecek şekilde geliştirildi.
-
-### Faz 15-17: Gelişmiş Yetenekler ve Mimari Olgunluk
-- **Standardizasyon (`BasePipeline`):** `Smart Learner` projesindeki pipeline soyutlama fikri, `azuraforge-learner` içinde `TimeSeriesPipeline` adıyla hayata geçirildi. Bu, eklenti geliştirmeyi standartlaştırdı ve `app-stock-predictor`'ın kodunu önemli ölçüde basitleştirdi.
-- **Performans Optimizasyonu (Caching):** Harici API çağrılarını önbelleğe alan merkezi bir caching mekanizması, `azuraforge-learner` kütüphanesine eklendi. Bu sayede, tekrarlanan deneyler için veri çekme adımı atlanarak platformun hızı ve verimliliği artırıldı.
-- **Akıllı Ön İşleme (Log Dönüşümü):** `TimeSeriesPipeline`, artık konfigürasyondan okuduğu `target_col_transform: "log"` ayarına göre, hedef değişkene otomatik olarak logaritmik dönüşüm ve tahminlere ters dönüşüm uygulayabilmektedir. Bu, model performansını artırmak için güçlü ve standart bir yöntem sunar.
-- **Hata Ayıklama ve Sağlamlaştırma:** `prefork` havuzunda karşılaşılan "sessiz çökme" sorunları, detaylı loglama ve bellek optimizasyonu teknikleri kullanılarak tespit edilip, `Learner` ve `Callback` arasındaki veri akışı düzeltilerek giderildi.
-
-**An itibarıyla AzuraForge Platformu, kararlı, canlı takip yetenekli, dinamik raporlama sunan, verimli bir önbellekleme mekanizmasına ve gelişmiş ön işleme yeteneklerine sahip "Checkpoint Echo" kilometre taşına ulaşmıştır. Platformun temel vizyonu tamamlanmış ve olgunlaşmıştır.**
-
-## 🗺️ Gelecek Vizyonu: Genişleme ve Kullanıcı Odaklı Geliştirmeler
+## 🗺️ Gelecek Vizyonu ve Stratejik Yol Haritası
 
 Bu sağlam temel üzerine inşa edilecek adımlar, AzuraForge'u daha da zenginleştirmeyi ve kapsamını genişletmeyi hedefleyecektir.
 
-### **Grup 1: Mevcut Deneyimi Mükemmelleştirme**
-- **Model Yönetimi:** `ModelCheckpoint` callback'ini kullanarak en iyi modelleri kaydetme ve bu modellere API üzerinden erişim sağlama.
-- **Hiperparametre Optimizasyonu:** `hyper_tuner` aracını, API üzerinden otomatik olarak yüzlerce deney başlatacak şekilde modernize etmek.
-- **UI Geliştirmeleri:** "Anlık Kayıp" gibi ek metriklerin ana deney listesinde gösterilmesi.
+### **Faz 0: Büyük Birleşme (The Grand Unification) - Mevcut Güçleri Konsolide Etme**
+*Bu faz, "Smart Learner" prototipinin kanıtlanmış başarılarını ve olgunlaşmış kodunu AzuraForge ekosistemine tam olarak entegre etmeyi hedefler.*
 
-### **Grup 2: Yeni Eklentiler ve Yetenek Kanıtı**
-- **`app-weather-forecaster`:** `TimeSeriesPipeline`'in gücünü kanıtlamak için hava durumu tahmincisi eklentisi, yeni standartlara uygun olarak hızla geliştirilecek.
-- **Sınıflandırma Problemleri:** Sınıflandırma görevleri için yeni bir `BaseClassificationPipeline` ve buna uygun raporlama (örn: Karışıklık Matrisi) araçları geliştirilecek.
+-   **1. Kanıtlanmış Pipeline'ları Eklenti Haline Getirme:**
+    -   `weather_forecaster` (R² > 0.98) ve `stock_predictor` (R² ≈ 0.73) pipeline'larını, AzuraForge standartlarına uygun, bağımsız `app-weather-forecaster` ve `app-stock-predictor` eklentileri olarak hayata geçirmek.
+-   **2. Motor ve Öğreniciyi Yükseltme:**
+    -   "Smart Learner"daki daha olgun `Tensor` ve `LSTM` implementasyonlarını, birim testleriyle birlikte `azuraforge-core` ve `azuraforge-learner` paketlerine taşımak.
+-   **3. Hikayeyi Birleştirme:**
+    -   Projenin tüm evrim hikayesini, bu belgede olduğu gibi tek ve tutarlı bir anlatıda birleştirmek.
 
-### **Grup 3: Çekirdeği Genişletme**
-- **Görüntü İşleme:** `Conv2D`, `MaxPool2D` gibi CNN katmanlarının `core`'a eklenmesi ve bir `app-image-classifier` eklentisinin geliştirilmesi.
-- **GPU Desteği:** `CuPy` entegrasyonunu test edip, `docker-compose.yml`'e GPU desteği eklemek.
+### **Faz 1: Deneyimi Derinleştirme ve Zenginleştirme**
+*Bu faz, platformu daha profesyonel ve güçlü kılacak temel MLOps yeteneklerini eklemeyi hedefler.*
+
+-   **1. Gelişmiş Model Yönetimi ve Sunumu:**
+    -   `ModelCheckpoint` callback'ini entegre ederek en iyi modelleri kalıcı olarak kaydetmek.
+    -   `API`'ye `/models` ve `/models/{model_id}/predict` gibi yeni endpoint'ler ekleyerek, kaydedilmiş modellere erişim ve onlar üzerinden tahmin yapma imkanı sağlamak.
+    -   `Dashboard`'a bir "Model Kayıt Defteri" sayfası eklemek.
+-   **2. "Hiper Sürücü" - Otomatik Hiperparametre Optimizasyonu:**
+    -   `Dashboard` üzerinden parametre aralıkları tanımlayarak hiperparametre optimizasyon görevleri başlatma arayüzü geliştirmek.
+    -   `Worker`'ın bu görevleri yüzlerce alt göreve bölerek paralel çalıştırmasını sağlamak.
+    -   Sonuçları `Dashboard`'da interaktif bir tablo veya ısı haritası ile görselleştirmek.
+-   **3. GPU Desteğinin Aktivasyonu (`CuPy`):**
+    -   `docker-compose.yml` dosyasına GPU desteği eklemek ve platformun uyumlu donanımlarda `CuPy` ile hızlandırılmasını sağlamak.
+
+### **Faz 2: Evreni Genişletme (Yeni Veri Modaliteleri ve Yetenekler)**
+*Bu faz, platformun farklı veri türleriyle çalışabilme yeteneğini kanıtlamayı hedefler.*
+
+-   **1. Görüntü İşleme Modülü (`app-image-classifier`):**
+    -   `azuraforge-core`'a `Conv2D`, `MaxPool2D`, `Flatten` katmanlarını sıfırdan eklemek.
+    -   `azuraforge-learner`'a `BaseImagePipeline` soyut sınıfını ve sınıflandırma raporlaması (`Confusion Matrix` vb.) eklemek.
+    -   `app-image-classifier` eklentisini geliştirmek.
+-   **2. Üretken Yapay Zeka Modülü (`app-gan-generator`):**
+    -   `azuraforge-core` ile basit bir GAN veya VAE mimarisi implemente etmek ve temel rakamlar üreten bir eklenti geliştirmek.
+-   **3. Doğal Dil İşleme / Ses Modülü (Projenin Kökenine Dönüş):**
+    -   `azuraforge-core`'a `Embedding` katmanı ve temel bir `Attention` mekanizması eklemek.
+    -   Metin sınıflandırma veya ses tanıma gibi görevler için temel pipeline'ları ve eklentileri oluşturarak daha karmaşık hedeflere (örn: TTS) zemin hazırlamak.
+
+### **Faz 3: Geleceği Kucaklamak (2025 ve Ötesi Trendleri)**
+*Bu faz, platformu endüstri standardı ve gerçekten "akıllı" bir sisteme dönüştürmeyi hedefler.*
+
+-   **1. Model Birleştirme ve Transfer Öğrenmesi:**
+    -   Platforma, sıfırdan eğitmek yerine, daha önce eğitilmiş bir modeli (model kayıt defterinden) yükleyip yeni bir veri setiyle **ince ayar (fine-tuning)** yapabilme yeteneği kazandırmak.
+-   **2. Açıklanabilir Yapay Zeka (XAI) Entegrasyonu:**
+    -   Raporlara, modelin bir tahmini "neden" yaptığını basitçe açıklayan (örn: SHAP, LIME entegrasyonu ile) bir bölüm eklemek.
+-   **3. Otomatik MLOps (AutoML-light):**
+    -   Hiperparametre optimizasyonu sonuçlarını analiz edip, bir sonraki deney için en olası parametre setini kullanıcıya öneren bir "Akıllı Asistan" özelliği geliştirmek.
+-   **4. Çoklu-Modalite (Multi-Modality):**
+    -   Tek bir pipeline'ın hem metin hem de görüntü gibi farklı türde girdileri aynı anda alarak tahmin yapabildiği mimarileri desteklemek.
 ========== FILE: learner/pyproject.toml ==========
 # learner/pyproject.toml
 
