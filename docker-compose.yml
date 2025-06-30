@@ -55,7 +55,7 @@ services:
         condition: service_started # Redis için basit başlangıç yeterli
     # === DEĞİŞİKLİK SONU ===
 
-  # 4. Worker Servisi
+  # 4. Worker Servisi (GPU Yetenekli)
   worker:
     container_name: azuraforge_worker
     build:
@@ -71,13 +71,21 @@ services:
       - REPORTS_DIR=/app/reports
       - CACHE_DIR=/app/.cache
       - DATABASE_URL=${DATABASE_URL}
-    # === DEĞİŞİKLİK BURADA ===
-    # depends_on yapısı, sağlık kontrolünü bekleyecek şekilde güncellendi
+      # YENİ: Cihazı GPU olarak ayarlıyoruz
+      - AZURAFORGE_DEVICE=gpu
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_started
+    # === YENİ BÖLÜM: GPU KAYNAKLARINI AYIRMA ===
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1 # veya 'all'
+              capabilities: [gpu]
     # === DEĞİŞİKLİK SONU ===
 
   # 5. Dashboard Servisi
