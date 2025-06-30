@@ -1,5 +1,5 @@
 PROJE KOD SNAPSHOT (TAM)
-Toplam 94 dosya bulundu ve eklendi.
+Toplam 95 dosya bulundu ve eklendi.
 Dahil Edilen Dizinler: .
 Dahil Edilen Uzantılar: .toml, .py, .yaml, .yml, .json, .md, .txt, html, .bat, .sh, .jsx, .js, .json, .css
 Hariç Tutulan Desenler/Yollar: __pycache__, .git, .venv, .vscode, .idea, build, dist, *.egg-info, *.pyc, *.so, *.pyd, .pytest_cache, .mypy_cache, .dataset, dataset, .logs, logs, .output, output, inputs, outputs, .tmp, checkpoints, reports, docs/_build, site, node_modules, .DS_Store, Thumbs.db, *.lock
@@ -9,12 +9,12 @@ Hariç Tutulan Desenler/Yollar: __pycache__, .git, .venv, .vscode, .idea, build,
 services:
   # 1. Redis Servisi
   redis:
-    image: "redis:alpine"
+    image: redis:alpine
     container_name: azuraforge_redis
     ports: ["6379:6379"]
     volumes: ["redis_data:/data"]
 
-  # 2. YENİ: PostgreSQL Veritabanı Servisi
+  # 2. PostgreSQL Veritabanı Servisi (Sağlık Kontrolü ile)
   postgres:
     image: postgres:15-alpine
     container_name: azuraforge_postgres
@@ -27,6 +27,13 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: always
+    # === YENİ BÖLÜM: SAĞLIK KONTROLÜ ===
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    # === DEĞİŞİKLİK SONU ===
 
   # --- ANA PLATFORM SERVİSLERİ ---
 
@@ -46,12 +53,17 @@ services:
       - REDIS_URL=${REDIS_URL}
       - REPORTS_DIR=/app/reports
       - CACHE_DIR=/app/.cache
-      # YENİ: Veritabanı bağlantı bilgisi
       - DATABASE_URL=${DATABASE_URL}
-    # YENİ: Veritabanı ve Redis'e bağımlı
-    depends_on: [redis, postgres]
+    # === DEĞİŞİKLİK BURADA ===
+    # depends_on yapısı, sağlık kontrolünü bekleyecek şekilde güncellendi
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started # Redis için basit başlangıç yeterli
+    # === DEĞİŞİKLİK SONU ===
 
-  # 4. Worker Servisi
+  # 4. Worker Servisi (GPU Yetenekli)
   worker:
     container_name: azuraforge_worker
     build:
@@ -66,10 +78,23 @@ services:
       - REDIS_URL=${REDIS_URL}
       - REPORTS_DIR=/app/reports
       - CACHE_DIR=/app/.cache
-      # YENİ: Veritabanı bağlantı bilgisi
       - DATABASE_URL=${DATABASE_URL}
-    # YENİ: Veritabanı ve Redis'e bağımlı
-    depends_on: [redis, postgres]
+      # YENİ: Cihazı GPU olarak ayarlıyoruz
+      - AZURAFORGE_DEVICE=gpu
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    # === YENİ BÖLÜM: GPU KAYNAKLARINI AYIRMA ===
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1 # veya 'all'
+              capabilities: [gpu]
+    # === DEĞİŞİKLİK SONU ===
 
   # 5. Dashboard Servisi
   dashboard:
@@ -86,7 +111,7 @@ services:
 
 volumes:
   redis_data:
-  postgres_data: # YENİ: Postgres verilerini kalıcı tutmak için volume
+  postgres_data:
 ========== FILE: README.md ==========
 # AzuraForge Platform 🚀
 
@@ -182,13 +207,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "azuraforge-api"
-version = "0.1.0"
+version = "0.2.2" # Versiyonu worker ile senkronize edelim
 description = "The API server for the AzuraForge Platform."
 requires-python = ">=3.8"
 
 dependencies = [
-    "azuraforge-learner @ git+https://github.com/AzuraForge/learner.git@v0.1.3",
-    "azuraforge-worker @ git+https://github.com/AzuraForge/worker.git@v0.1.0",
+    "azuraforge-learner @ git+https://github.com/AzuraForge/learner.git@v0.1.4",
+    # worker'ın yeni etiketine işaret ediyor
+    "azuraforge-worker @ git+https://github.com/AzuraForge/worker.git@v0.2.2",
     "azuraforge-applications @ git+https://github.com/AzuraForge/applications.git@v0.1.0",
     "fastapi",
     "uvicorn[standard]",
@@ -196,6 +222,8 @@ dependencies = [
     "python-dotenv",
     "pyyaml",
     "redis",
+    "SQLAlchemy",
+    "psycopg2-binary",
 ]
 
 [project.scripts]
@@ -204,16 +232,12 @@ start-api = "azuraforge_api.main:run_server"
 [project.urls]
 "Homepage" = "https://github.com/AzuraForge/api"
 
-# === DEĞİŞİKLİK BURADA ===
-# 'extras' yerine standart olan 'optional-dependencies' kullanılıyor.
 [project.optional-dependencies]
 dev = [
     "pytest",
     "pytest-asyncio",
     "httpx",
 ]
-# === DEĞİŞİKLİK SONU ===
-
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -503,123 +527,170 @@ async def websocket_task_status(websocket: WebSocket, task_id: str):
 # api/src/azuraforge_api/services/experiment_service.py
 
 import json
-import os
-import glob
+import itertools
+import uuid
+from datetime import datetime
 from importlib import resources
-from typing import List, Dict, Any
-from celery.result import AsyncResult 
+from typing import List, Dict, Any, Generator
 from fastapi import HTTPException
+from celery.result import AsyncResult
+from sqlalchemy import desc
 
+from azuraforge_worker.database import SessionLocal, Experiment
 from azuraforge_worker import celery_app
-# Bu importun çalışması için worker'ın -e ile kurulmuş olması gerekir.
-# Docker build sırasında bu sağlanır.
 from azuraforge_worker.tasks.training_tasks import AVAILABLE_PIPELINES_AND_CONFIGS
 
-REPORTS_BASE_DIR = os.path.abspath(os.getenv("REPORTS_DIR", "/app/reports"))
+# --- Helper Fonksiyonlar ---
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+def _generate_config_combinations(config: Dict[str, Any]) -> Generator[Dict[str, Any], None, None]:
+    varying_params = {}
+    static_params = {}
+    
+    def _traverse_and_split(conf, path=""):
+        for key, value in conf.items():
+            new_path = f"{path}.{key}" if path else key
+            if isinstance(value, list):
+                varying_params[new_path] = value
+            elif isinstance(value, dict):
+                _traverse_and_split(value, new_path)
+            else:
+                static_params[new_path] = value
+
+    _traverse_and_split(config)
+
+    if not varying_params:
+        yield config
+        return
+
+    param_names = list(varying_params.keys())
+    param_values = list(varying_params.values())
+    
+    for combo in itertools.product(*param_values):
+        new_config = {}
+        for key_path, value in static_params.items():
+            keys = key_path.split('.')
+            d = new_config
+            for k in keys[:-1]:
+                d = d.setdefault(k, {})
+            d[keys[-1]] = value
+            
+        for i, key_path in enumerate(param_names):
+            keys = key_path.split('.')
+            d = new_config
+            for k in keys[:-1]:
+                d = d.setdefault(k, {})
+            d[keys[-1]] = combo[i]
+            
+        yield new_config
+
+# --- API Servis Fonksiyonları ---
 
 def get_available_pipelines() -> List[Dict[str, Any]]:
-    """
-    Sisteme kurulu ve "resmi" olarak listelenmiş pipeline'ları döndürür.
-    """
     official_apps_data = []
     try:
-        # Uygulama katalogunu oku
         with resources.open_text("azuraforge_applications", "official_apps.json") as f:
             official_apps_data = json.load(f)
-    except (FileNotFoundError, ModuleNotFoundError) as e:
-        print(f"ERROR: Could not find or read the official apps catalog. {e}")
-
-    # Sadece worker tarafından gerçekten keşfedilen pipeline'ları filtrele
-    available_pipelines_with_configs = []
-    for app_meta in official_apps_data:
-        app_id = app_meta.get("id")
-        if app_id in AVAILABLE_PIPELINES_AND_CONFIGS:
-            available_pipelines_with_configs.append(app_meta)
+    except (FileNotFoundError, ModuleNotFoundError):
+        pass
     
-    return available_pipelines_with_configs
+    available_pipelines = [app for app in official_apps_data if app.get("id") in AVAILABLE_PIPELINES_AND_CONFIGS]
+    return available_pipelines
 
 def get_default_pipeline_config(pipeline_id: str) -> Dict[str, Any]:
-    """
-    Belirli bir pipeline'ın varsayılan konfigürasyonunu döndürür.
-    """
     pipeline_info = AVAILABLE_PIPELINES_AND_CONFIGS.get(pipeline_id)
     if not pipeline_info:
-        raise ValueError(f"Pipeline '{pipeline_id}' not found or its config function is missing.")
+        raise ValueError(f"Pipeline '{pipeline_id}' not found.")
     
     get_config_func = pipeline_info.get('get_config_func')
     if not get_config_func:
-        return {"message": "No specific default configuration available for this pipeline."}
-
+        return {"message": "No specific default configuration available."}
     return get_config_func()
 
-def list_experiments() -> List[Dict[str, Any]]:
-    """
-    Raporlar dizinindeki tüm deneylerin `results.json` dosyalarını okur ve
-    bir liste olarak döndürür.
-    """
-    experiment_files = glob.glob(f"{REPORTS_BASE_DIR}/**/results.json", recursive=True)
-    experiments = []
-    for f_path in experiment_files:
-        try:
-            with open(f_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                experiments.append(data)
-        except Exception as e:
-            print(f"Warning: Could not read or parse {f_path}: {e}")
-            continue
-    
-    # En yeniden en eskiye doğru sırala
-    experiments.sort(key=lambda x: x.get('config', {}).get('start_time', ''), reverse=True)
-    return experiments
 
 def start_experiment(config: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Yeni bir deneyi başlatmak için Celery'ye bir görev gönderir.
-    """
-    # Celery görevinin adını doğrudan belirtmek daha güvenilirdir.
-    task = celery_app.send_task("start_training_pipeline", args=[config])
-    return {"message": "Experiment submitted to worker.", "task_id": task.id}
+    task_ids = []
+    batch_id = str(uuid.uuid4())
+    batch_name = config.pop("batch_name", f"Batch-{datetime.now().strftime('%Y-%m-%d-%H%M')}")
+    
+    combinations = list(_generate_config_combinations(config))
+    num_combinations = len(combinations)
+
+    for single_config in combinations:
+        if num_combinations > 1:
+            single_config['batch_id'] = batch_id
+            single_config['batch_name'] = batch_name
+        else:
+            single_config['batch_id'] = None
+            single_config['batch_name'] = None
+            
+        task = celery_app.send_task("start_training_pipeline", args=[single_config])
+        task_ids.append(task.id)
+
+    if num_combinations > 1:
+        return {
+            "message": f"{num_combinations} experiments submitted as a batch.",
+            "batch_id": batch_id,
+            "task_ids": task_ids
+        }
+    else:
+        return {"message": "Experiment submitted to worker.", "task_id": task_ids[0]}
+
+def list_experiments() -> List[Dict[str, Any]]:
+    """Veritabanındaki tüm deneylerin bir özetini en yeniden eskiye doğru listeler."""
+    with SessionLocal() as db:
+        experiments = db.query(Experiment).order_by(desc(Experiment.created_at)).all()
+        
+        results_summary = []
+        for exp in experiments:
+            # Sadece Dashboard'un liste görünümü için gerekli olan verileri gönderiyoruz.
+            summary = {
+                "experiment_id": exp.id,
+                "task_id": exp.task_id,
+                "pipeline_name": exp.pipeline_name,
+                "status": exp.status,
+                "created_at": exp.created_at.isoformat() if exp.created_at else None,
+                "completed_at": exp.completed_at.isoformat() if exp.completed_at else None,
+                "failed_at": exp.failed_at.isoformat() if exp.failed_at else None,
+                "batch_id": exp.batch_id,
+                "batch_name": exp.batch_name,
+                "config_summary": {
+                    "ticker": exp.config.get("data_sourcing", {}).get("ticker", "N/A") if exp.config else "N/A",
+                    "epochs": exp.config.get("training_params", {}).get("epochs", "N/A") if exp.config else "N/A",
+                    "lr": exp.config.get("training_params", {}).get("lr", "N/A") if exp.config else "N/A",
+                },
+                "results_summary": {
+                    "final_loss": exp.results.get("final_loss") if exp.results else None
+                }
+            }
+            results_summary.append(summary)
+        return results_summary
+
+def get_experiment_details(experiment_id: str) -> Dict[str, Any]:
+    """Belirli bir deneyin tüm detaylarını veritabanından çeker."""
+    with SessionLocal() as db:
+        exp = db.query(Experiment).filter(Experiment.id == experiment_id).first()
+        if not exp:
+            raise HTTPException(status_code=404, detail=f"Experiment '{experiment_id}' not found.")
+        
+        return {
+            "experiment_id": exp.id, "task_id": exp.task_id, "pipeline_name": exp.pipeline_name,
+            "status": exp.status, "config": exp.config, "results": exp.results, "error": exp.error,
+            "created_at": exp.created_at.isoformat() if exp.created_at else None,
+            "completed_at": exp.completed_at.isoformat() if exp.completed_at else None,
+            "failed_at": exp.failed_at.isoformat() if exp.failed_at else None,
+            "batch_id": exp.batch_id,
+            "batch_name": exp.batch_name,
+        }
 
 def get_task_status(task_id: str) -> Dict[str, Any]:
-    """
-    Belirli bir Celery görevinin anlık durumunu döndürür.
-    """
     task_result = AsyncResult(task_id, app=celery_app)
-    
-    if task_result.state == 'SUCCESS':
-        # Başarılı görevlerde sonuç (result) genellikle büyük olabilir,
-        # bu yüzden doğrudan sonucu döndürmek yerine sadece durumu bildirebiliriz.
-        # /details endpoint'i tam sonucu almak için kullanılmalıdır.
-        return {"status": "SUCCESS"}
-    elif task_result.state == 'FAILURE':
-        return {"status": "FAILURE", "error": str(task_result.info)}
-    else: # PENDING, PROGRESS, etc.
-        return {"status": task_result.state, "details": task_result.info}
-
-# YENİ FONKSİYON (get_experiment_report yerine)
-def get_experiment_details(experiment_id: str) -> Dict[str, Any]:
-    """
-    Belirli bir deneye ait results.json dosyasının tüm içeriğini döndürür.
-    Bu, UI'da dinamik rapor oluşturmak için kullanılır.
-    """
-    # Güvenlik: Path traversal saldırılarını önle
-    if ".." in experiment_id or "/" in experiment_id or "\\" in experiment_id:
-        raise HTTPException(status_code=400, detail="Invalid experiment ID format.")
-
-    # Rapor dosyasını bulmak için tüm alt dizinlerde ara
-    report_path_pattern = os.path.join(REPORTS_BASE_DIR, "**", experiment_id, "results.json")
-    report_files = glob.glob(report_path_pattern, recursive=True)
-
-    if not report_files:
-        raise HTTPException(status_code=404, detail=f"Details for experiment '{experiment_id}' not found.")
-    
-    report_path = report_files[0]
-
-    try:
-        with open(report_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Could not read details file: {e}")
+    return {"status": task_result.state, "details": task_result.info}
 ========== FILE: api/src/azuraforge_api/services/__init__.py ==========
 
 ========== FILE: api/src/azuraforge_api/tasks/training_tasks.py ==========
@@ -689,11 +760,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "azuraforge-app-stock-predictor"
-version = "0.1.0"
+# Versiyonu yeni bir düzeltme için artırıyoruz
+version = "0.1.1"
 description = "A stock prediction pipeline application for the AzuraForge platform."
 requires-python = ">=3.8"
 dependencies = [
-    "azuraforge-learner @ git+https://github.com/AzuraForge/learner.git@v0.1.3", # <-- DEĞİŞTİ
+    # @main yerine kararlı versiyon etiketi kullanılıyor.
+    "azuraforge-learner @ git+https://github.com/AzuraForge/learner.git@v0.1.3",
     "yfinance",
     "pandas",
     "scikit-learn",
@@ -701,12 +774,8 @@ dependencies = [
 ]
 
 [project.entry-points]
-# Var olan giriş noktası
 "azuraforge.pipelines" = { stock_predictor = "azuraforge_stockapp.pipeline:StockPredictionPipeline" }
-
-# --- YENİ GİRİŞ NOKTASI GRUBU ---
 "azuraforge.configs" = { stock_predictor = "azuraforge_stockapp.pipeline:get_default_config" }
-
 ========== FILE: app-stock-predictor/README.md ==========
 # app-stock-predictor
 
@@ -920,7 +989,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "azuraforge-core"
-version = "0.1.2"
+version = "0.1.3"
 authors = [{ name = "Azmi Sahin" }]
 description = "The core automatic differentiation engine (Tensor object) for the AzuraForge ecosystem."
 readme = "README.md"
@@ -989,8 +1058,13 @@ jobs:
         pytest
 ========== FILE: core/src/azuraforge_core/tensor.py ==========
 import os
-from typing import Callable, List, Optional, Set, Tuple, Union, Any, cast
+from typing import Callable, List, Optional, Set, Tuple, Union, Any
 import numpy as np
+import logging # Loglama için import et
+
+# === DEĞİŞİKLİK BURADA: Cihaz algılandığında logla ===
+# Loglamayı yapılandır
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - CORE - %(levelname)s - %(message)s')
 
 DEVICE = os.environ.get("AZURAFORGE_DEVICE", "cpu").lower()
 
@@ -999,13 +1073,17 @@ if DEVICE == "gpu":
     try:
         import cupy
         xp = cupy
+        logging.info("✅ AzuraForge Core: CuPy (GPU) backend successfully loaded.")
     except ImportError:
         import numpy
         xp = numpy
+        logging.warning("⚠️ AzuraForge Core: AZURAFORGE_DEVICE set to 'gpu' but CuPy not found. Falling back to NumPy (CPU).")
         DEVICE = "cpu"
 else:
     import numpy
     xp = numpy
+    logging.info("ℹ️ AzuraForge Core: NumPy (CPU) backend is active.")
+# === DEĞİŞİKLİK SONU ===
 
 ArrayType = Any
 ScalarType = Union[int, float, bool, np.number, xp.number]
@@ -1015,8 +1093,16 @@ def _empty_backward_op() -> None: pass
 class Tensor:
     def __init__(self, data: Any, _children: Tuple["Tensor", ...] = (), _op: str = "", requires_grad: bool = False):
         if isinstance(data, Tensor): self.data = data.data.copy()
-        else: self.data = xp.array(data, dtype=np.float64)
-        
+        else: 
+            # Veriyi doğru cihaza taşı
+            try:
+                # Eğer xp, cupy ise bu veriyi GPU'ya taşır.
+                self.data = xp.array(data, dtype=np.float64)
+            except Exception as e:
+                # GPU'ya taşıma sırasında hata olursa (örn. CUDA context hatası) logla
+                logging.error(f"Error transferring data to device '{DEVICE}': {e}. Falling back to CPU.")
+                self.data = np.array(data, dtype=np.float64)
+
         self.requires_grad = requires_grad
         self.grad: Optional[ArrayType] = xp.zeros_like(self.data) if requires_grad else None
         self._backward: Callable[[], None] = _empty_backward_op
@@ -1031,15 +1117,12 @@ class Tensor:
             if v not in visited:
                 visited.add(v); [build_topo(child) for child in v._prev]; topo.append(v)
         build_topo(self)
-        # Gradyanları sıfırla
         for t in topo:
             if t.grad is not None:
                 t.grad.fill(0.0)
         
-        # Bu tensörün gradyanını başlat
         self.grad = xp.ones_like(self.data) if grad_output is None else xp.asarray(grad_output, dtype=np.float64).reshape(self.data.shape)
         
-        # Topolojik sırayla geriye doğru git
         for v in reversed(topo):
             v._backward()
 
@@ -1112,7 +1195,6 @@ class Tensor:
         out._backward = _backward
         return out
     
-    # DÜZELTME: Tanh'a tam bir backward pass eklendi.
     def tanh(self) -> "Tensor":
         t = xp.tanh(self.data)
         out = Tensor(t, (self,), "Tanh", self.requires_grad)
@@ -1144,7 +1226,7 @@ def _unbroadcast_to(target_shape: Tuple[int, ...], grad: ArrayType) -> ArrayType
 
     axes_to_sum = []
     for i, dim in enumerate(target_shape):
-        if dim == 1 and grad.shape[i] > 1: # İkinci koşul önemli
+        if dim == 1 and grad.shape[i] > 1:
             axes_to_sum.append(i)
     
     if axes_to_sum:
@@ -1821,12 +1903,10 @@ function ComparisonView({ experiments, onClose }) {
 ComparisonView.propTypes = { experiments: PropTypes.array.isRequired, onClose: PropTypes.func.isRequired, };
 export default ComparisonView;
 ========== FILE: dashboard/src/components/ExperimentRow.jsx ==========
-// dashboard/src/components/ExperimentRow.jsx
-
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { toast } from 'react-toastify';
-import { Link } from 'react-router-dom'; // YENİ
+import { Link } from 'react-router-dom';
 
 const Icon = ({ path, className }) => <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d={path} /></svg>;
 Icon.propTypes = { path: PropTypes.string.isRequired, className: PropTypes.string };
@@ -1838,28 +1918,34 @@ const ICONS = {
   report: "M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"
 };
 
-function ExperimentRow({ experiment, isSelected, onSelect, onReRun, setTrackingTaskId }) {
+function ExperimentRow({ experiment, isSelected, onSelect, setTrackingTaskId }) {
   const [actionsOpen, setActionsOpen] = useState(false);
-  const { experiment_id, status, config, results, completed_at, failed_at, task_id } = experiment;
+  const { 
+    experiment_id, status, task_id, pipeline_name,
+    created_at, completed_at, failed_at,
+    config_summary, results_summary
+  } = experiment;
 
-  const handleCopyConfig = () => {
-    navigator.clipboard.writeText(JSON.stringify(config, null, 2));
-    toast.success('Konfigürasyon panoya kopyalandı!');
+  const handleCopyId = () => {
+    navigator.clipboard.writeText(experiment_id);
+    toast.success('Deney ID panoya kopyalandı!');
     setActionsOpen(false);
   };
 
   const isRunning = ['STARTED', 'PROGRESS', 'PENDING'].includes(status);
-  const finalLoss = results?.final_loss;
+  const finalLoss = results_summary?.final_loss;
   const displayLoss = (finalLoss !== null && finalLoss !== undefined) ? finalLoss.toFixed(6) : 'N/A';
+  const startTime = created_at ? new Date(created_at).toLocaleString() : 'N/A';
+  const endTime = completed_at || failed_at ? new Date(completed_at || failed_at).toLocaleString() : 'N/A';
 
   return (
     <tr className={isSelected ? 'selected-row' : ''}>
       <td><input type="checkbox" checked={isSelected} onChange={onSelect} title="Karşılaştırmak için seç"/></td>
       <td><span className={`status-badge status-${status?.toLowerCase() || 'unknown'}`}>{status || 'Bilinmiyor'}</span></td>
-      <td><div className="detail-cell"><strong>{config?.pipeline_name || 'N/A'}</strong><span className="exp-id">{experiment_id}</span></div></td>
-      <td><div className="detail-cell"><span>Ticker: <strong>{config?.data_sourcing?.ticker || 'N/A'}</strong></span><span>Epochs: <strong>{config?.training_params?.epochs || 'N/A'}</strong></span></div></td>
+      <td><div className="detail-cell"><strong>{pipeline_name || 'N/A'}</strong><span className="exp-id">{experiment_id}</span></div></td>
+      <td><div className="detail-cell"><span>Ticker: <strong>{config_summary?.ticker || 'N/A'}</strong></span><span>Epochs: <strong>{config_summary?.epochs || 'N/A'}</strong></span></div></td>
       <td><div className="detail-cell"><span>Final Kayıp: <strong>{displayLoss}</strong></span></div></td>
-      <td><div className="detail-cell"><span>Başlangıç: {new Date(config.start_time).toLocaleString()}</span><span>Bitiş: {completed_at || failed_at ? new Date(completed_at || failed_at).toLocaleString() : 'N/A'}</span></div></td>
+      <td><div className="detail-cell"><span>Başlangıç: {startTime}</span><span>Bitiş: {endTime}</span></div></td>
       <td className="actions-cell">
         <button className="actions-button" onClick={() => setActionsOpen(!actionsOpen)}>⋮</button>
         {actionsOpen && (
@@ -1870,31 +1956,27 @@ function ExperimentRow({ experiment, isSelected, onSelect, onReRun, setTrackingT
               </Link>
             )}
             {isRunning && <button onClick={() => { setTrackingTaskId(task_id); setActionsOpen(false); }}><Icon path={ICONS.satellite} /> Canlı İzle</button>}
-            <button onClick={() => { onReRun(config); setActionsOpen(false); }}><Icon path={ICONS.rerun} /> Yeniden Çalıştır</button>
-            <button onClick={handleCopyConfig}><Icon path={ICONS.copy} /> Config'i Kopyala</button>
+            <button onClick={handleCopyId}><Icon path={ICONS.copy} /> ID'yi Kopyala</button>
           </div>
         )}
       </td>
     </tr>
   );
 }
-// DÜZELTME: actions-menu içindeki Link'in bir buton gibi görünmesi için CSS eklemesi gerekiyor.
-// App.css'e şunu ekleyelim:
-/*
-.actions-menu-button {
-  background: none; border: none; color: var(--text-color); padding: 10px 15px; text-align: left;
-  cursor: pointer; border-radius: 6px; display: flex; align-items: center; gap: 10px; font-size: 0.9em;
-  width: 100%; text-decoration: none;
-}
-.actions-menu-button:hover { background-color: var(--secondary-color); color: var(--text-inverse); }
-*/
-ExperimentRow.propTypes = { experiment: PropTypes.object.isRequired, isSelected: PropTypes.bool.isRequired, onSelect: PropTypes.func.isRequired, onReRun: PropTypes.func.isRequired, setTrackingTaskId: PropTypes.func.isRequired, };
+
+ExperimentRow.propTypes = {
+  experiment: PropTypes.object.isRequired,
+  isSelected: PropTypes.bool.isRequired,
+  onSelect: PropTypes.func.isRequired,
+  setTrackingTaskId: PropTypes.func.isRequired,
+};
+
 export default ExperimentRow;
 ========== FILE: dashboard/src/components/ExperimentsList.jsx ==========
 import PropTypes from 'prop-types';
 import ExperimentRow from './ExperimentRow';
 
-function ExperimentsList({ experiments, selectedIds, onSelect, onReRun, setTrackingTaskId }) {
+function ExperimentsList({ experiments, selectedIds, onSelect, setTrackingTaskId }) {
   if (!experiments || experiments.length === 0) {
     return <p style={{textAlign: 'center', padding: '20px'}}>Filtrelerinize uyan bir deney bulunamadı.</p>;
   }
@@ -1919,7 +2001,6 @@ function ExperimentsList({ experiments, selectedIds, onSelect, onReRun, setTrack
               experiment={exp} 
               isSelected={selectedIds.has(exp.experiment_id)}
               onSelect={() => onSelect(exp.experiment_id)}
-              onReRun={() => onReRun(exp.config)}
               setTrackingTaskId={setTrackingTaskId}
             />
           ))}
@@ -1928,7 +2009,12 @@ function ExperimentsList({ experiments, selectedIds, onSelect, onReRun, setTrack
     </div>
   );
 }
-ExperimentsList.propTypes = { experiments: PropTypes.array.isRequired, selectedIds: PropTypes.object.isRequired, onSelect: PropTypes.func.isRequired, onReRun: PropTypes.func.isRequired, setTrackingTaskId: PropTypes.func.isRequired, };
+ExperimentsList.propTypes = { 
+  experiments: PropTypes.array.isRequired, 
+  selectedIds: PropTypes.object.isRequired, 
+  onSelect: PropTypes.func.isRequired, 
+  setTrackingTaskId: PropTypes.func.isRequired 
+};
 export default ExperimentsList;
 ========== FILE: dashboard/src/components/LiveTrackerPane.jsx ==========
 // dashboard/src/components/LiveTrackerPane.jsx
@@ -2152,22 +2238,19 @@ ThemeProvider.propTypes = {
 };
 ========== FILE: dashboard/src/pages/DashboardOverview.jsx ==========
 import { useState, useEffect, useMemo } from 'react';
-import { toast } from 'react-toastify';
 import PropTypes from 'prop-types';
 import ExperimentsList from '../components/ExperimentsList';
 import ComparisonView from '../components/ComparisonView';
-import { fetchExperiments, startNewExperiment } from '../services/api';
+import { fetchExperiments, fetchExperimentDetails } from '../services/api';
 
-function DashboardOverview({ onNewExperimentClick, setTrackingTaskId }) {
+function DashboardOverview({ setTrackingTaskId }) {
   const [experiments, setExperiments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // Filtreleme ve Arama State'leri
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL');
   
-  // Karşılaştırma State'leri
   const [selectedForComparison, setSelectedForComparison] = useState(new Set());
   const [comparisonData, setComparisonData] = useState(null);
 
@@ -2175,43 +2258,39 @@ function DashboardOverview({ onNewExperimentClick, setTrackingTaskId }) {
     if (showLoadingIndicator) setLoading(true);
     try {
       const response = await fetchExperiments();
-      // Gelen veriyi başlangıç zamanına göre sırala (en yeni en üstte)
-      const sortedData = response.data.sort((a, b) => new Date(b.config.start_time) - new Date(a.config.start_time));
-      setExperiments(sortedData);
+      setExperiments(response.data);
       setError(null);
     } catch (err) {
       setError('API sunucusuna bağlanılamadı veya veri çekilemedi. Servislerin çalıştığından emin olun.');
+      console.error(err);
     } finally {
       if (showLoadingIndicator) setLoading(false);
     }
   };
 
   useEffect(() => {
-    getExperiments(true); // Sayfa ilk yüklendiğinde loading göstergesiyle veri çek
-    const intervalId = setInterval(() => getExperiments(false), 5000); // Arka planda sessizce güncelle
-    return () => clearInterval(intervalId); // Component unmount olduğunda interval'ı temizle
+    getExperiments(true);
+    const intervalId = setInterval(() => getExperiments(false), 5000);
+    return () => clearInterval(intervalId);
   }, []);
 
-  // Mevcut deneylerden dinamik olarak durum listesi oluşturur
   const allStatuses = useMemo(() => {
     const statuses = new Set(experiments.map(exp => exp.status));
     return ['ALL', ...Array.from(statuses).sort()];
   }, [experiments]);
 
-  // Filtrelenmiş deneyleri hesaplar
   const filteredExperiments = useMemo(() => {
     return experiments.filter(exp => {
-      // Durum filtresi
       const statusMatch = filterStatus === 'ALL' || exp.status === filterStatus;
       if (!statusMatch) return false;
 
-      // Arama terimi filtresi (ID, pipeline adı veya ticker sembolü)
       if (searchTerm) {
         const lowerCaseSearchTerm = searchTerm.toLowerCase();
         const searchFields = [
           exp.experiment_id,
-          exp.config?.pipeline_name,
-          exp.config?.data_sourcing?.ticker
+          exp.pipeline_name,
+          exp.config_summary?.ticker,
+          exp.batch_name,
         ];
         return searchFields.some(field => field?.toLowerCase().includes(lowerCaseSearchTerm));
       }
@@ -2220,7 +2299,6 @@ function DashboardOverview({ onNewExperimentClick, setTrackingTaskId }) {
     });
   }, [experiments, filterStatus, searchTerm]);
   
-  // Karşılaştırma için deney seçme/kaldırma fonksiyonu
   const handleComparisonSelect = (experimentId) => {
     setSelectedForComparison(prev => {
       const newSelection = new Set(prev);
@@ -2233,35 +2311,27 @@ function DashboardOverview({ onNewExperimentClick, setTrackingTaskId }) {
     });
   };
 
-  // Bir deneyi konfigürasyonuyla yeniden çalıştırma fonksiyonu
-  const handleReRun = async (experimentConfig) => {
-    // Yeniden çalıştırmadan önce eski ID ve zaman bilgilerini temizle
-    const { experiment_id, task_id, start_time, ...configToReRun } = experimentConfig;
-    toast.info(`"${configToReRun.pipeline_name}" deneyi yeniden başlatılıyor...`);
+  const handleStartComparison = async () => {
+    const idsToCompare = Array.from(selectedForComparison);
+    if (idsToCompare.length < 2) return;
+    
+    setComparisonData([]); // Show loading state in modal
     try {
-      const response = await startNewExperiment(configToReRun);
-      toast.success(`Deney başarıyla gönderildi! ID: ${response.data.task_id}`);
-      setTrackingTaskId(response.data.task_id); // Yeniden çalıştırılan deneyi canlı izlemeye başla
-    } catch (err) {
-      toast.error('Deney yeniden başlatılamadı.');
-    }
-  };
-
-  // Karşılaştırma modalını açar
-  const handleStartComparison = () => {
-    const dataToCompare = experiments.filter(exp => selectedForComparison.has(exp.experiment_id));
-    if (dataToCompare.length > 1) {
+      const promises = idsToCompare.map(id => fetchExperimentDetails(id));
+      const responses = await Promise.all(promises);
+      const dataToCompare = responses.map(res => res.data);
       setComparisonData(dataToCompare);
+    } catch (error) {
+      console.error("Karşılaştırma verileri çekilemedi:", error);
+      setComparisonData(null); // Hide modal on error
     }
   };
 
-  // Yükleme ve Hata durumları için gösterilecek arayüz
   if (loading) return <p style={{textAlign: 'center', padding: '40px'}}>Deney verileri yükleniyor...</p>;
   if (error) return <p style={{textAlign: 'center', padding: '40px', color: 'var(--error-color)'}}>{error}</p>;
 
   return (
     <div className="dashboard-overview">
-      {/* Karşılaştırma modalı, sadece data varsa render edilir */}
       {comparisonData && <ComparisonView experiments={comparisonData} onClose={() => setComparisonData(null)}/>}
       
       <div className="page-header">
@@ -2269,7 +2339,6 @@ function DashboardOverview({ onNewExperimentClick, setTrackingTaskId }) {
         <p>Tüm deneylerinizi tek bir yerden yönetin, takip edin ve karşılaştırın.</p>
       </div>
       
-      {/* Filtreleme ve Aksiyonlar Paneli */}
       <div className="card" style={{ marginBottom: '25px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
           <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
@@ -2295,21 +2364,20 @@ function DashboardOverview({ onNewExperimentClick, setTrackingTaskId }) {
         </div>
       </div>
       
-      {/* Deney Tablosu */}
       <ExperimentsList 
         experiments={filteredExperiments} 
         selectedIds={selectedForComparison} 
         onSelect={handleComparisonSelect} 
-        onReRun={handleReRun} 
-        setTrackingTaskId={setTrackingTaskId} 
+        setTrackingTaskId={setTrackingTaskId}
       />
     </div>
   );
 }
+
 DashboardOverview.propTypes = { 
-  onNewExperimentClick: PropTypes.func.isRequired, 
   setTrackingTaskId: PropTypes.func.isRequired, 
 };
+
 export default DashboardOverview;
 ========== FILE: dashboard/src/pages/NewExperiment.jsx ==========
 import { useState, useEffect } from 'react';
@@ -3173,14 +3241,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "azuraforge-learner"
-version = "0.1.3" # Yeni bağımlılık için sürüm artırımı
+version = "0.1.4" # Yeni bağımlılık için sürüm artırımı
 authors = [{ name = "Azmi Sahin" }]
 description = "High-level deep learning library for model training and management, using the AzuraForge Core engine."
 readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "MIT" }
 dependencies = [
-    "azuraforge-core @ git+https://github.com/AzuraForge/core.git@v0.1.2", # <-- DEĞİŞTİ
+    "azuraforge-core @ git+https://github.com/AzuraForge/core.git@v0.1.3",
     "scikit-learn",
     "numpy",
     "redis",
@@ -4707,18 +4775,21 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "azuraforge-worker"
-version = "0.1.0"
+# Bu repo için de versiyonu güncelleyelim
+version = "0.2.1"
 description = "The Celery worker for the AzuraForge Platform. Discovers and runs pipeline plugins."
 requires-python = ">=3.8"
 dependencies = [
-    "azuraforge-app-stock-predictor @ git+https://github.com/AzuraForge/app-stock-predictor.git@v0.1.0", # <-- DEĞİŞTİ
+    # app-stock-predictor'ın yeni etiketine işaret ediyor
+    "azuraforge-app-stock-predictor @ git+https://github.com/AzuraForge/app-stock-predictor.git@v0.1.1",
     "celery[redis]",
     "pyyaml",
+    "SQLAlchemy",
+    "psycopg2-binary",
 ]
 
 [project.scripts]
 start-worker = "azuraforge_worker.main:run_celery_worker"
-
 ========== FILE: worker/README.md ==========
 # AzuraForge Worker Servisi
 
@@ -4858,8 +4929,11 @@ class RedisProgressCallback(Callback):
             # Eğitimi durdurmamak için hatayı sadece logluyoruz.
             print(f"HATA: Redis'e ilerleme durumu yayınlanamadı: {e}")
 ========== FILE: worker/src/azuraforge_worker/celery_app.py ==========
-from celery import Celery
+# worker/src/azuraforge_worker/celery_app.py
+
 import os
+from celery import Celery
+from celery.signals import worker_process_init, worker_process_shutdown
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
@@ -4867,10 +4941,89 @@ celery_app = Celery(
     "azuraforge_worker",
     broker=REDIS_URL,
     backend=REDIS_URL,
-    # Worker başladığında görevlerin nerede olduğunu belirtir.
     include=["azuraforge_worker.tasks.training_tasks"]
 )
 
+# Bu değişken, her bir worker sürecinin kendi motorunu tutmasını sağlar.
+engine = None
+
+@worker_process_init.connect
+def init_worker_db_connection(**kwargs):
+    """Her bir Celery alt süreci başladığında çağrılır."""
+    global engine
+    print("Initializing DB connection for worker process...")
+    # === DEĞİŞİKLİK BURADA ===
+    # database.py'den 'sa_create_engine' olarak import edip ismini değiştiriyoruz.
+    from .database import sa_create_engine as db_create_engine
+    # === DEĞİŞİKLİK SONU ===
+    
+    # DATABASE_URL'yi doğrudan ortamdan alıyoruz.
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url:
+        raise RuntimeError("DATABASE_URL not set, cannot initialize DB engine.")
+        
+    engine = db_create_engine(db_url)
+    print(f"DB connection for worker process {os.getpid()} initialized.")
+
+
+@worker_process_shutdown.connect
+def shutdown_worker_db_connection(**kwargs):
+    """Her bir Celery alt süreci kapandığında çağrılır."""
+    global engine
+    if engine:
+        print(f"Disposing DB connection for worker process {os.getpid()}...")
+        engine.dispose()
+========== FILE: worker/src/azuraforge_worker/database.py ==========
+# worker/src/azuraforge_worker/database.py
+
+import os
+from sqlalchemy import create_engine as sa_create_engine, Column, String, JSON, DateTime
+from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.sql import func
+
+Base = declarative_base()
+
+class Experiment(Base):
+    __tablename__ = "experiments"
+    id = Column(String, primary_key=True, index=True)
+    task_id = Column(String, index=True, nullable=False)
+    batch_id = Column(String, index=True, nullable=True)
+    batch_name = Column(String, nullable=True)
+    pipeline_name = Column(String, index=True, nullable=False)
+    status = Column(String, index=True, default="PENDING")
+    config = Column(JSON, nullable=True)
+    results = Column(JSON, nullable=True)
+    error = Column(JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+    failed_at = Column(DateTime(timezone=True), nullable=True)
+
+    def __repr__(self):
+        return f"<Experiment(id='{self.id}', status='{self.status}')>"
+
+_SessionLocal = None
+
+def get_session_local():
+    """SessionLocal fabrikasını yalnızca gerektiğinde oluşturur (singleton)."""
+    global _SessionLocal
+    if _SessionLocal is None:
+        # celery_app'ten her süreç için özel olarak oluşturulmuş engine'i al
+        from .celery_app import engine
+        if engine is None:
+            raise RuntimeError("Database engine not initialized for this worker process.")
+        _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    return _SessionLocal
+
+def init_db():
+    """Ana süreçte veritabanı tablolarını oluşturur."""
+    DATABASE_URL = os.getenv("DATABASE_URL")
+    if not DATABASE_URL:
+        raise ValueError("DATABASE_URL ortam değişkeni ayarlanmamış!")
+    
+    # Tablo oluşturma işlemi için geçici bir motor oluştur.
+    engine = sa_create_engine(DATABASE_URL)
+    Base.metadata.create_all(bind=engine)
+    engine.dispose()
 ========== FILE: worker/src/azuraforge_worker/main.py ==========
 # worker/src/azuraforge_worker/main.py
 
@@ -4879,26 +5032,31 @@ import sys
 import platform
 import logging
 import multiprocessing
+import os # os'i import et
 
 def determine_pool_and_concurrency():
-    """İşletim sistemine göre uygun pool ve concurrency değerini belirler."""
+    """İşletim sistemine ve cihaz türüne göre uygun pool ve concurrency değerini belirler."""
     current_platform = platform.system()
+    device = os.environ.get("AZURAFORGE_DEVICE", "cpu").lower()
 
-    # --- HATA AYIKLAMA İÇİN GEÇİCİ DEĞİŞİKLİK ---
-    # Sorunun 'prefork' ile ilgili olup olmadığını anlamak için,
-    # geçici olarak her zaman 'solo' kullanmaya zorluyoruz.
-    logging.warning("!!! HATA AYIKLAMA MODU: Worker 'solo' pool ile çalışmaya zorlanıyor. !!!")
-    return "solo", 1
-    # ---------------------------------------------
-
-    # Orjinal kod:
-    # if current_platform == "Windows":
-    #     pool_type = "solo"
-    #     concurrency = 1
-    # else:
-    #     pool_type = "prefork"
-    #     concurrency = multiprocessing.cpu_count()
-    # return pool_type, concurrency
+    if current_platform == "Windows":
+        pool_type = "solo"
+        concurrency = 1
+        logging.info("Windows platformu algılandı. 'solo' pool kullanılıyor.")
+    elif device == "gpu":
+        # === DEĞİŞİKLİK BURADA: GPU için özel concurrency ayarı ===
+        pool_type = "prefork"
+        # Tek bir GPU varken, çok fazla paralel süreç başlatmak verimsizdir ve OOM'a yol açabilir.
+        # 2 veya 4 gibi küçük bir değerle başlayalım.
+        concurrency = 4 
+        logging.info(f"GPU modu aktif. 'prefork' pool ve {concurrency} (sabit) concurrency kullanılıyor.")
+        # === DEĞİŞİKLİK SONU ===
+    else: # CPU-bound Linux
+        pool_type = "prefork"
+        concurrency = multiprocessing.cpu_count()
+        logging.info(f"CPU-bound Linux/macOS platformu algılandı. 'prefork' pool ve {concurrency} concurrency kullanılıyor.")
+    
+    return pool_type, concurrency
 
 
 def run_celery_worker():
@@ -4917,7 +5075,9 @@ def run_celery_worker():
     logging.info(f"Platform: {platform.system()} - Using pool: {pool_type}, concurrency: {concurrency}")
 
     command = [
-        sys.executable, "-m", "celery",
+        # python -m celery ... yerine doğrudan celery komutunu kullanmak daha standarttır
+        # ve PATH sorunları artık Dockerfile'da çözüldü.
+        "celery",
         "-A", "azuraforge_worker.celery_app:celery_app",
         "worker",
         f"--pool={pool_type}",
@@ -4941,30 +5101,40 @@ __all__ = ("celery_app",)
 
 import logging
 import os
-import json
+import traceback
 from datetime import datetime
 from importlib.metadata import entry_points
-import traceback
+from contextlib import contextmanager
 
 from ..celery_app import celery_app
 from ..callbacks import RedisProgressCallback
+from ..database import Experiment, get_session_local # DEĞİŞTİ
 
+# --- Veritabanı Oturum Yönetimi ---
+@contextmanager
+def get_db():
+    """Veritabanı oturumu için bir context manager sağlar."""
+    # SessionLocal'ı dinamik olarak al
+    SessionLocal = get_session_local()
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# --- Pipeline Keşfi (Değişiklik Yok) ---
 def discover_pipelines():
     logging.info("Worker: Discovering installed AzuraForge pipeline plugins and configurations...")
     discovered = {}
     try:
         pipeline_entry_points = entry_points(group='azuraforge.pipelines')
         for ep in pipeline_entry_points:
-            logging.info(f"Worker: Found pipeline plugin: '{ep.name}' -> points to '{ep.value}'")
-            discovered[ep.name] = {'pipeline_class': ep.load()} 
+            discovered[ep.name] = {'pipeline_class': ep.load()}
         
         config_entry_points = entry_points(group='azuraforge.configs')
         for ep in config_entry_points:
-            logging.info(f"Worker: Found config entry point: '{ep.name}' -> points to '{ep.value}'")
             if ep.name in discovered:
                 discovered[ep.name]['get_config_func'] = ep.load()
-            else:
-                logging.warning(f"Worker: Found config for '{ep.name}' but no corresponding pipeline. Skipping config.")
     except Exception as e:
         logging.error(f"Worker: Error discovering pipelines or configs: {e}", exc_info=True)
     
@@ -4973,70 +5143,77 @@ def discover_pipelines():
     return discovered
 
 AVAILABLE_PIPELINES_AND_CONFIGS = discover_pipelines()
-if not AVAILABLE_PIPELINES_AND_CONFIGS:
-    logging.warning("Worker: No AzuraForge pipelines found!")
-
 REPORTS_BASE_DIR = os.path.abspath(os.getenv("REPORTS_DIR", "/app/reports"))
 os.makedirs(REPORTS_BASE_DIR, exist_ok=True)
 
+# --- Celery Görevi (Tamamen Yenilendi) ---
 @celery_app.task(bind=True, name="start_training_pipeline")
 def start_training_pipeline(self, config: dict):
     task_id = self.request.id
     pipeline_name = config.get("pipeline_name", "unknown_pipeline")
-    experiment_id = "" # Hata durumunda bile ID'nin var olması için başlat
+    run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    experiment_id = f"{pipeline_name}_{run_timestamp}_{task_id[:8]}"
+
+    # Raporlama için hala dosya sistemini kullanabiliriz
+    experiment_dir = os.path.join(REPORTS_BASE_DIR, pipeline_name, experiment_id)
+    os.makedirs(experiment_dir, exist_ok=True)
+    
+    # Konfigürasyonu zenginleştir
+    config['experiment_id'] = experiment_id
+    config['task_id'] = task_id
+    config['experiment_dir'] = experiment_dir
+    config['start_time'] = datetime.now().isoformat()
 
     try:
         if not pipeline_name or pipeline_name not in AVAILABLE_PIPELINES_AND_CONFIGS:
             raise ValueError(f"Pipeline '{pipeline_name}' not found or installed.")
 
+        # --- Veritabanı Kaydı Başlatma ---
+        with get_db() as db:
+            new_experiment = Experiment(
+                id=experiment_id,
+                task_id=task_id,
+                pipeline_name=pipeline_name,
+                status="STARTED",
+                config=config
+            )
+            db.add(new_experiment)
+            db.commit()
+            logging.info(f"Worker: Experiment {experiment_id} 'STARTED' olarak veritabanına kaydedildi.")
+
+        # Pipeline'ı çalıştır
         PipelineClass = AVAILABLE_PIPELINES_AND_CONFIGS[pipeline_name]['pipeline_class']
-
-        run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        experiment_id = f"{pipeline_name}_{run_timestamp}_{task_id}" 
-        
-        experiment_dir = os.path.join(REPORTS_BASE_DIR, pipeline_name, experiment_id)
-        os.makedirs(experiment_dir, exist_ok=True)
-        
-        config['experiment_id'] = experiment_id
-        config['task_id'] = task_id
-        config['experiment_dir'] = experiment_dir
-        config['start_time'] = datetime.now().isoformat()
-
-        logging.info(f"Worker: Instantiating pipeline '{PipelineClass.__name__}' for experiment {experiment_id}")
-        
-        initial_report_data = {"task_id": task_id, "experiment_id": experiment_id, "status": "STARTED", "config": config, "results": {}}
-        with open(os.path.join(experiment_dir, "results.json"), 'w') as f:
-            json.dump(initial_report_data, f, indent=4, default=str)
-
         pipeline_instance = PipelineClass(config)
         redis_callback = RedisProgressCallback(task_id=task_id)
-        
         results = pipeline_instance.run(callbacks=[redis_callback])
 
-        final_report_data = {"task_id": task_id, "experiment_id": experiment_id, "status": "SUCCESS", "config": config, "results": results, "completed_at": datetime.now().isoformat()}
-        with open(os.path.join(experiment_dir, "results.json"), 'w') as f:
-            json.dump(final_report_data, f, indent=4, default=str)
-            
+        # --- Veritabanı Kaydını Başarıyla Güncelleme ---
+        with get_db() as db:
+            exp_to_update = db.query(Experiment).filter(Experiment.id == experiment_id).first()
+            if exp_to_update:
+                exp_to_update.status = "SUCCESS"
+                exp_to_update.results = results
+                exp_to_update.completed_at = datetime.now(datetime.utcnow().tzinfo)
+                db.commit()
+                logging.info(f"Worker: Experiment {experiment_id} 'SUCCESS' olarak güncellendi.")
+        
         logging.info(f"Worker: Task {task_id} completed successfully.")
-        return final_report_data
+        return {"experiment_id": experiment_id, "status": "SUCCESS"}
 
     except Exception as e:
         tb_str = traceback.format_exc()
         logging.error(f"PIPELINE CRITICAL FAILURE in task {task_id} (experiment: {experiment_id}): {e}")
         logging.error(f"FULL TRACEBACK:\n{tb_str}")
         
-        # Hata durumunda bile results.json'ı güncelle
-        error_report_data = {
-            "task_id": task_id, "experiment_id": experiment_id, "status": "FAILURE", 
-            "config": config, "error": {"message": str(e), "traceback": tb_str}, 
-            "failed_at": datetime.now().isoformat()
-        }
-        if experiment_id: # Eğer experiment_id oluşturulduysa dosyayı yaz
-            error_report_path = os.path.join(REPORTS_BASE_DIR, pipeline_name, experiment_id, "results.json")
-            os.makedirs(os.path.dirname(error_report_path), exist_ok=True)
-            with open(error_report_path, 'w') as f:
-                json.dump(error_report_data, f, indent=4)
+        # --- Veritabanı Kaydını Hatayla Güncelleme ---
+        with get_db() as db:
+            exp_to_update = db.query(Experiment).filter(Experiment.id == experiment_id).first()
+            if exp_to_update:
+                exp_to_update.status = "FAILURE"
+                exp_to_update.error = {"message": str(e), "traceback": tb_str}
+                exp_to_update.failed_at = datetime.now(datetime.utcnow().tzinfo)
+                db.commit()
+                logging.error(f"Worker: Experiment {experiment_id} 'FAILURE' olarak güncellendi.")
         
-        # Celery'nin hatayı düzgün işlemesi için yeniden fırlat
         raise e
 ========== FILE: worker/src/azuraforge_worker/tasks/__init__.py ==========
