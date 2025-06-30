@@ -1,5 +1,5 @@
 PROJE KOD SNAPSHOT (TAM)
-Toplam 82 dosya bulundu ve eklendi.
+Toplam 83 dosya bulundu ve eklendi.
 Dahil Edilen Dizinler: .
 Dahil Edilen Uzantılar: .toml, .py, .yaml, .yml, .json, .md, .txt, html, .bat, .sh, .jsx, .js, .json, .css
 Hariç Tutulan Desenler/Yollar: __pycache__, .git, .venv, .vscode, .idea, build, dist, *.egg-info, *.pyc, *.so, *.pyd, .pytest_cache, .mypy_cache, .dataset, dataset, .logs, logs, .output, output, inputs, outputs, .tmp, checkpoints, reports, docs/_build, site, node_modules, .DS_Store, Thumbs.db, *.lock
@@ -110,31 +110,30 @@ volumes:
 ========== FILE: README.md ==========
 # AzuraForge Platform 🚀
 
-**AzuraForge Platform**, yapay zeka modellerini sıfırdan oluşturmak, eğitmek ve yönetmek için tasarlanmış modüler, dağıtık ve eklenti tabanlı bir MLOps platformudur. Modern mikroservis mimarisi prensipleriyle inşa edilmiştir.
+**AzuraForge Platform**, yapay zeka modellerini sıfırdan oluşturmak, eğitmek, canlı olarak takip etmek ve sonuçlarını interaktif raporlarla analiz etmek için tasarlanmış modüler, dağıtık ve eklenti tabanlı bir MLOps platformudur.
 
 Bu depo, AzuraForge ekosistemindeki tüm ana servisleri (API, Worker, Dashboard) ve kütüphaneleri (Core, Learner, Applications) bir araya getiren **orkestrasyon katmanıdır**.
 
-## 🎯 Temel Amaçlar ve Felsefe
+## ✨ Platform Yetenekleri
 
-*   **Sıfırdan İnşa:** Derin öğrenme motoru (`azuraforge-core`) ve temel bileşenler sıfırdan geliştirilmiştir.
-*   **Modülerlik ve Bağımsızlık:** Her bileşen (kütüphane, API, worker, UI, uygulama) kendi bağımsız repo'sunda yaşar ve kendi sorumluluğuna sahiptir.
-*   **Olay Güdümlü Mimari:** Servisler arası iletişim olay tabanlı (Celery, Redis Pub/Sub, WebSockets) gerçekleşir. Bu sayede, yoğun hesaplama görevleri bile kullanıcı arayüzünü bloklamaz.
-*   **Eklenti Tabanlı:** Yeni yapay zeka modelleri ve uygulamaları, platformun çekirdek koduna dokunmadan birer eklenti (plugin) olarak eklenebilir.
-*   **Zengin ve Otomatik Çıktılar:** Platform, sadece sayısal sonuçlar üretmekle kalmaz, her deneyin sonunda performans metriklerini ve görselleştirmeleri içeren **otomatik Markdown raporları** oluşturur.
+*   **Sıfırdan İnşa Edilmiş Çekirdek:** Otomatik türev, `LSTM` gibi gelişmiş katmanlar ve `Adam` optimizer içeren, saf Python/NumPy tabanlı bir derin öğrenme motoru.
+*   **Modüler Mikroservis Mimarisi:** Her bileşen (`api`, `worker`, `learner` vb.) kendi bağımsız reposunda yaşar, bağımsız olarak geliştirilebilir ve kurulabilir.
+*   **Olay Güdümlü ve Bloklamayan Akış:** `Celery` ve `Redis Pub/Sub` üzerine kurulu mimari sayesinde, yoğun model eğitimleri bile sistemi bloklamaz.
+*   **Canlı Deney Takibi:** `WebSocket` aracılığıyla, devam eden bir eğitimin ilerleme çubuğunu, anlık kayıp değerini ve hatta **tahmin grafiklerinin canlı evrimini** anlık olarak izleme imkanı.
+*   **Dinamik ve İnteraktif Raporlama:** Tamamlanan her deney için, `Dashboard` üzerinden erişilebilen, `Chart.js` ile çizilmiş interaktif grafikler ve detaylı metrikler içeren rapor sayfaları.
+*   **Genişletilebilir Eklenti Sistemi:** Yeni AI uygulamaları, platformun çekirdek koduna dokunmadan, standartlaştırılmış bir `BasePipeline`'den türetilerek kolayca eklenebilir.
 
 ## 🏛️ Mimari Genel Bakış
 
-AzuraForge platformu, aşağıdaki bağımsız GitHub depolarından oluşan bir mikroservis mimarisini benimser:
+AzuraForge, aşağıdaki bağımsız GitHub depolarından oluşur:
 
--   **`core`**: Temel otomatik türev motoru.
--   **`learner`**: `core` üzerinde geliştirilmiş yüksek seviyeli öğrenme kütüphanesi. `LSTM` gibi gelişmiş katmanları, `Adam` gibi optimizer'ları, `Callback` sistemini ve **otomatik raporlama araçlarını** içerir.
--   **`applications`**: Platform için resmi uygulama eklentilerinin katalogu.
+-   **`core`**: Temel matematik motoru.
+-   **`learner`**: Yüksek seviyeli öğrenme kütüphanesi (`Learner`, `Callback` sistemi, `BasePipeline` ve raporlama araçları).
+-   **`applications`**: Resmi uygulama katalogu.
 -   **`app-stock-predictor`**: Gerçek bir uygulama eklentisi örneği.
 -   **`api`**: RESTful API ve WebSocket (Pub/Sub tabanlı) sunan iletişim katmanı.
 -   **`worker`**: Arka plan görevlerini işleyen ve raporları oluşturan işçi servisi.
--   **`dashboard`**: Platform için web tabanlı, canlı takip yeteneklerine sahip kullanıcı arayüzü.
-
-Bu repo, tüm bu servisleri tek bir `docker-compose` komutuyla ayağa kaldıran ana orkestrasyon katmanıdır.
+-   **`dashboard`**: React tabanlı, canlı takip ve dinamik raporlama yeteneklerine sahip web arayüzü.
 
 ## 🚀 Hızlı Başlangıç (Docker Compose ile)
 
@@ -146,7 +145,7 @@ Bu repo, tüm bu servisleri tek bir `docker-compose` komutuyla ayağa kaldıran 
 6.  **Platforma erişin:**
     -   **Dashboard:** `http://localhost:5173`
     -   **API Dokümantasyonu:** `http://localhost:8000/api/v1/docs`
-7.  **Deneyi Çalıştırın ve Raporu Görüntüleyin:** Dashboard'dan bir deney başlattıktan sonra, host makinenizdeki `./reports` klasörünü kontrol ederek oluşturulan `report.md` ve `images/` klasörünü inceleyin.
+7.  **Deneyin ve Keşfedin:** Dashboard'dan bir deney başlatın, canlı takip panelini izleyin ve deney bittiğinde "Raporu Görüntüle" butonuyla interaktif sonuçları inceleyin.
 
 ## 🛠️ Geliştirme Rehberi ve İç Detaylar
 
@@ -265,11 +264,12 @@ settings = Settings()
 ========== FILE: api/src/azuraforge_api/core/__init__.py ==========
 
 ========== FILE: api/src/azuraforge_api/routes/experiments.py ==========
+# api/src/azuraforge_api/routes/experiments.py
+
 from fastapi import APIRouter, HTTPException
 from typing import List, Dict, Any
 from ..services import experiment_service
 
-# DÜZELTME: tags'i buraya al, prefix'i ana dosyada bırak
 router = APIRouter(tags=["Experiments"])
 
 @router.get("/experiments", response_model=List[Dict[str, Any]])
@@ -282,7 +282,20 @@ def create_new_experiment(config: Dict[str, Any]):
 
 @router.get("/experiments/{task_id}/status", response_model=Dict[str, Any])
 def get_experiment_status(task_id: str):
+    # Bu endpoint artık çok gerekli değil ama kalabilir.
     return experiment_service.get_task_status(task_id)
+
+# YENİ ENDPOINT (read_experiment_report yerine)
+@router.get("/experiments/{experiment_id}/details", response_model=Dict[str, Any])
+def read_experiment_details(experiment_id: str):
+    """
+    Belirli bir deneyin tüm detaylarını (config, results, metrics, history)
+     içeren JSON verisini döndürür.
+    """
+    try:
+        return experiment_service.get_experiment_details(experiment_id)
+    except HTTPException as e:
+        raise e
 ========== FILE: api/src/azuraforge_api/routes/pipelines.py ==========
 from fastapi import APIRouter, HTTPException
 from typing import List, Dict, Any
@@ -368,150 +381,126 @@ async def websocket_task_status(websocket: WebSocket, task_id: str):
 ========== FILE: api/src/azuraforge_api/routes/__init__.py ==========
 
 ========== FILE: api/src/azuraforge_api/services/experiment_service.py ==========
+# api/src/azuraforge_api/services/experiment_service.py
+
 import json
 import os
 import glob
 from importlib import resources
-from importlib.metadata import entry_points
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 from celery.result import AsyncResult 
+from fastapi import HTTPException
 
 from azuraforge_worker import celery_app
-from azuraforge_worker.tasks.training_tasks import start_training_pipeline
+# Bu importun çalışması için worker'ın -e ile kurulmuş olması gerekir.
+# Docker build sırasında bu sağlanır.
 from azuraforge_worker.tasks.training_tasks import AVAILABLE_PIPELINES_AND_CONFIGS
 
 REPORTS_BASE_DIR = os.path.abspath(os.getenv("REPORTS_DIR", "/app/reports"))
 
 def get_available_pipelines() -> List[Dict[str, Any]]:
-    # Mevcut kodunuzu kullanarak resmi uygulamalar kataloğunu çekmeye devam edin
-    # Bu, dashboard'daki "pipeline adı" ve "açıklama" gibi meta verileri sağlar.
+    """
+    Sisteme kurulu ve "resmi" olarak listelenmiş pipeline'ları döndürür.
+    """
     official_apps_data = []
     try:
+        # Uygulama katalogunu oku
         with resources.open_text("azuraforge_applications", "official_apps.json") as f:
             official_apps_data = json.load(f)
     except (FileNotFoundError, ModuleNotFoundError) as e:
         print(f"ERROR: Could not find or read the official apps catalog. {e}")
-        # Hata durumunda boş liste döndürmek yerine hata fırlatılabilir veya varsayılan bir şey sağlanabilir.
 
-    # Şimdi worker'dan keşfedilen pipeline'lar ile bu meta veriyi birleştir.
-    # Sadece worker'ın gerçekten keşfettiği pipeline'ları sun.
+    # Sadece worker tarafından gerçekten keşfedilen pipeline'ları filtrele
     available_pipelines_with_configs = []
     for app_meta in official_apps_data:
         app_id = app_meta.get("id")
         if app_id in AVAILABLE_PIPELINES_AND_CONFIGS:
-            # Sadece keşfedilenleri ekle
             available_pipelines_with_configs.append(app_meta)
     
     return available_pipelines_with_configs
 
-# Yeni fonksiyon: Belirli bir pipeline'ın varsayılan konfigürasyonunu döndürür
 def get_default_pipeline_config(pipeline_id: str) -> Dict[str, Any]:
-    """Belirli bir pipeline'ın varsayılan konfigürasyonunu döndürür."""
+    """
+    Belirli bir pipeline'ın varsayılan konfigürasyonunu döndürür.
+    """
     pipeline_info = AVAILABLE_PIPELINES_AND_CONFIGS.get(pipeline_id)
     if not pipeline_info:
         raise ValueError(f"Pipeline '{pipeline_id}' not found or its config function is missing.")
     
     get_config_func = pipeline_info.get('get_config_func')
     if not get_config_func:
-        return {"message": "No specific default configuration available for this pipeline. Worker will use its internal defaults.", "pipeline_name": pipeline_id}
+        return {"message": "No specific default configuration available for this pipeline."}
 
     return get_config_func()
 
-
 def list_experiments() -> List[Dict[str, Any]]:
     """
-    DÜZELTME: Artık her deney için results.json dosyasının tamamını döndürüyor.
-    Bu, UI'ın genişletilebilir satırlarda tüm detayları göstermesini sağlar.
+    Raporlar dizinindeki tüm deneylerin `results.json` dosyalarını okur ve
+    bir liste olarak döndürür.
     """
     experiment_files = glob.glob(f"{REPORTS_BASE_DIR}/**/results.json", recursive=True)
     experiments = []
     for f_path in experiment_files:
         try:
-            with open(f_path, 'r') as f:
+            with open(f_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                # Direkt olarak dosyanın içeriğini listeye ekle
                 experiments.append(data)
         except Exception as e:
-            print(f"Warning: Could not read results.json from {f_path}: {e}")
+            print(f"Warning: Could not read or parse {f_path}: {e}")
             continue
     
-    # Sıralama: Önce çalışanlar, sonra en yeni tamamlananlar
-    def sort_key(exp):
-        status_order = {'STARTED': 1, 'PROGRESS': 2, 'PENDING': 3, 'UNKNOWN': 4, 'DISCONNECTED': 5, 'FAILURE': 6, 'ERROR': 7, 'SUCCESS': 8}
-        status = exp.get('status', 'UNKNOWN')
-        # Eğer canlı bir görevse, Celery'den anlık durumunu al. Bu, PENDING'den STARTED'a geçişi yakalar.
-        if status in ['STARTED', 'PROGRESS', 'PENDING']:
-             task = AsyncResult(exp.get('task_id'), app=celery_app)
-             status = task.state
-             exp['status'] = status # Deney objesini de anlık durumla güncelle
-        
-        timestamp = exp.get('completed_at') or exp.get('failed_at') or exp.get('config', {}).get('start_time', '1970-01-01T00:00:00')
-        return (status_order.get(status, 99), timestamp)
-
-    experiments.sort(key=sort_key, reverse=False) # Status'e göre artan, tarihe göre azalan sıralama için
-    # reverse=False olacak ama sıralama anahtarını (timestamp) negatif yapmak aynı etkiyi verir.
-    # En basit yol:
+    # En yeniden en eskiye doğru sırala
     experiments.sort(key=lambda x: x.get('config', {}).get('start_time', ''), reverse=True)
-    
     return experiments
 
-
 def start_experiment(config: Dict[str, Any]) -> Dict[str, Any]:
-    pipeline_name = config.get("pipeline_name", "unknown")
-    print(f"Service: Sending task for pipeline '{pipeline_name}' to Celery with config: {config}") # Logu güncellendi
-    task = start_training_pipeline.delay(config) 
+    """
+    Yeni bir deneyi başlatmak için Celery'ye bir görev gönderir.
+    """
+    # Celery görevinin adını doğrudan belirtmek daha güvenilirdir.
+    task = celery_app.send_task("start_training_pipeline", args=[config])
     return {"message": "Experiment submitted to worker.", "task_id": task.id}
 
 def get_task_status(task_id: str) -> Dict[str, Any]:
-    # Artık /experiments endpoint'i tüm veriyi döndürdüğü için bu endpoint'e olan ihtiyaç azalıyor.
-    # Ama WebSocket'in ilk veri çekişi için hala değerli olabilir.
+    """
+    Belirli bir Celery görevinin anlık durumunu döndürür.
+    """
     task_result = AsyncResult(task_id, app=celery_app)
-    status = task_result.state
     
-    details = task_result.info 
-    
-    # Başarı durumunda, Celery result.result'ı doğrudan alıp gönder
-    if status == 'SUCCESS':
-        # Başarılı biten görevlerin rapor dosyasından okunmasını sağla
-        # Bu, sayfa yenilense bile tüm verinin (özellikle loss geçmişinin) görünmesini garanti eder.
-        matching_experiments = list_experiments()
-        for exp in matching_experiments:
-            if exp.get('task_id') == task_id: # task_id'yi de almanız gerekebilir list_experiments içinde
-                return exp # Zaten gerekli tüm verileri içeren objeyi döndür
+    if task_result.state == 'SUCCESS':
+        # Başarılı görevlerde sonuç (result) genellikle büyük olabilir,
+        # bu yüzden doğrudan sonucu döndürmek yerine sadece durumu bildirebiliriz.
+        # /details endpoint'i tam sonucu almak için kullanılmalıdır.
+        return {"status": "SUCCESS"}
+    elif task_result.state == 'FAILURE':
+        return {"status": "FAILURE", "error": str(task_result.info)}
+    else: # PENDING, PROGRESS, etc.
+        return {"status": task_result.state, "details": task_result.info}
 
-        # Eğer rapor dosyasından bulunamazsa, Celery sonucunu döndür
-        return {"task_id": task_id, "status": status, "result": task_result.result}
-    
-    elif status == 'FAILURE':
-        error_message = details.get('error_message', 'Bilinmeyen bir hata oluştu.')
-        traceback_info = details.get('traceback', 'Detaylı hata izleme bilgisi yok.')
-        
-        # Kullanıcı dostu hata mesajı üretimi (örnek)
-        user_friendly_message = "Deney eğitimi sırasında bir hata oluştu. Lütfen yapılandırmanızı kontrol edin veya AI modelinde bir sorun olabilir."
-        if "yfinance.download" in error_message or "No data downloaded" in error_message:
-            user_friendly_message = "Veri çekilirken bir sorun oluştu. Ticker sembolünü veya başlangıç tarihini kontrol edin."
-        elif "Not enough data" in error_message:
-            user_friendly_message = "Eğitim için yeterli veri bulunamadı. Lütfen daha uzun bir tarih aralığı seçin."
-        elif "Pipeline execution failed" in error_message:
-            user_friendly_message = "Pipeline'ın kendisi çalışırken bir hata ile karşılaştı. Detaylar için aşağıdaki teknik hata mesajını inceleyin."
+# YENİ FONKSİYON (get_experiment_report yerine)
+def get_experiment_details(experiment_id: str) -> Dict[str, Any]:
+    """
+    Belirli bir deneye ait results.json dosyasının tüm içeriğini döndürür.
+    Bu, UI'da dinamik rapor oluşturmak için kullanılır.
+    """
+    # Güvenlik: Path traversal saldırılarını önle
+    if ".." in experiment_id or "/" in experiment_id or "\\" in experiment_id:
+        raise HTTPException(status_code=400, detail="Invalid experiment ID format.")
 
+    # Rapor dosyasını bulmak için tüm alt dizinlerde ara
+    report_path_pattern = os.path.join(REPORTS_BASE_DIR, "**", experiment_id, "results.json")
+    report_files = glob.glob(report_path_pattern, recursive=True)
 
-        # Eğer rapor dosyasından bulunursa, hata bilgilerini oradan al.
-        # Bu bölüm, önceki get_task_status'taki mantıkla çakışmaması için biraz daha dikkatli ele alınmalı.
-        # En iyisi, task_id'ye göre rapor dosyasından full veriyi çekip, Celery'den sadece canlı durumu almak.
-        # Şimdilik direkt Celery sonucunu zenginleştirelim.
-        
-        # Buradaki return, direkt Celery'den alınan 'FAILURE' state'indeki veriyi döndürür.
-        # Rapor dosyasındaki "error" alanını burada "user_friendly_error" olarak ekleyebiliriz.
-        return {
-            "task_id": task_id, 
-            "status": status, 
-            "result": details, # Celery meta verisi (error_message, traceback içerir)
-            "user_friendly_error": user_friendly_message
-        }
+    if not report_files:
+        raise HTTPException(status_code=404, detail=f"Details for experiment '{experiment_id}' not found.")
     
-    # PROGRESS, PENDING, STARTED gibi durumlar için
-    return {"task_id": task_id, "status": status, "details": details}
+    report_path = report_files[0]
+
+    try:
+        with open(report_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Could not read details file: {e}")
 ========== FILE: api/src/azuraforge_api/services/__init__.py ==========
 
 ========== FILE: api/src/azuraforge_api/tasks/training_tasks.py ==========
@@ -563,134 +552,61 @@ setup(
 # app-stock-predictor/src/azuraforge_stockapp/pipeline.py
 
 import logging
-from typing import Any, Dict, Tuple, Optional, List
+from typing import Dict, Any, Tuple, List
+
 import yaml
 from importlib import resources
-
-import numpy as np
 import pandas as pd
 import yfinance as yf
-from sklearn.preprocessing import MinMaxScaler
 
-from azuraforge_learner import Learner, Sequential, LSTM, Linear, Adam, SGD, MSELoss, Callback
-# DÜZELTME: Raporlama fonksiyonunu yeni yerinden import et
-from azuraforge_learner.reporting import generate_regression_report
-
-
-def create_sequences(data: np.ndarray, seq_length: int) -> Tuple[np.ndarray, np.ndarray]:
-    xs, ys = [], []
-    for i in range(len(data) - seq_length):
-        x = data[i:(i + seq_length)]
-        y = data[i + seq_length]
-        xs.append(x)
-        ys.append(y)
-    return np.array(xs), np.array(ys)
+from azuraforge_learner import Sequential, LSTM, Linear
+from azuraforge_learner.pipelines import TimeSeriesPipeline
 
 def get_default_config() -> Dict[str, Any]:
+    """Uygulamanın varsayılan konfigürasyonunu yükler."""
     try:
         with resources.open_text("azuraforge_stockapp.config", "stock_predictor_config.yml") as f:
             return yaml.safe_load(f)
     except Exception as e:
-        logging.error(f"Error loading default config for stock_predictor: {e}", exc_info=True)
-        return {"error": f"Could not load default config: {e}"}
+        logging.error(f"Hisse senedi uygulaması için varsayılan config yüklenemedi: {e}", exc_info=True)
+        return {"error": f"Varsayılan konfigürasyon yüklenemedi: {e}"}
 
-class StockPredictionPipeline:
-    def __init__(self, config: dict):
-        self.logger = logging.getLogger(self.__class__.__name__)
-        logging.basicConfig(level="INFO", format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+class StockPredictionPipeline(TimeSeriesPipeline):
+    """
+    Hisse senedi fiyat tahmini için TimeSeriesPipeline'den türetilmiş,
+    standartlaştırılmış ve basit pipeline.
+    """
+    def _load_data(self) -> pd.DataFrame:
+        """yfinance'ten hisse senedi verilerini çeker."""
+        ticker = self.config.get("data_sourcing", {}).get("ticker", "MSFT")
+        self.logger.info(f"'{ticker}' için yfinance'ten veri çekiliyor (period=max)...")
         
-        default_config = get_default_config()
-        if "error" in default_config:
-            self.config = config
-        else:
-            def deep_merge(source: dict, destination: dict) -> dict:
-                for key, value in source.items():
-                    if isinstance(value, dict) and key in destination and isinstance(destination.get(key), dict):
-                        destination[key] = deep_merge(value, destination[key])
-                    elif value is not None: 
-                        destination[key] = value
-                return destination
-            self.config = deep_merge(config, default_config.copy())
-        
-        self.scaler = MinMaxScaler(feature_range=(-1, 1))
+        data = yf.download(ticker, period="max", progress=False, actions=False, auto_adjust=True)
+        if data.empty:
+            raise ValueError(f"'{ticker}' için veri indirilemedi.")
+            
+        self.logger.info(f"{len(data)} satır veri indirildi.")
+        # Sadece 'Close' sütununu döndürüyoruz
+        return data[['Close']]
 
-    def run(self, callbacks: Optional[List[Callback]] = None):
-        data_sourcing_config = self.config.get("data_sourcing", {})
-        training_params_config = self.config.get("training_params", {})
-        model_params_config = self.config.get("model_params", {})
-        
-        ticker = data_sourcing_config.get("ticker", "MSFT")
-        epochs = int(training_params_config.get("epochs", 50)) 
-        lr = float(training_params_config.get("lr", 0.001)) 
-        optimizer_type = str(training_params_config.get("optimizer", "adam")).lower()
-        sequence_length = int(model_params_config.get("sequence_length", 60))
-        hidden_size = int(model_params_config.get("hidden_size", 50))
+    def _get_target_and_feature_cols(self) -> Tuple[str, List[str]]:
+        """Bu basit model için hedef ve özellik aynı sütundur."""
+        target_col = "Close"
+        feature_cols = ["Close"]
+        return target_col, feature_cols
 
-        self.logger.info(f"--- Running LSTM Stock Prediction for {ticker} (period=max, epochs={epochs}) ---")
+    def _create_model(self, input_shape: Tuple) -> Sequential:
+        """
+        LSTM ve bir Linear katmandan oluşan modeli oluşturur.
+        input_shape: (num_samples, sequence_length, num_features)
+        """
+        input_size = input_shape[2] # num_features
+        hidden_size = self.config.get("model_params", {}).get("hidden_size", 50)
         
-        try:
-            data = yf.download(ticker, period="max", progress=False, actions=False, auto_adjust=True)
-            if data.empty:
-                raise ValueError(f"No data downloaded for ticker: {ticker}")
-            self.logger.info(f"Downloaded {len(data)} rows of data.")
-            close_prices_df = data[['Close']]
-        except Exception as e:
-            self.logger.error(f"Data download failed for {ticker}: {e}")
-            raise 
-
-        scaled_prices = self.scaler.fit_transform(close_prices_df)
-        
-        if len(scaled_prices) <= sequence_length:
-            self.logger.warning(f"Not enough data for sequences.")
-            return {"status": "failed", "message": "Not enough data for training"}
-        
-        X, y = create_sequences(scaled_prices, sequence_length)
-        
-        if X.size == 0:
-            return {"status": "failed", "message": "Preprocessing resulted in empty dataset."}
-
-        test_size = training_params_config.get("test_size", 0.2)
-        split_idx = int(len(X) * (1 - test_size))
-        X_train, X_test = X[:split_idx], X[split_idx:]
-        y_train, y_test = y[:split_idx], y[split_idx:]
-        
-        time_index_test = close_prices_df.index[split_idx + sequence_length:]
-
-        input_size = X_train.shape[2]
-        model = Sequential(LSTM(input_size=input_size, hidden_size=hidden_size), Linear(hidden_size, 1))
-        criterion = MSELoss()
-        optimizer = Adam(model.parameters(), lr=lr) if optimizer_type == "adam" else SGD(model.parameters(), lr=lr)
-        
-        learner = Learner(model, criterion, optimizer, callbacks=callbacks)
-
-        self.logger.info(f"{epochs} epoch için model eğitimi başlıyor...")
-        history = learner.fit(X_train, y_train, epochs=epochs, pipeline_name=self.config.get("pipeline_name"))
-        
-        self.logger.info("Model değerlendiriliyor...")
-        y_pred_scaled = learner.predict(X_test)
-        
-        y_pred_unscaled = self.scaler.inverse_transform(y_pred_scaled)
-        y_test_unscaled = self.scaler.inverse_transform(y_test)
-
-        from sklearn.metrics import r2_score, mean_absolute_error
-        metrics = {
-            'r2_score': r2_score(y_test_unscaled, y_pred_unscaled),
-            'mae': mean_absolute_error(y_test_unscaled, y_pred_unscaled)
-        }
-        
-        final_results = {
-            "history": history, "metrics": metrics,
-            "y_true": y_test_unscaled, "y_pred": y_pred_unscaled,
-            "time_index": time_index_test, "y_label": "Hisse Fiyatı"
-        }
-
-        self.logger.info("Rapor oluşturuluyor...")
-        generate_regression_report(final_results, self.config)
-        
-        return {
-            "final_loss": history['loss'][-1] if history.get('loss') else None,
-            "metrics": metrics
-        }
+        return Sequential(
+            LSTM(input_size=input_size, hidden_size=hidden_size),
+            Linear(hidden_size, 1) # Çıktı boyutu her zaman 1 (tek bir değer tahmini)
+        )
 ========== FILE: app-stock-predictor/src/azuraforge_stockapp/__init__.py ==========
 
 ========== FILE: app-stock-predictor/src/azuraforge_stockapp/config/stock_predictor_config.yml ==========
@@ -1109,14 +1025,18 @@ export default defineConfig([
     "@fontsource/inter": "^5.2.6",
     "axios": "^1.10.0",
     "chart.js": "^4.5.0",
+    "chartjs-adapter-date-fns": "^3.0.0",
     "chartjs-plugin-annotation": "^3.1.0",
     "chartjs-plugin-zoom": "^2.2.0",
+    "date-fns": "^4.1.0",
     "prop-types": "^15.8.1",
     "react": "^19.1.0",
     "react-chartjs-2": "^5.3.0",
     "react-dom": "^19.1.0",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "^7.6.3",
-    "react-toastify": "^11.0.5"
+    "react-toastify": "^11.0.5",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.0",
@@ -1410,7 +1330,18 @@ table tbody tr.selected-row { background-color: color-mix(in srgb, var(--primary
   font-weight: 600;
   color: var(--text-color);
 }
+
+/* ... mevcut CSS kodunuz ... */
+
+.actions-menu button, .actions-menu-button {
+  background: none; border: none; color: var(--text-color); padding: 10px 15px; text-align: left;
+  cursor: pointer; border-radius: 6px; display: flex; align-items: center; gap: 10px; font-size: 0.9em;
+  width: 100%; text-decoration: none;
+}
+.actions-menu button:hover, .actions-menu-button:hover { background-color: var(--secondary-color); color: var(--text-inverse); }
 ========== FILE: dashboard/src/App.jsx ==========
+// dashboard/src/App.jsx
+
 import { useState, useContext } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
@@ -1420,6 +1351,7 @@ import './App.css';
 import { ThemeContext } from './context/ThemeContext';
 import NewExperiment from './pages/NewExperiment';
 import DashboardOverview from './pages/DashboardOverview';
+import ReportViewer from './pages/ReportViewer'; // YENİ
 import LiveTrackerPane from './components/LiveTrackerPane';
 import Logo from './components/Logo';
 import ThemeToggle from './components/ThemeToggle';
@@ -1438,10 +1370,7 @@ function App() {
     setTrackingTaskId(null);
   };
 
-  const isActive = (path) => {
-    if (path === '/' && (location.pathname === '/' || location.pathname.startsWith('/experiments'))) return true;
-    return location.pathname === path;
-  };
+  const isActive = (path) => location.pathname.startsWith(path) && path !== '/' || location.pathname === path;
 
   return (
     <div className="app-layout">
@@ -1450,8 +1379,12 @@ function App() {
         <Logo />
         <nav style={{ flexGrow: 1 }}>
           <ul>
-            <li><Link to="/" className={isActive('/') ? 'active' : ''}><span role="img" aria-label="dashboard">📊</span><span>Genel Bakış</span></Link></li>
-            <li><Link to="/new-experiment" className={isActive('/new-experiment') ? 'active' : ''}><span role="img" aria-label="rocket">🚀</span><span>Yeni Deney</span></Link></li>
+            <li><Link to="/" className={location.pathname === '/' ? 'active' : ''}>
+                <span role="img" aria-label="dashboard">📊</span><span>Genel Bakış</span>
+            </Link></li>
+            <li><Link to="/new-experiment" className={isActive('/new-experiment') ? 'active' : ''}>
+                <span role="img" aria-label="rocket">🚀</span><span>Yeni Deney</span>
+            </Link></li>
           </ul>
         </nav>
         <ThemeToggle />
@@ -1459,8 +1392,10 @@ function App() {
       <main className="main-content">
         {trackingTaskId && <LiveTrackerPane taskId={trackingTaskId} onClose={handleCloseTracker} />}
         <Routes>
-          <Route path="/" element={<DashboardOverview onNewExperimentClick={() => navigate('/new-experiment')} setTrackingTaskId={setTrackingTaskId} />} />
+          <Route path="/" element={<DashboardOverview setTrackingTaskId={setTrackingTaskId} />} />
           <Route path="/new-experiment" element={<NewExperiment onExperimentStarted={handleExperimentStarted} />} />
+          {/* YENİ ROUTE */}
+          <Route path="/reports/:experimentId" element={<ReportViewer />} />
         </Routes>
       </main>
     </div>
@@ -1581,18 +1516,21 @@ function ComparisonView({ experiments, onClose }) {
 ComparisonView.propTypes = { experiments: PropTypes.array.isRequired, onClose: PropTypes.func.isRequired, };
 export default ComparisonView;
 ========== FILE: dashboard/src/components/ExperimentRow.jsx ==========
-// Bu dosyanın içeriği de önceki cevaptaki ile aynı, tam halini tekrar veriyorum
+// dashboard/src/components/ExperimentRow.jsx
+
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { toast } from 'react-toastify';
+import { Link } from 'react-router-dom'; // YENİ
 
-const Icon = ({ path }) => <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d={path} /></svg>;
-Icon.propTypes = { path: PropTypes.string.isRequired };
+const Icon = ({ path, className }) => <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d={path} /></svg>;
+Icon.propTypes = { path: PropTypes.string.isRequired, className: PropTypes.string };
 
 const ICONS = {
   rerun: "M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z",
   copy: "M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z",
   satellite: "M6.34 5.34L4.93 3.93l-1.41 1.41 1.41 1.41C3.89 7.79 3.5 9.05 3.5 10.41c0 .46.06.91.16 1.34l-2.48 1.43c-.22.13-.34.38-.34.65v1.14c0 .27.11.52.34.65l2.48 1.43c-.1.43-.16.88-.16 1.34 0 2.21 1.79 4 4 4s4-1.79 4-4c0-1.37-.69-2.63-1.76-3.34l1.41-1.41-1.41-1.41-1.41 1.41C9.11 6.1 9.5 4.95 9.5 3.59c0-.46-.06-.91-.16-1.34l2.48-1.43c.22-.13.34-.38.34-.65V-.98c0-.27-.11-.52-.34-.65L9.34.8c.1-.43.16-.88.16-1.34 0-2.21-1.79-4-4-4s-4 1.79-4 4c0 1.37.69 2.63 1.76 3.34zm.24 9.35l-1.24-.71c.12-.52.19-1.06.19-1.61s-.07-1.09-.19-1.61l1.24-.71C7.58 10.9 8.5 12.05 8.5 13.41s-.92 2.51-1.92 3.28zM12 17.5c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z",
+  report: "M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"
 };
 
 function ExperimentRow({ experiment, isSelected, onSelect, onReRun, setTrackingTaskId }) {
@@ -1606,8 +1544,6 @@ function ExperimentRow({ experiment, isSelected, onSelect, onReRun, setTrackingT
   };
 
   const isRunning = ['STARTED', 'PROGRESS', 'PENDING'].includes(status);
-
-  // DÜZELTME: Savunmacı (defensive) kodlama
   const finalLoss = results?.final_loss;
   const displayLoss = (finalLoss !== null && finalLoss !== undefined) ? finalLoss.toFixed(6) : 'N/A';
 
@@ -1616,13 +1552,18 @@ function ExperimentRow({ experiment, isSelected, onSelect, onReRun, setTrackingT
       <td><input type="checkbox" checked={isSelected} onChange={onSelect} title="Karşılaştırmak için seç"/></td>
       <td><span className={`status-badge status-${status?.toLowerCase() || 'unknown'}`}>{status || 'Bilinmiyor'}</span></td>
       <td><div className="detail-cell"><strong>{config?.pipeline_name || 'N/A'}</strong><span className="exp-id">{experiment_id}</span></div></td>
-      <td><div className="detail-cell"><span>Ticker: <strong>{config?.data_sourcing?.ticker || 'N/A'}</strong></span><span>Epochs: <strong>{config?.training_params?.epochs || 'N/A'}</strong>, LR: <strong>{config?.training_params?.lr || 'N/A'}</strong></span></div></td>
+      <td><div className="detail-cell"><span>Ticker: <strong>{config?.data_sourcing?.ticker || 'N/A'}</strong></span><span>Epochs: <strong>{config?.training_params?.epochs || 'N/A'}</strong></span></div></td>
       <td><div className="detail-cell"><span>Final Kayıp: <strong>{displayLoss}</strong></span></div></td>
       <td><div className="detail-cell"><span>Başlangıç: {new Date(config.start_time).toLocaleString()}</span><span>Bitiş: {completed_at || failed_at ? new Date(completed_at || failed_at).toLocaleString() : 'N/A'}</span></div></td>
       <td className="actions-cell">
         <button className="actions-button" onClick={() => setActionsOpen(!actionsOpen)}>⋮</button>
         {actionsOpen && (
           <div className="actions-menu" onMouseLeave={() => setActionsOpen(false)}>
+            {status === 'SUCCESS' && (
+              <Link to={`/reports/${experiment_id}`} className="actions-menu-button">
+                  <Icon path={ICONS.report} /> Raporu Görüntüle
+              </Link>
+            )}
             {isRunning && <button onClick={() => { setTrackingTaskId(task_id); setActionsOpen(false); }}><Icon path={ICONS.satellite} /> Canlı İzle</button>}
             <button onClick={() => { onReRun(config); setActionsOpen(false); }}><Icon path={ICONS.rerun} /> Yeniden Çalıştır</button>
             <button onClick={handleCopyConfig}><Icon path={ICONS.copy} /> Config'i Kopyala</button>
@@ -1632,6 +1573,16 @@ function ExperimentRow({ experiment, isSelected, onSelect, onReRun, setTrackingT
     </tr>
   );
 }
+// DÜZELTME: actions-menu içindeki Link'in bir buton gibi görünmesi için CSS eklemesi gerekiyor.
+// App.css'e şunu ekleyelim:
+/*
+.actions-menu-button {
+  background: none; border: none; color: var(--text-color); padding: 10px 15px; text-align: left;
+  cursor: pointer; border-radius: 6px; display: flex; align-items: center; gap: 10px; font-size: 0.9em;
+  width: 100%; text-decoration: none;
+}
+.actions-menu-button:hover { background-color: var(--secondary-color); color: var(--text-inverse); }
+*/
 ExperimentRow.propTypes = { experiment: PropTypes.object.isRequired, isSelected: PropTypes.bool.isRequired, onSelect: PropTypes.func.isRequired, onReRun: PropTypes.func.isRequired, setTrackingTaskId: PropTypes.func.isRequired, };
 export default ExperimentRow;
 ========== FILE: dashboard/src/components/ExperimentsList.jsx ==========
@@ -2199,10 +2150,137 @@ function NewExperiment({ onExperimentStarted }) {
 
 NewExperiment.propTypes = { onExperimentStarted: PropTypes.func.isRequired };
 export default NewExperiment;
+========== FILE: dashboard/src/pages/ReportViewer.jsx ==========
+// dashboard/src/pages/ReportViewer.jsx
+
+import { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { Line } from 'react-chartjs-2';
+// DÜZELTME: Filler eklentisini import et
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, TimeScale, Title, Tooltip, Legend, Filler } from 'chart.js';
+import 'chartjs-adapter-date-fns';
+import { fetchExperimentDetails } from '../services/api';
+
+// DÜZELTME: Filler'ı kaydet
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, TimeScale, Title, Tooltip, Legend, Filler);
+
+const chartOptions = (title) => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: { position: 'top' },
+        title: { display: true, text: title, font: { size: 16 } }
+    },
+    interaction: {
+        intersect: false,
+        mode: 'index',
+    },
+});
+
+function ReportViewer() {
+    const { experimentId } = useParams();
+    const [details, setDetails] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const getDetails = async () => {
+            setLoading(true);
+            try {
+                const response = await fetchExperimentDetails(experimentId);
+                setDetails(response.data);
+                setError(null);
+            } catch (err) {
+                setError(`Rapor detayları yüklenemedi: ${err.response?.data?.detail || err.message}`);
+            } finally {
+                setLoading(false);
+            }
+        };
+        getDetails();
+    }, [experimentId]);
+
+    if (loading) return <div className="card"><p>Rapor Yükleniyor...</p></div>;
+    if (error) return <div className="card" style={{borderColor: 'var(--error-color)'}}><p>{error}</p><Link to="/">Geri Dön</Link></div>;
+    if (!details) return <div className="card"><p>Deney detayı bulunamadı.</p></div>;
+
+    const { config, results } = details;
+    // DÜZELTME: Verinin varlığını güvenli bir şekilde kontrol et
+    const lossHistory = results?.history?.loss || [];
+    const predictionData = {
+        labels: results?.time_index || [],
+        datasets: [
+            {
+                label: 'Gerçek Değerler',
+                data: results?.y_true || [],
+                borderColor: 'rgb(54, 162, 235)',
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                pointRadius: 1,
+                fill: 'origin'
+            },
+            {
+                label: 'Tahmin Edilen Değerler',
+                data: results?.y_pred || [],
+                borderColor: 'rgb(255, 99, 132)',
+                borderDash: [5, 5],
+                pointRadius: 1,
+            }
+        ]
+    };
+    
+    const lossData = {
+        labels: lossHistory.map((_, i) => `Epoch ${i + 1}`),
+        datasets: [{
+            label: 'Eğitim Kaybı',
+            data: lossHistory,
+            borderColor: 'rgb(75, 192, 192)',
+            tension: 0.1
+        }]
+    };
+
+    return (
+        <div className="report-viewer">
+            <div className="page-header" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                <div>
+                    <h1>{config?.pipeline_name} Deney Raporu</h1>
+                    <p style={{fontFamily: 'var(--font-mono)', color: 'var(--text-color-darker)'}}>{experimentId}</p>
+                </div>
+                <Link to="/" className="button-primary" style={{textDecoration: 'none'}}>← Genel Bakış'a Dön</Link>
+            </div>
+
+            <div className="card" style={{marginBottom: '20px'}}>
+                <h2>Performans Özeti</h2>
+                <div style={{display: 'flex', gap: '20px', flexWrap: 'wrap'}}>
+                    <p><strong>R² Skoru:</strong> {results?.metrics?.r2_score?.toFixed(4) ?? 'N/A'}</p>
+                    <p><strong>MAE:</strong> {results?.metrics?.mae?.toFixed(4) ?? 'N/A'}</p>
+                    <p><strong>Final Kayıp:</strong> {results?.final_loss?.toFixed(6) ?? 'N/A'}</p>
+                </div>
+            </div>
+
+            <div className="card" style={{height: '500px', marginBottom: '20px'}}>
+                 <Line options={{...chartOptions('Tahmin vs Gerçek Değerler'), scales: {x: {type: 'time', time: {unit: 'year'}}}}} data={predictionData} />
+            </div>
+
+            <div className="card" style={{height: '400px', marginBottom: '20px'}}>
+                <Line options={chartOptions('Model Öğrenme Eğrisi')} data={lossData} />
+            </div>
+            
+            <div className="card">
+                <h2>Deney Konfigürasyonu</h2>
+                <pre style={{backgroundColor: 'var(--bg-color)', padding: '15px', borderRadius: '8px', whiteSpace: 'pre-wrap', maxHeight: '400px', overflowY: 'auto'}}>
+                    <code>{JSON.stringify(config, null, 2)}</code>
+                </pre>
+            </div>
+        </div>
+    );
+}
+
+export default ReportViewer;
 ========== FILE: dashboard/src/services/api.js ==========
+// dashboard/src/services/api.js
+
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+export const API_BASE_URL = 'http://localhost:8000/api/v1';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -2213,6 +2291,12 @@ export const fetchExperiments = () => apiClient.get('/experiments');
 export const startNewExperiment = (config) => apiClient.post('/experiments', config);
 export const fetchAvailablePipelines = () => apiClient.get('/pipelines'); 
 export const fetchPipelineDefaultConfig = (pipelineId) => apiClient.get(`/pipelines/${pipelineId}/config`);
+
+// YENİ FONKSİYON (fetchExperimentReport yerine)
+// Artık JSON döndüğü için responseType belirtmeye gerek yok.
+export const fetchExperimentDetails = (experimentId) => {
+  return apiClient.get(`/experiments/${experimentId}/details`);
+};
 ========== FILE: dashboard/src/utils/cssUtils.js ==========
 /**
  * Belirtilen CSS değişkeninin hesaplanmış değerini döndürür.
@@ -2431,6 +2515,30 @@ Sanal ortamınız aktifken ve Redis çalışırken, her servisi ayrı bir termin
 
 Bu yapı, `Worker`'ın CPU kullanımı ne kadar yoğun olursa olsun, raporlama ve arayüz güncellemesinin bloklanmadan, anlık olarak gerçekleşmesini sağlar.
 
+##  Platform Mimarisi Nasıl Çalışır?
+
+### Standart Bir Deney Akışı
+
+1.  **Başlatma (`Dashboard` -> `API` -> `Worker`):**
+    *   `Dashboard`, kullanıcıdan aldığı konfigürasyon ile `API`'nin `/experiments` endpoint'ine bir `POST` isteği atar.
+    *   `API`, görevi `Celery` kuyruğuna bırakır ve bir `task_id` döner.
+    *   `Worker`, görevi kuyruktan alır ve ilgili `Pipeline` eklentisinin bir örneğini oluşturur.
+
+2.  **Eğitim ve Canlı Takip (`Worker` -> `Learner` -> `API` -> `Dashboard`):**
+    *   `Worker`, eklentinin standart `run` metodunu çağırır. Bu metot, `azuraforge-learner` içindeki `TimeSeriesPipeline`'den gelir.
+    *   `run` metodu, `LivePredictionCallback` ve `RedisProgressCallback` gibi özel `Callback`'ler oluşturur.
+    *   `Learner`'ın `fit` metodu çalıştırılır. Her epoch sonunda:
+        *   `LivePredictionCallback`, doğrulama seti üzerinde tahmin yapar.
+        *   `RedisProgressCallback`, hem kayıp bilgisini hem de canlı tahmin verisini birleştirerek Redis Pub/Sub kanalına yayınlar.
+    *   `API`, bu kanala abone olduğu için mesajı anında alır ve `WebSocket` üzerinden `Dashboard`'a iletir.
+    *   `LiveTrackerPane`, gelen bu zengin veriyle kendini (kayıp grafiği, tahmin grafiği, ilerleme çubuğu) günceller.
+
+3.  **Tamamlama ve Raporlama (`Worker` -> `Learner`):**
+    *   Eğitim bittiğinde, `TimeSeriesPipeline`'in `run` metodu, son değerlendirmeyi yapar ve `azuraforge_learner.reporting` içindeki `generate_regression_report` fonksiyonunu çağırır.
+    *   Bu fonksiyon, `/reports` dizini altına, grafikleri içeren bir `report.md` dosyası oluşturur.
+    *   `run` metodu, deneyin tüm sonuçlarını (`history`, `metrics`, ham veriler) içeren bir JSON objesini `worker` görevine döndürür.
+    *   `Worker`, bu sonucu `results.json` dosyasına yazar ve görevi `SUCCESS` olarak işaretler.
+
 ## 🤝 Katkıda Bulunma
 
 Bu proje bir açık kaynak projesi olarak geliştirilmektedir. Katkıda bulunmak için lütfen `platform/docs/CONTRIBUTING.md` dosyasını inceleyin.
@@ -2476,26 +2584,34 @@ AzuraForge'un her aşamasında, kalitesini ve sürdürülebilirliğini sağlamak
     3.  **`API`:** `WebSocket` bağlantısı kurulduğunda bu Redis kanalını dinleyen (`subscribe`) ve gelen her mesajı anında `Dashboard`'a ileten bir yapıya dönüştürüldü.
 - **BAŞARI:** Bu mimari değişiklik sayesinde, worker'ın CPU kullanımı ne kadar yoğun olursa olsun, ilerleme durumu bilgileri (epoch, kayıp vb.) anlık ve akıcı bir şekilde `Dashboard`'a iletilmeye başlandı.
 
-### Faz 9-10: Mimari Saflaştırma ve Otomatik Raporlama
+### Faz 9-11: Mimari Saflaştırma ve Standardizasyon
 - **Mimari Düzeltme:** `Learner` sınıfının Redis'e olan doğrudan bağımlılığı, bir `RedisProgressCallback` sınıfı yazılarak kaldırıldı. Raporlama sorumluluğu `Worker` katmanına (Callback aracılığıyla) devredilerek `Learner` tekrar teknoloji-agnostik ve saf hale getirildi.
-- **Hata Ayıklama:** `AttributeError: 'Learner' object has no attribute 'predict'` ve `NameError: name 'json' is not defined` gibi, büyük bir refactoring sürecinde ortaya çıkan entegrasyon hataları adım adım tespit edilip çözüldü.
-- **BAŞARI (Otomatik Raporlama):** `Smart Learner` projesindeki raporlama yeteneği, `azuraforge-learner` kütüphanesine başarıyla entegre edildi. Artık her deneyin sonunda, `worker` servisi, deney metriklerini ve `matplotlib` ile çizilmiş grafikleri içeren zengin bir **`report.md` dosyasını otomatik olarak oluşturmaktadır.**
+- **Hata Ayıklama:** `AttributeError` ve `NameError` gibi, büyük bir refactoring sürecinde ortaya çıkan entegrasyon hataları adım adım çözüldü.
+- **`BasePipeline` Mimarisi:** `Smart Learner` projesindeki pipeline soyutlama fikri, `azuraforge-learner` kütüphanesi içinde `TimeSeriesPipeline` adıyla yeniden hayata geçirildi. Bu, eklenti geliştirmeyi standartlaştıran ve kod tekrarını önleyen bir yapı sağladı. `app-stock-predictor` eklentisi bu yeni yapıya başarıyla uyarlandı.
 
-**An itibarıyla AzuraForge Platformu, temel MLOps döngüsünü (Başlat -> Canlı İzle -> Eğit -> Değerlendir -> Raporla) tam ve kararlı bir şekilde tamamlamıştır. Bu, "Checkpoint Bravo" kilometre taşıdır.**
+### Faz 12-14: Dinamik ve İnteraktif Raporlama
+- **Veri Akışının Tamamlanması:** `Worker`'ın, deney sonunda sadece metrikleri değil, aynı zamanda grafik çizimi için gerekli olan tüm ham veriyi (`history`, `y_true`, `y_pred`, `time_index`) `results.json` dosyasına yazması sağlandı.
+- **Dinamik Rapor Endpoint'i:** `API`'ye, bir deneyin tüm bu zenginleştirilmiş JSON verisini döndüren bir `/details` endpoint'i eklendi.
+- **BAŞARI (İnteraktif Raporlama):** `Dashboard`'daki rapor sayfası, artık statik Markdown dosyalarını değil, bu dinamik JSON verisini kullanarak, `Chart.js` ile çizilmiş **interaktif ve canlı grafikler** sunar hale getirildi.
+- **BAŞARI (Canlı Tahmin Grafiği):** `LiveTrackerPane`, eğitim sırasında her `n` epoch'ta bir güncellenen "Tahmin vs Gerçek" grafiğini canlı olarak gösterecek şekilde geliştirildi.
+
+**An itibarıyla AzuraForge Platformu, tam işlevsel, canlı takip yetenekli, standartlaştırılmış eklenti yapısına sahip ve dinamik raporlama sunan "Checkpoint Charlie" kilometre taşına ulaşmıştır.**
 
 ## 🗺️ Gelecek Fazlar ve Yol Haritası
 
 Bu sağlam temel üzerine inşa edilecek adımlar, AzuraForge'u daha da zenginleştirmeyi ve kapsamını genişletmeyi hedefleyecektir.
 
-### Faz 11: `BasePipeline` Standardizasyonu ve Geliştirici Deneyimi
-- **`BasePipeline` Soyut Sınıfı:** `app-stock-predictor` içinde manuel olarak yazılan `run` metodu, `azuraforge-learner` içindeki `BasePipeline` soyut sınıfına taşınacak. Eklenti geliştirmek, sadece `_load_data`, `_create_model` gibi birkaç metodu doldurmak kadar basit hale gelecek.
-- **Dashboard'da Rapor Görüntüleme:** Kullanıcıların tamamlanmış deneylerin `report.md` dosyalarını doğrudan arayüzden okuyabilmesi sağlanacak.
+### Faz 15: Performans ve UX İyileştirmeleri
+- **Akıllı Önbellekleme (Caching):** `yfinance` gibi harici API çağrılarının sonuçları önbelleğe alınarak, aynı parametrelerle yapılan sonraki deneyler önemli ölçüde hızlandırılacak.
+- **Gelişmiş Ön İşleme:** `target_col_transform: "log"` gibi kanıtlanmış ön işleme adımlarını `BasePipeline`'e entegre etmek.
 
-### Faz 12: Yardımcı Modüllerin Entegrasyonu (`caching` vb.)
-- **Akıllı Önbellekleme (Caching):** `yf.download` gibi API çağrılarının sonuçları önbelleğe alınarak, aynı parametrelerle yapılan sonraki deneyler önemli ölçüde hızlandırılacak.
+### Faz 16: Yeni Eklentiler ve Yetenek Kanıtı
+- **`app-weather-forecaster`:** `TimeSeriesPipeline`'in gücünü kanıtlamak için hava durumu tahmincisi eklentisi, yeni standartlara uygun olarak hızla geliştirilecek.
+- **Sınıflandırma Problemleri:** Sınıflandırma görevleri için yeni bir `BaseClassificationPipeline` ve buna uygun raporlama araçları geliştirilecek.
 
-### Faz 13: Yeni Veri Modaliteleri ve Gelişmiş Modeller
-- **Görüntü İşleme:** `Conv2D`, `MaxPool2D` gibi katmanların `core`'a eklenmesi ve `azuraforge-app-image-classifier` eklentisinin geliştirilmesi.
+### Faz 17: Görüntü İşleme
+- **`core` Genişletme:** `Conv2D`, `MaxPool2D` gibi CNN katmanlarının `core`'a eklenmesi.
+- **Yeni Eklenti:** `azuraforge-app-image-classifier` (örn: MNIST için) oluşturma.
 ========== FILE: learner/pyproject.toml ==========
 [build-system]
 requires = ["setuptools>=61.0"]
@@ -2539,39 +2655,58 @@ setup(
 )
 
 ========== FILE: learner/src/azuraforge_learner/callbacks.py ==========
+# learner/src/azuraforge_learner/callbacks.py
+
 import os
 import numpy as np
-from .events import Event
+from typing import TYPE_CHECKING, Optional, Any
+from .events import Event # Event'i de import edelim
 
-# 'Learner' sınıfı henüz tanımlanmadığı için ileriye dönük referans (forward reference) kullanıyoruz
-from typing import TYPE_CHECKING
+# Döngüsel importu önlemek için, sadece tip kontrolü sırasında Learner'ı import et
 if TYPE_CHECKING:
     from .learner import Learner
 
 class Callback:
     """
-    Tüm callback'lerin temel sınıfı. Olayları dinler ve ilgili metoda yönlendirir.
+    Tüm callback'lerin temel sınıfı.
+    Kendisini çalıştıran Learner'a bir referans tutar.
     """
+    def __init__(self):
+        self.learner: Optional['Learner'] = None
+
+    def set_learner(self, learner: 'Learner'):
+        """Bu metod, Learner tarafından çağrılarak referansı ayarlar."""
+        self.learner = learner
+
     def __call__(self, event: Event):
+        """
+        Gelen olaya göre ilgili metodu (örn: on_epoch_end) çağırır.
+        """
         method = getattr(self, f"on_{event.name}", None)
         if method:
             method(event)
 
-    def on_train_begin(self, event: Event): pass
-    def on_train_end(self, event: Event): pass
-    def on_epoch_begin(self, event: Event): pass
-    def on_epoch_end(self, event: Event): pass
+    # Olay metotları
+    def on_train_begin(self, event: Event) -> None: pass
+    def on_train_end(self, event: Event) -> None: pass
+    def on_epoch_begin(self, event: Event) -> None: pass
+    def on_epoch_end(self, event: Event) -> None: pass
+    def on_batch_begin(self, event: Event) -> None: pass
+    def on_batch_end(self, event: Event) -> None: pass
 
+
+# ÖNEMLİ: ModelCheckpoint ve EarlyStopping sınıflarını koruyoruz ve
+# yeni temel sınıftan miras almalarını sağlıyoruz.
 class ModelCheckpoint(Callback):
     """Her epoch sonunda performansı izler ve sadece en iyi modeli kaydeder."""
     def __init__(self, filepath: str, monitor: str = "val_loss", mode: str = "min", verbose: int = 1):
+        super().__init__() # Temel sınıfın init'ini çağır
         self.filepath = filepath
         self.monitor = monitor
         self.mode = mode
         self.verbose = verbose
         self.best = np.inf if mode == "min" else -np.inf
 
-        # Dosyanın kaydedileceği dizini oluştur
         dir_path = os.path.dirname(self.filepath)
         if dir_path:
             os.makedirs(dir_path, exist_ok=True)
@@ -2588,13 +2723,16 @@ class ModelCheckpoint(Callback):
 
         if is_better:
             if self.verbose > 0:
-                print(f"ModelCheckpoint: {self.monitor} improved from {self.best:.6f} to {current_val:.6f}. Saving model to {self.filepath}")
+                print(f"ModelCheckpoint: {self.monitor} improved from {self.best:.6f} to {current_val:.6f}. Saving model...")
             self.best = current_val
-            event.learner.save(self.filepath)
+            if self.learner and hasattr(self.learner, 'save_model'): # Learner'da save_model metodu varsa
+                 self.learner.save_model(self.filepath)
+
 
 class EarlyStopping(Callback):
     """Performans belirli bir epoch sayısı boyunca iyileşmediğinde eğitimi durdurur."""
     def __init__(self, monitor: str = "val_loss", patience: int = 10, mode: str = "min", verbose: int = 1):
+        super().__init__() # Temel sınıfın init'ini çağır
         self.monitor = monitor
         self.patience = patience
         self.mode = mode
@@ -2603,7 +2741,6 @@ class EarlyStopping(Callback):
         self.best = np.inf if mode == "min" else -np.inf
 
     def on_train_begin(self, event: Event):
-        # Eğitimin başında sayaçları sıfırla
         self.wait = 0
         self.best = np.inf if self.mode == "min" else -np.inf
 
@@ -2623,8 +2760,8 @@ class EarlyStopping(Callback):
             if self.wait >= self.patience:
                 if self.verbose > 0:
                     print(f"EarlyStopping: Stopping training. {self.monitor} did not improve for {self.patience} epochs.")
-                event.learner.stop_training = True
-
+                if self.learner:
+                    self.learner.stop_training = True
 ========== FILE: learner/src/azuraforge_learner/events.py ==========
 from dataclasses import dataclass, field
 from typing import Dict, Any, Literal, TYPE_CHECKING
@@ -2812,14 +2949,17 @@ class Learner:
         self.criterion = criterion
         self.optimizer = optimizer
         self.callbacks = callbacks or []
+        
+        # KRİTİK DÜZELTME: Tüm callback'lere bu learner örneğini tanıt.
+        # Bu, callback'lerin `self.learner` üzerinden `predict` gibi metotlara erişmesini sağlar.
         for cb in self.callbacks:
-            if hasattr(cb, 'set_learner'):
-                 cb.set_learner(self)
+            cb.set_learner(self)
                  
         self.history: Dict[str, List[float]] = {}
         self.stop_training: bool = False
 
     def _publish(self, event_name: str, payload: Optional[Dict[str, Any]] = None):
+        """Olayı tüm callback'lere yayınlar."""
         event = Event(name=event_name, learner=self, payload=payload or {})
         for cb in self.callbacks:
             cb(event)
@@ -2836,7 +2976,6 @@ class Learner:
             
             self._publish("epoch_begin", payload={"epoch": epoch, "total_epochs": epochs, "pipeline_name": pipeline_name})
             
-            # Eğitim adımı
             y_pred = self.model(X_train_t)
             loss = self.criterion(y_pred, y_train_t)
             
@@ -2857,28 +2996,16 @@ class Learner:
             
         self._publish("train_end", payload={"status_text": "Eğitim tamamlandı.", "pipeline_name": pipeline_name})
         return self.history
-
-    # YENİ: predict metodu eklendi
+        
     def predict(self, X_test: np.ndarray) -> np.ndarray:
-        """
-        Verilen girdi verisi (X_test) için model tahminleri yapar.
-        """
         if not isinstance(X_test, np.ndarray):
             raise TypeError("Girdi (X_test) bir NumPy dizisi olmalıdır.")
         
-        # Modeli Tensor'a çevir ve tahmin yap
         input_tensor = Tensor(X_test)
         predictions_tensor = self.model(input_tensor)
-        
-        # Sonucu CPU'ya çekip NumPy dizisi olarak döndür
         return predictions_tensor.to_cpu()
 
-    # YENİ: evaluate metodu eklendi
     def evaluate(self, X_val: np.ndarray, y_val: np.ndarray) -> Dict[str, float]:
-        """
-        Verilen doğrulama seti üzerinde modelin performansını değerlendirir.
-        Şimdilik sadece regresyon metriklerini destekliyor.
-        """
         from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
         
         y_val_t = Tensor(y_val)
@@ -2887,7 +3014,6 @@ class Learner:
         val_loss = self.criterion(y_pred_t, y_val_t).to_cpu().item()
         y_pred_np = y_pred_t.to_cpu()
         
-        # y_val'in NumPy olduğundan emin ol
         y_val_np = y_val if isinstance(y_val, np.ndarray) else np.array(y_val)
         
         val_r2 = r2_score(y_val_np, y_pred_np)
@@ -2970,110 +3096,167 @@ class Adam(Optimizer):
 import logging
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Tuple, Optional, List
+
 import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
 
 from .learner import Learner, Callback
 from .models import Sequential
 from .reporting import generate_regression_report
+from .optimizers import Adam, SGD
+from .losses import MSELoss
+from .events import Event
+
+def _create_sequences(data: np.ndarray, seq_length: int) -> Tuple[np.ndarray, np.ndarray]:
+    xs, ys = [], []
+    for i in range(len(data) - seq_length):
+        x = data[i:(i + seq_length)]
+        y = data[i + seq_length]
+        xs.append(x)
+        ys.append(y)
+    return np.array(xs), np.array(ys)
 
 class BasePipeline(ABC):
-    """
-    Tüm AzuraForge pipeline eklentileri için temel soyut sınıf.
-    Bir deneyin standart yaşam döngüsünü yönetir.
-    """
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.scaler = StandardScaler()
+        logging.basicConfig(level="INFO", format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', force=True)
 
     @abstractmethod
-    def _load_data(self) -> Any:
-        """Uygulamaya özel veri yükleme mantığı."""
+    def run(self, callbacks: Optional[List[Callback]] = None) -> Dict[str, Any]:
+        pass
+
+class LivePredictionCallback(Callback):
+    def __init__(self, pipeline: 'TimeSeriesPipeline', X_val: np.ndarray, y_val: np.ndarray, time_index_val: pd.Index, validate_every_n_epochs: int):
+        super().__init__()
+        self.pipeline = pipeline
+        self.X_val = X_val
+        self.y_val = y_val
+        self.time_index_val = time_index_val
+        self.validate_every = validate_every_n_epochs
+        self.last_results: Dict[str, Any] = {}
+
+    def on_epoch_end(self, event: Event) -> None:
+        epoch = event.payload.get("epoch", 0)
+        total_epochs = event.payload.get("total_epochs", 1)
+
+        if (epoch % self.validate_every == 0 and epoch > 0) or (epoch == total_epochs):
+            if not self.learner: return
+
+            y_pred_scaled = self.learner.predict(self.X_val)
+            
+            target_col, feature_cols = self.pipeline._get_target_and_feature_cols()
+            target_idx = feature_cols.index(target_col)
+            
+            dummy_pred = np.zeros((len(y_pred_scaled), len(feature_cols)))
+            dummy_test = np.zeros((len(self.y_val), len(feature_cols)))
+            dummy_pred[:, target_idx] = y_pred_scaled.flatten()
+            dummy_test[:, target_idx] = self.y_val.flatten()
+            y_pred_unscaled = self.pipeline.scaler.inverse_transform(dummy_pred)[:, target_idx]
+            y_test_unscaled = self.pipeline.scaler.inverse_transform(dummy_test)[:, target_idx]
+
+            validation_payload = {
+                "x_axis": [d.isoformat() for d in self.time_index_val],
+                "y_true": y_test_unscaled.tolist(),
+                "y_pred": y_pred_unscaled.tolist(),
+                "x_label": "Tarih",
+                "y_label": target_col
+            }
+            event.payload['validation_data'] = validation_payload
+            
+            from sklearn.metrics import r2_score, mean_absolute_error
+            self.last_results = {
+                "history": self.learner.history,
+                "metrics": {
+                    'r2_score': r2_score(y_test_unscaled, y_pred_unscaled),
+                    'mae': mean_absolute_error(y_test_unscaled, y_pred_unscaled)
+                },
+                "y_true": y_test_unscaled, "y_pred": y_pred_unscaled,
+                "time_index": self.time_index_val, "y_label": target_col
+            }
+
+class TimeSeriesPipeline(BasePipeline):
+    def __init__(self, config: Dict[str, Any]):
+        super().__init__(config)
+        self.scaler = MinMaxScaler(feature_range=(-1, 1))
+        self.learner: Optional[Learner] = None
+
+    @abstractmethod
+    def _load_data(self) -> pd.DataFrame:
         pass
 
     @abstractmethod
-    def _preprocess(self, data: Any) -> Tuple[np.ndarray, np.ndarray]:
-        """Veriyi X ve y olarak ayırıp ön işleme tabi tutar."""
+    def _get_target_and_feature_cols(self) -> Tuple[str, List[str]]:
         pass
     
     @abstractmethod
     def _create_model(self, input_shape: Tuple) -> Sequential:
-        """Uygulamaya özel modeli oluşturur."""
         pass
 
-    @abstractmethod
     def _create_learner(self, model: Sequential, callbacks: Optional[List[Callback]]) -> Learner:
-        """Uygulamaya özel Learner ve Optimizer'ı oluşturur."""
-        pass
-    
-    def _postprocess_and_evaluate(self, learner: Learner, X_test: np.ndarray, y_test: np.ndarray) -> Dict[str, Any]:
-        """
-        Tahminleri yapar, ölçeklemeyi geri alır ve metrikleri hesaplar.
-        Varsayılan implementasyon regresyon içindir. Gerekirse override edilebilir.
-        """
-        from sklearn.metrics import r2_score, mean_absolute_error
-
-        y_pred = learner.predict(X_test)
-        
-        # Varsayılan olarak y'nin tek bir sütun olduğunu varsayıyoruz
-        # Ölçeklemeyi geri almak için, scaler'ın n_features_in_ özelliğini kullanıyoruz
-        if hasattr(self.scaler, 'n_features_in_'):
-            dummy_test = np.zeros((len(y_test), self.scaler.n_features_in_))
-            dummy_pred = np.zeros((len(y_pred), self.scaler.n_features_in_))
-
-            dummy_test[:, -1] = y_test.flatten()
-            dummy_pred[:, -1] = y_pred.flatten()
-
-            y_test_unscaled = self.scaler.inverse_transform(dummy_test)[:, -1]
-            y_pred_unscaled = self.scaler.inverse_transform(dummy_pred)[:, -1]
-        else:
-            # Scaler hiç kullanılmamışsa
-            y_test_unscaled = y_test
-            y_pred_unscaled = y_pred
-
-        metrics = {
-            'r2_score': r2_score(y_test_unscaled, y_pred_unscaled),
-            'mae': mean_absolute_error(y_test_unscaled, y_pred_unscaled)
-        }
-        
-        return {
-            "metrics": metrics,
-            "y_true": y_test_unscaled,
-            "y_pred": y_pred_unscaled
-        }
+        training_params = self.config.get("training_params", {})
+        lr = float(training_params.get("lr", 0.001))
+        optimizer_type = str(training_params.get("optimizer", "adam")).lower()
+        optimizer = Adam(model.parameters(), lr=lr) if optimizer_type == "adam" else SGD(model.parameters(), lr=lr)
+        return Learner(model, MSELoss(), optimizer, callbacks=callbacks)
 
     def run(self, callbacks: Optional[List[Callback]] = None) -> Dict[str, Any]:
-        """Deneyin tam yaşam döngüsünü çalıştırır."""
-        self.logger.info("Pipeline başlatılıyor...")
+        self.logger.info(f"'{self.config.get('pipeline_name')}' pipeline başlatılıyor...")
         
         raw_data = self._load_data()
-        X, y = self._preprocess(raw_data)
+        target_col, feature_cols = self._get_target_and_feature_cols()
+        data_to_process = raw_data[feature_cols]
 
-        # Veriyi ölçekle ve böl
-        X_scaled = self.scaler.fit_transform(X)
-        X_train, X_test, y_train, y_test = train_test_split(
-            X_scaled, y, test_size=0.2, random_state=42, shuffle=False
-        )
+        sequence_length = self.config.get("model_params", {}).get("sequence_length", 60)
+        scaled_data = self.scaler.fit_transform(data_to_process)
+        
+        if len(scaled_data) <= sequence_length:
+            return {"status": "failed", "message": "Sekans oluşturmak için yeterli veri yok."}
+        
+        X, y_unsequenced = _create_sequences(scaled_data, sequence_length)
+        
+        target_idx = feature_cols.index(target_col)
+        y = y_unsequenced[:, target_idx].reshape(-1, 1)
+        
+        test_size = self.config.get("training_params", {}).get("test_size", 0.2)
+        split_idx = int(len(X) * (1 - test_size))
+        X_train, X_test = X[:split_idx], X[split_idx:]
+        y_train, y_test = y[:split_idx], y[split_idx:]
+        time_index_test = raw_data.index[split_idx + sequence_length:]
 
         model = self._create_model(X_train.shape)
-        learner = self._create_learner(model, callbacks)
-
-        self.logger.info("Model eğitimi başlıyor...")
-        history = learner.fit(X_train, y_train.reshape(-1, 1))
         
-        self.logger.info("Model değerlendiriliyor...")
-        final_results = self._postprocess_and_evaluate(learner, X_test, y_test)
-        final_results['history'] = history
+        live_predict_cb = LivePredictionCallback(
+            pipeline=self, X_val=X_test, y_val=y_test, 
+            time_index_val=time_index_test,
+            validate_every_n_epochs=self.config.get("training_params", {}).get("validate_every", 5)
+        )
+        all_callbacks = (callbacks or []) + [live_predict_cb]
+        
+        self.learner = self._create_learner(model, all_callbacks)
+
+        epochs = int(self.config.get("training_params", {}).get("epochs", 50))
+        self.logger.info(f"{epochs} epoch için model eğitimi başlıyor...")
+        history = self.learner.fit(X_train, y_train, epochs=epochs, pipeline_name=self.config.get("pipeline_name"))
+        
+        final_results = live_predict_cb.last_results
+        if not final_results:
+            return {"status": "failed", "message": "Eğitim tamamlanamadı veya hiç doğrulama yapılmadı."}
 
         self.logger.info("Rapor oluşturuluyor...")
         generate_regression_report(final_results, self.config)
         
-        # Worker'a döndürülecek nihai sonuç
+        # DÜZELTME: Worker'a döndürülecek nihai sonuçları JSON uyumlu hale getir
+        final_loss = history['loss'][-1] if history.get('loss') else None
+        
         return {
-            "final_loss": history['loss'][-1],
-            "metrics": final_results['metrics']
+            "final_loss": final_loss,
+            "metrics": final_results.get('metrics', {}),
+            "history": final_results.get('history', {}),
+            "y_true": final_results.get('y_true', np.array([])).tolist(),
+            "y_pred": final_results.get('y_pred', np.array([])).tolist(),
+            "time_index": [d.isoformat() for d in final_results.get('time_index', [])]
         }
 ========== FILE: learner/src/azuraforge_learner/reporting.py ==========
 # learner/src/azuraforge_learner/reporting.py
@@ -3184,22 +3367,23 @@ def generate_regression_report(results: Dict[str, Any], config: Dict[str, Any]):
 # learner/src/azuraforge_learner/__init__.py
 
 from .events import Event
-from .callbacks import Callback, ModelCheckpoint, EarlyStopping
+from .callbacks import Callback
 from .losses import Loss, MSELoss
 from .layers import Layer, Linear, ReLU, Sigmoid, LSTM
 from .models import Sequential
 from .optimizers import Optimizer, SGD, Adam
 from .learner import Learner
-from .pipelines import BasePipeline # YENİ
+from .pipelines import BasePipeline, TimeSeriesPipeline # YENİ
 
 __all__ = [
-    "Event", "Callback", "ModelCheckpoint", "EarlyStopping",
+    "Event", "Callback",
     "Loss", "MSELoss", 
     "Layer", "Linear", "ReLU", "Sigmoid", "LSTM",
     "Sequential", 
     "Optimizer", "SGD", "Adam",
     "Learner",
-    "BasePipeline" # YENİ
+    "BasePipeline", 
+    "TimeSeriesPipeline" # YENİ
 ]
 ========== FILE: learner/tests/azuraforge_learner/test_learner_components.py ==========
 import pytest

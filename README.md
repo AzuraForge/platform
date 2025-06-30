@@ -1,30 +1,29 @@
 # AzuraForge Platform 🚀
 
-**AzuraForge Platform**, yapay zeka modellerini sıfırdan oluşturmak, eğitmek ve yönetmek için tasarlanmış modüler, dağıtık ve eklenti tabanlı bir MLOps platformudur. Modern mikroservis mimarisi prensipleriyle inşa edilmiştir.
+**AzuraForge Platform**, yapay zeka modellerini sıfırdan oluşturmak, eğitmek, canlı olarak takip etmek ve sonuçlarını interaktif raporlarla analiz etmek için tasarlanmış modüler, dağıtık ve eklenti tabanlı bir MLOps platformudur.
 
 Bu depo, AzuraForge ekosistemindeki tüm ana servisleri (API, Worker, Dashboard) ve kütüphaneleri (Core, Learner, Applications) bir araya getiren **orkestrasyon katmanıdır**.
 
-## 🎯 Temel Amaçlar ve Felsefe
+## ✨ Platform Yetenekleri
 
-*   **Sıfırdan İnşa:** Derin öğrenme motoru (`azuraforge-core`) ve temel bileşenler sıfırdan geliştirilmiştir.
-*   **Modülerlik ve Bağımsızlık:** Her bileşen (kütüphane, API, worker, UI, uygulama) kendi bağımsız repo'sunda yaşar ve kendi sorumluluğuna sahiptir.
-*   **Olay Güdümlü Mimari:** Servisler arası iletişim olay tabanlı (Celery, Redis Pub/Sub, WebSockets) gerçekleşir. Bu sayede, yoğun hesaplama görevleri bile kullanıcı arayüzünü bloklamaz.
-*   **Eklenti Tabanlı:** Yeni yapay zeka modelleri ve uygulamaları, platformun çekirdek koduna dokunmadan birer eklenti (plugin) olarak eklenebilir.
-*   **Zengin ve Otomatik Çıktılar:** Platform, sadece sayısal sonuçlar üretmekle kalmaz, her deneyin sonunda performans metriklerini ve görselleştirmeleri içeren **otomatik Markdown raporları** oluşturur.
+*   **Sıfırdan İnşa Edilmiş Çekirdek:** Otomatik türev, `LSTM` gibi gelişmiş katmanlar ve `Adam` optimizer içeren, saf Python/NumPy tabanlı bir derin öğrenme motoru.
+*   **Modüler Mikroservis Mimarisi:** Her bileşen (`api`, `worker`, `learner` vb.) kendi bağımsız reposunda yaşar, bağımsız olarak geliştirilebilir ve kurulabilir.
+*   **Olay Güdümlü ve Bloklamayan Akış:** `Celery` ve `Redis Pub/Sub` üzerine kurulu mimari sayesinde, yoğun model eğitimleri bile sistemi bloklamaz.
+*   **Canlı Deney Takibi:** `WebSocket` aracılığıyla, devam eden bir eğitimin ilerleme çubuğunu, anlık kayıp değerini ve hatta **tahmin grafiklerinin canlı evrimini** anlık olarak izleme imkanı.
+*   **Dinamik ve İnteraktif Raporlama:** Tamamlanan her deney için, `Dashboard` üzerinden erişilebilen, `Chart.js` ile çizilmiş interaktif grafikler ve detaylı metrikler içeren rapor sayfaları.
+*   **Genişletilebilir Eklenti Sistemi:** Yeni AI uygulamaları, platformun çekirdek koduna dokunmadan, standartlaştırılmış bir `BasePipeline`'den türetilerek kolayca eklenebilir.
 
 ## 🏛️ Mimari Genel Bakış
 
-AzuraForge platformu, aşağıdaki bağımsız GitHub depolarından oluşan bir mikroservis mimarisini benimser:
+AzuraForge, aşağıdaki bağımsız GitHub depolarından oluşur:
 
--   **`core`**: Temel otomatik türev motoru.
--   **`learner`**: `core` üzerinde geliştirilmiş yüksek seviyeli öğrenme kütüphanesi. `LSTM` gibi gelişmiş katmanları, `Adam` gibi optimizer'ları, `Callback` sistemini ve **otomatik raporlama araçlarını** içerir.
--   **`applications`**: Platform için resmi uygulama eklentilerinin katalogu.
+-   **`core`**: Temel matematik motoru.
+-   **`learner`**: Yüksek seviyeli öğrenme kütüphanesi (`Learner`, `Callback` sistemi, `BasePipeline` ve raporlama araçları).
+-   **`applications`**: Resmi uygulama katalogu.
 -   **`app-stock-predictor`**: Gerçek bir uygulama eklentisi örneği.
 -   **`api`**: RESTful API ve WebSocket (Pub/Sub tabanlı) sunan iletişim katmanı.
 -   **`worker`**: Arka plan görevlerini işleyen ve raporları oluşturan işçi servisi.
--   **`dashboard`**: Platform için web tabanlı, canlı takip yeteneklerine sahip kullanıcı arayüzü.
-
-Bu repo, tüm bu servisleri tek bir `docker-compose` komutuyla ayağa kaldıran ana orkestrasyon katmanıdır.
+-   **`dashboard`**: React tabanlı, canlı takip ve dinamik raporlama yeteneklerine sahip web arayüzü.
 
 ## 🚀 Hızlı Başlangıç (Docker Compose ile)
 
@@ -36,7 +35,7 @@ Bu repo, tüm bu servisleri tek bir `docker-compose` komutuyla ayağa kaldıran 
 6.  **Platforma erişin:**
     -   **Dashboard:** `http://localhost:5173`
     -   **API Dokümantasyonu:** `http://localhost:8000/api/v1/docs`
-7.  **Deneyi Çalıştırın ve Raporu Görüntüleyin:** Dashboard'dan bir deney başlattıktan sonra, host makinenizdeki `./reports` klasörünü kontrol ederek oluşturulan `report.md` ve `images/` klasörünü inceleyin.
+7.  **Deneyin ve Keşfedin:** Dashboard'dan bir deney başlatın, canlı takip panelini izleyin ve deney bittiğinde "Raporu Görüntüle" butonuyla interaktif sonuçları inceleyin.
 
 ## 🛠️ Geliştirme Rehberi ve İç Detaylar
 

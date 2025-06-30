@@ -39,23 +39,31 @@ AzuraForge'un her aşamasında, kalitesini ve sürdürülebilirliğini sağlamak
     3.  **`API`:** `WebSocket` bağlantısı kurulduğunda bu Redis kanalını dinleyen (`subscribe`) ve gelen her mesajı anında `Dashboard`'a ileten bir yapıya dönüştürüldü.
 - **BAŞARI:** Bu mimari değişiklik sayesinde, worker'ın CPU kullanımı ne kadar yoğun olursa olsun, ilerleme durumu bilgileri (epoch, kayıp vb.) anlık ve akıcı bir şekilde `Dashboard`'a iletilmeye başlandı.
 
-### Faz 9-10: Mimari Saflaştırma ve Otomatik Raporlama
+### Faz 9-11: Mimari Saflaştırma ve Standardizasyon
 - **Mimari Düzeltme:** `Learner` sınıfının Redis'e olan doğrudan bağımlılığı, bir `RedisProgressCallback` sınıfı yazılarak kaldırıldı. Raporlama sorumluluğu `Worker` katmanına (Callback aracılığıyla) devredilerek `Learner` tekrar teknoloji-agnostik ve saf hale getirildi.
-- **Hata Ayıklama:** `AttributeError: 'Learner' object has no attribute 'predict'` ve `NameError: name 'json' is not defined` gibi, büyük bir refactoring sürecinde ortaya çıkan entegrasyon hataları adım adım tespit edilip çözüldü.
-- **BAŞARI (Otomatik Raporlama):** `Smart Learner` projesindeki raporlama yeteneği, `azuraforge-learner` kütüphanesine başarıyla entegre edildi. Artık her deneyin sonunda, `worker` servisi, deney metriklerini ve `matplotlib` ile çizilmiş grafikleri içeren zengin bir **`report.md` dosyasını otomatik olarak oluşturmaktadır.**
+- **Hata Ayıklama:** `AttributeError` ve `NameError` gibi, büyük bir refactoring sürecinde ortaya çıkan entegrasyon hataları adım adım çözüldü.
+- **`BasePipeline` Mimarisi:** `Smart Learner` projesindeki pipeline soyutlama fikri, `azuraforge-learner` kütüphanesi içinde `TimeSeriesPipeline` adıyla yeniden hayata geçirildi. Bu, eklenti geliştirmeyi standartlaştıran ve kod tekrarını önleyen bir yapı sağladı. `app-stock-predictor` eklentisi bu yeni yapıya başarıyla uyarlandı.
 
-**An itibarıyla AzuraForge Platformu, temel MLOps döngüsünü (Başlat -> Canlı İzle -> Eğit -> Değerlendir -> Raporla) tam ve kararlı bir şekilde tamamlamıştır. Bu, "Checkpoint Bravo" kilometre taşıdır.**
+### Faz 12-14: Dinamik ve İnteraktif Raporlama
+- **Veri Akışının Tamamlanması:** `Worker`'ın, deney sonunda sadece metrikleri değil, aynı zamanda grafik çizimi için gerekli olan tüm ham veriyi (`history`, `y_true`, `y_pred`, `time_index`) `results.json` dosyasına yazması sağlandı.
+- **Dinamik Rapor Endpoint'i:** `API`'ye, bir deneyin tüm bu zenginleştirilmiş JSON verisini döndüren bir `/details` endpoint'i eklendi.
+- **BAŞARI (İnteraktif Raporlama):** `Dashboard`'daki rapor sayfası, artık statik Markdown dosyalarını değil, bu dinamik JSON verisini kullanarak, `Chart.js` ile çizilmiş **interaktif ve canlı grafikler** sunar hale getirildi.
+- **BAŞARI (Canlı Tahmin Grafiği):** `LiveTrackerPane`, eğitim sırasında her `n` epoch'ta bir güncellenen "Tahmin vs Gerçek" grafiğini canlı olarak gösterecek şekilde geliştirildi.
+
+**An itibarıyla AzuraForge Platformu, tam işlevsel, canlı takip yetenekli, standartlaştırılmış eklenti yapısına sahip ve dinamik raporlama sunan "Checkpoint Charlie" kilometre taşına ulaşmıştır.**
 
 ## 🗺️ Gelecek Fazlar ve Yol Haritası
 
 Bu sağlam temel üzerine inşa edilecek adımlar, AzuraForge'u daha da zenginleştirmeyi ve kapsamını genişletmeyi hedefleyecektir.
 
-### Faz 11: `BasePipeline` Standardizasyonu ve Geliştirici Deneyimi
-- **`BasePipeline` Soyut Sınıfı:** `app-stock-predictor` içinde manuel olarak yazılan `run` metodu, `azuraforge-learner` içindeki `BasePipeline` soyut sınıfına taşınacak. Eklenti geliştirmek, sadece `_load_data`, `_create_model` gibi birkaç metodu doldurmak kadar basit hale gelecek.
-- **Dashboard'da Rapor Görüntüleme:** Kullanıcıların tamamlanmış deneylerin `report.md` dosyalarını doğrudan arayüzden okuyabilmesi sağlanacak.
+### Faz 15: Performans ve UX İyileştirmeleri
+- **Akıllı Önbellekleme (Caching):** `yfinance` gibi harici API çağrılarının sonuçları önbelleğe alınarak, aynı parametrelerle yapılan sonraki deneyler önemli ölçüde hızlandırılacak.
+- **Gelişmiş Ön İşleme:** `target_col_transform: "log"` gibi kanıtlanmış ön işleme adımlarını `BasePipeline`'e entegre etmek.
 
-### Faz 12: Yardımcı Modüllerin Entegrasyonu (`caching` vb.)
-- **Akıllı Önbellekleme (Caching):** `yf.download` gibi API çağrılarının sonuçları önbelleğe alınarak, aynı parametrelerle yapılan sonraki deneyler önemli ölçüde hızlandırılacak.
+### Faz 16: Yeni Eklentiler ve Yetenek Kanıtı
+- **`app-weather-forecaster`:** `TimeSeriesPipeline`'in gücünü kanıtlamak için hava durumu tahmincisi eklentisi, yeni standartlara uygun olarak hızla geliştirilecek.
+- **Sınıflandırma Problemleri:** Sınıflandırma görevleri için yeni bir `BaseClassificationPipeline` ve buna uygun raporlama araçları geliştirilecek.
 
-### Faz 13: Yeni Veri Modaliteleri ve Gelişmiş Modeller
-- **Görüntü İşleme:** `Conv2D`, `MaxPool2D` gibi katmanların `core`'a eklenmesi ve `azuraforge-app-image-classifier` eklentisinin geliştirilmesi.
+### Faz 17: Görüntü İşleme
+- **`core` Genişletme:** `Conv2D`, `MaxPool2D` gibi CNN katmanlarının `core`'a eklenmesi.
+- **Yeni Eklenti:** `azuraforge-app-image-classifier` (örn: MNIST için) oluşturma.

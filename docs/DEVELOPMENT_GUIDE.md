@@ -128,6 +128,30 @@ Sanal ortamınız aktifken ve Redis çalışırken, her servisi ayrı bir termin
 
 Bu yapı, `Worker`'ın CPU kullanımı ne kadar yoğun olursa olsun, raporlama ve arayüz güncellemesinin bloklanmadan, anlık olarak gerçekleşmesini sağlar.
 
+##  Platform Mimarisi Nasıl Çalışır?
+
+### Standart Bir Deney Akışı
+
+1.  **Başlatma (`Dashboard` -> `API` -> `Worker`):**
+    *   `Dashboard`, kullanıcıdan aldığı konfigürasyon ile `API`'nin `/experiments` endpoint'ine bir `POST` isteği atar.
+    *   `API`, görevi `Celery` kuyruğuna bırakır ve bir `task_id` döner.
+    *   `Worker`, görevi kuyruktan alır ve ilgili `Pipeline` eklentisinin bir örneğini oluşturur.
+
+2.  **Eğitim ve Canlı Takip (`Worker` -> `Learner` -> `API` -> `Dashboard`):**
+    *   `Worker`, eklentinin standart `run` metodunu çağırır. Bu metot, `azuraforge-learner` içindeki `TimeSeriesPipeline`'den gelir.
+    *   `run` metodu, `LivePredictionCallback` ve `RedisProgressCallback` gibi özel `Callback`'ler oluşturur.
+    *   `Learner`'ın `fit` metodu çalıştırılır. Her epoch sonunda:
+        *   `LivePredictionCallback`, doğrulama seti üzerinde tahmin yapar.
+        *   `RedisProgressCallback`, hem kayıp bilgisini hem de canlı tahmin verisini birleştirerek Redis Pub/Sub kanalına yayınlar.
+    *   `API`, bu kanala abone olduğu için mesajı anında alır ve `WebSocket` üzerinden `Dashboard`'a iletir.
+    *   `LiveTrackerPane`, gelen bu zengin veriyle kendini (kayıp grafiği, tahmin grafiği, ilerleme çubuğu) günceller.
+
+3.  **Tamamlama ve Raporlama (`Worker` -> `Learner`):**
+    *   Eğitim bittiğinde, `TimeSeriesPipeline`'in `run` metodu, son değerlendirmeyi yapar ve `azuraforge_learner.reporting` içindeki `generate_regression_report` fonksiyonunu çağırır.
+    *   Bu fonksiyon, `/reports` dizini altına, grafikleri içeren bir `report.md` dosyası oluşturur.
+    *   `run` metodu, deneyin tüm sonuçlarını (`history`, `metrics`, ham veriler) içeren bir JSON objesini `worker` görevine döndürür.
+    *   `Worker`, bu sonucu `results.json` dosyasına yazar ve görevi `SUCCESS` olarak işaretler.
+
 ## 🤝 Katkıda Bulunma
 
 Bu proje bir açık kaynak projesi olarak geliştirilmektedir. Katkıda bulunmak için lütfen `platform/docs/CONTRIBUTING.md` dosyasını inceleyin.
