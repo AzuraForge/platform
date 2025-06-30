@@ -1,12 +1,12 @@
 services:
   # 1. Redis Servisi
   redis:
-    image: "redis:alpine"
+    image: redis:alpine
     container_name: azuraforge_redis
     ports: ["6379:6379"]
     volumes: ["redis_data:/data"]
 
-  # 2. YENİ: PostgreSQL Veritabanı Servisi
+  # 2. PostgreSQL Veritabanı Servisi (Sağlık Kontrolü ile)
   postgres:
     image: postgres:15-alpine
     container_name: azuraforge_postgres
@@ -19,6 +19,13 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: always
+    # === YENİ BÖLÜM: SAĞLIK KONTROLÜ ===
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    # === DEĞİŞİKLİK SONU ===
 
   # --- ANA PLATFORM SERVİSLERİ ---
 
@@ -38,10 +45,15 @@ services:
       - REDIS_URL=${REDIS_URL}
       - REPORTS_DIR=/app/reports
       - CACHE_DIR=/app/.cache
-      # YENİ: Veritabanı bağlantı bilgisi
       - DATABASE_URL=${DATABASE_URL}
-    # YENİ: Veritabanı ve Redis'e bağımlı
-    depends_on: [redis, postgres]
+    # === DEĞİŞİKLİK BURADA ===
+    # depends_on yapısı, sağlık kontrolünü bekleyecek şekilde güncellendi
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started # Redis için basit başlangıç yeterli
+    # === DEĞİŞİKLİK SONU ===
 
   # 4. Worker Servisi
   worker:
@@ -58,10 +70,15 @@ services:
       - REDIS_URL=${REDIS_URL}
       - REPORTS_DIR=/app/reports
       - CACHE_DIR=/app/.cache
-      # YENİ: Veritabanı bağlantı bilgisi
       - DATABASE_URL=${DATABASE_URL}
-    # YENİ: Veritabanı ve Redis'e bağımlı
-    depends_on: [redis, postgres]
+    # === DEĞİŞİKLİK BURADA ===
+    # depends_on yapısı, sağlık kontrolünü bekleyecek şekilde güncellendi
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    # === DEĞİŞİKLİK SONU ===
 
   # 5. Dashboard Servisi
   dashboard:
@@ -78,4 +95,4 @@ services:
 
 volumes:
   redis_data:
-  postgres_data: # YENİ: Postgres verilerini kalıcı tutmak için volume
+  postgres_data:
