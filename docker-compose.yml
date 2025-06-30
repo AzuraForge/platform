@@ -40,14 +40,14 @@ services:
   #   command: python -c "import azuraforge_applications; print('AzuraForge Applications Catalog built and imported successfully in Docker!')"
   #   # volumes: - ./applications:/app # Sadece build ediliyor.
 
-  # 5. App Stock Predictor (Uygulama Eklentisi)
-  app_stock_predictor:
-    container_name: azuraforge_app_stock_predictor_build_test
-    build:
-      context: ./app-stock-predictor
-      dockerfile: Dockerfile
-    command: python -c "import azuraforge_stockapp; print('AzuraForge App Stock Predictor built and imported successfully in Docker!')"
-    # volumes: - ./app-stock-predictor:/app # Sadece build ediliyor.
+  # # 5. App Stock Predictor (Uygulama Eklentisi)
+  # app_stock_predictor:
+  #   container_name: azuraforge_app_stock_predictor_build_test
+  #   build:
+  #     context: ./app-stock-predictor
+  #     dockerfile: Dockerfile
+  #   command: python -c "import azuraforge_stockapp; print('AzuraForge App Stock Predictor built and imported successfully in Docker!')"
+  #   # volumes: - ./app-stock-predictor:/app # Sadece build ediliyor.
 
   # --- ANA PLATFORM SERVİSLERİ ---
   # Bu servisler, tüm ekosistemin temelidir ve diğer kütüphanelere bağımlıdır.
