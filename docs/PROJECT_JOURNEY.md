@@ -16,53 +16,44 @@ AzuraForge'un her aşamasında, kalitesini ve sürdürülebilirliğini sağlamak
 ## ✅ Tamamlanan Fazlar ve Elde Edilen Başarılar
 
 ### Faz 0: Fikir ve İlk Denemeler (Monolitik "Smart Learner" Prototipi)
+- **Düşünce:** Mevcut ML araçlarının karmaşıklığına bir tepki olarak, sıfırdan bir derin öğrenme motoru (`mininn`) inşa etme fikri doğdu.
+- **Kanıt:** LSTM mimarisi, hava durumu ve hisse senedi verileriyle test edildi ve yüksek başarı oranları elde edildi.
+- **Öğrenilen Ders:** Monolitik yapı hızlı prototipleme sağlasa da, ölçeklenebilirlik ve yönetim zorlukları ortaya çıkardı.
 
-*   **Düşünce:** Mevcut ML araçlarının karmaşıklığına bir tepki olarak, sıfırdan bir derin öğrenme motoru (`mininn`) inşa etme fikri doğdu.
-*   **Çekirdek Güçlendirme:** `mininn` motoruna sıfırdan **LSTM** katmanı ve **Adam** optimizer eklendi.
-*   **Kanıt 1 (Hava Durumu):** LSTM mimarisi, ham hava durumu verileriyle test edildi ve **R² > 0.98** gibi olağanüstü bir başarı elde edildi.
-*   **Kanıt 2 (Hisse Senedi):** LSTM mimarisi, logaritmik dönüşüm uygulanmış hisse senedi verileriyle test edildi ve **R² ≈ 0.73** gibi anlamlı bir başarı elde edildi.
-*   **Öğrenilen Ders:** Monolitik yapı hızlı prototipleme sağlasa da, ölçeklenebilirlik ve yönetim zorlukları ortaya çıkardı. Bu başarılar, daha profesyonel bir mimariye geçiş için temel oluşturdu.
+### Faz 1-3: Mikroservis Mimarisine Geçiş ve Temel Yapının İnşası
+- **Karar:** Uzun vadeli sürdürülebilirlik için platform, bağımsız repolara (`azuraforge-core`, `learner`, `api`, `worker`, `dashboard` vb.) sahip bir mikroservis mimarisine dönüştürüldü.
+- **Yapı:** `docker-compose` ile orkestrasyon, `pip install -e` ile yerel geliştirme ve `git+https` ile repo'lar arası bağımlılıklar kuruldu.
+- **İlk Başarı:** `Dashboard` -> `API` -> `Worker` -> `Uygulama` -> `Learner` -> `Core` şeklindeki temel görev akışı başarıyla çalıştırıldı.
 
-### Faz 1: Multi-Repo ve Mikroservis Mimarisine Geçiş ("AzuraForge" Doğuyor)
+### Faz 4-7: Canlı Takip Entegrasyonu ve Kararlılık Mücadelesi
+- **İlk Deneme (`task.update_state`):** `Learner` içerisinden doğrudan Celery'nin görev durumunu güncelleme denendi.
+- **Sorun 1 (Worker Çökmesi):** `LSTM` katmanının geriye yayılım (`backward`) implementasyonunun eksik olduğu ve `loss.backward()` çağrıldığında worker'ı çökerttiği tespit edildi.
+- **Çözüm 1:** `LSTM` katmanına ve `Tensor` objesine (`tanh` vb.) tam bir geriye yayılım desteği eklendi. Worker artık çökmüyordu.
+- **Sorun 2 (UI "Donması"):** Worker, CPU-yoğun eğitim görevi nedeniyle o kadar meşgul oluyordu ki, durum güncelleme mesajlarını (`task.update_state`) göndermeye fırsat bulamıyordu. UI, tüm güncellemeleri eğitimin sonunda toplu olarak alıyordu.
+- **Geçici Deneme (`time.sleep`):** Eğitim döngüsüne küçük bir bekleme ekleyerek I/O işlemlerine zaman tanıma denendi, ancak bu hem yetersiz kaldı hem de mimari olarak yanlıştı.
 
-*   **Karar:** Uzun vadeli sürdürülebilirlik, ölçeklenebilirlik ve profesyonellik için, platformu bağımsız repolara sahip bir mikroservis mimarisine dönüştürme kararı alındı.
-*   **Zorluk:** Python'da çoklu repolar arası bağımlılık yönetimi.
-*   **Çözüm:** `pip`'in `editable` kurulumu (`-e`) ve `git+https` bağımlılıklarını kullanarak, her reponun kendi `pyproject.toml` ile kurulabilir bir paket olması sağlandı.
+### Faz 8: Pub/Sub Mimarisi ile Gerçek Zamanlı Akışın Sağlanması (Dönüm Noktası)
+- **Karar:** Hesaplama ve raporlama görevlerini tamamen ayırmak için Redis Pub/Sub modeline geçildi.
+- **Yeni Mimari:**
+    1.  **`Learner`:** Artık sadece olayları (`on_epoch_end`) yayınlayan, teknoloji-agnostik ve saf bir bileşen haline getirildi.
+    2.  **`RedisProgressCallback`:** `Worker` tarafında, `Learner`'dan gelen olayları dinleyen ve ilerleme verisini bir Redis kanalına yayınlayan özel bir `Callback` sınıfı oluşturuldu.
+    3.  **`API`:** `WebSocket` bağlantısı kurulduğunda bu Redis kanalını dinleyen (`subscribe`) ve gelen her mesajı anında `Dashboard`'a ileten bir yapıya dönüştürüldü.
+- **BAŞARI:** Bu mimari değişiklik sayesinde, worker'ın CPU kullanımı ne kadar yoğun olursa olsun, ilerleme durumu bilgileri (epoch, kayıp vb.) anlık ve akıcı bir şekilde `Dashboard`'a iletilmeye başlandı.
 
-### Faz 2: Temel Kütüphanelerin ve Dağıtık Servislerin İnşası
-
-*   **`azuraforge-core` & `azuraforge-learner`:** Temel matematik motoru ve öğrenme kütüphanesi yeni mimariye uygun olarak oluşturuldu.
-*   **`azuraforge-worker`:** `Celery` ve `importlib.metadata` kullanarak, sisteme kurulu `entry_points`'e sahip eklentileri **otomatik olarak keşfeden** ve çalıştıran işçi servisi kuruldu.
-*   **`azuraforge-api`:** `FastAPI` ile RESTful API ve WebSocket endpoint'leri sunan iletişim katmanı inşa edildi.
-*   **`azuraforge-dashboard`:** React tabanlı temel bir web arayüzü inşa edildi.
-
-### Faz 3: Uçtan Uca Canlı Takip Entegrasyonu
-
-*   **Başarı:** `Dashboard` üzerinden başlatılan bir görevin `API`'ye, oradan `Worker`'a iletilmesi ve `Worker`'ın eğitim ilerlemesini (`epoch`, `loss`) anlık olarak WebSocket üzerinden `Dashboard`'a raporlayarak canlı bir grafik ve ilerleme çubuğu güncellemesi başarıyla tamamlandı.
-
-**An itibarıyla AzuraForge, temel mimarisi ve canlı takip yetenekleriyle çalışır durumdadır. Şimdi, "Smart Learner" prototipinin kanıtlanmış zengin özelliklerini bu sağlam iskelete entegre etme zamanıdır.**
+**An itibarıyla AzuraForge Platformu, temel mimarisi, eklenti yapısı ve en önemlisi, kararlı ve ölçeklenebilir gerçek zamanlı takip yetenekleriyle "Checkpoint Alpha" kilometre taşına ulaşmıştır.**
 
 ## 🗺️ Gelecek Fazlar ve Yol Haritası
 
 Bu sağlam temel üzerine inşa edilecek adımlar, AzuraForge'u daha da zenginleştirmeyi ve kapsamını genişletmeyi hedefleyecektir.
 
-### Faz 4: Çekirdek Kütüphaneleri Zenginleştirme (Mevcut Görev)
-*   **Hedef:** `mininn` çekirdeğindeki `LSTM`, `Adam` optimizer gibi kanıtlanmış yetenekleri `azuraforge-core` ve `azuraforge-learner` kütüphanelerine entegre etmek.
-*   **Hedef:** `BaseTimeSeriesPipeline` gibi soyutlamaları ve otomatik raporlama yeteneklerini yeni mimariye taşımak.
+### Faz 10: Otomatik Raporlama ve Pipeline Standardizasyonu
+- **`BasePipeline` Soyut Sınıfı:** `Smart Learner` projesindeki gibi, tüm eklentilerin miras alacağı, standart bir akış (veri yükle, işle, eğit, raporla) sunan bir temel sınıf oluşturulacak.
+- **Otomatik Markdown Raporlama:** `Worker`'ın, her deney sonunda, sonuçları ve grafikleri içeren detaylı bir Markdown raporu (`report.md`) oluşturmasını sağlayan bir `Callback` eklenecek.
+- **Dashboard'da Rapor Görüntüleme:** Kullanıcıların tamamlanmış deneylerin bu zengin raporlarını doğrudan arayüzden okuyabilmesi sağlanacak.
 
-### Faz 5: Gelişmiş Deney Yönetimi ve Raporlama
-*   **Kalıcı Sonuçlar:** `worker`'ın oluşturduğu detaylı Markdown raporlarını ve grafiklerini `Dashboard` üzerinden görüntülenebilir hale getirmek.
-*   **Deney Detay Sayfası:** Her deney için tüm metriklerin, grafiklerin ve konfigürasyonun görülebildiği özel bir sayfa oluşturmak.
-*   **Model Yönetimi:** Eğitilen modellerin kaydedilmesi, listelenmesi ve daha sonra çıkarım için yüklenebilmesi.
+### Faz 11: Yardımcı Modüllerin Entegrasyonu (`caching` vb.)
+- **Akıllı Önbellekleme (Caching):** `Smart Learner` projesindeki `caching.py` mantığı, yeni eklenti yapısına uygun şekilde entegre edilerek veri çekme işlemleri hızlandırılacak.
 
-### Faz 6: Yeni Veri Modalitelerine Açılım (Görüntü İşleme)
-*   **`core` Genişletme:** `Conv2D`, `MaxPool2D`, `Flatten` gibi CNN katmanlarını `core` kütüphanesine ekleme.
-*   **Yeni Uygulama Eklentisi:** `azuraforge-app-image-classifier` (örn: MNIST için) oluşturma.
-
-### Faz 7: Hiperparametre Optimizasyonu
-*   **`azuraforge-hyper-tuner`:** Farklı hiperparametre kombinasyonlarıyla otomatik deneyler yapabilen yeni bir uygulama eklentisi veya araç.
-*   **Dashboard Entegrasyonu:** `Dashboard`'dan hiperparametre optimizasyonu işleri başlatma.
-
-### Faz 8: Üretim Ortamı Hazırlığı (Deployment)
-*   **`platform` Orkestrasyonu:** `docker-compose.yml`'ı daha sağlam hale getirme (Nginx, HTTPS, Load Balancing).
-*   **CI/CD Pipeline'ları:** Tüm repolar için otomatik test, versiyonlama ve yayınlama (PyPI/GitHub Packages) pipeline'ları kurma.
+### Faz 12: Yeni Veri Modaliteleri ve Gelişmiş Modeller
+- **Görüntü İşleme:** `Conv2D`, `MaxPool2D` gibi katmanların `core`'a eklenmesi ve `azuraforge-app-image-classifier` eklentisinin geliştirilmesi.
+- **Hiperparametre Optimizasyonu:** `azuraforge-hyper-tuner` aracının geliştirilmesi.

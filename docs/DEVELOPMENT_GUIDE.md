@@ -10,74 +10,62 @@ Her repomuz, kendi başına yaşayan, kurulabilir ve test edilebilir bağımsız
 
 AzuraForge platformu, aşağıdaki bağımsız GitHub depolarından oluşur. Geliştirme yaparken bu repoların bir kısmını veya tamamını yerel makinenizde klonlamanız gerekecektir.
 
-*   **`core`** ([link](https://github.com/AzuraForge/core)): Temel otomatik türev motoru.
-*   **`learner`** ([link](https://github.com/AzuraForge/learner)): `core` üzerinde yüksek seviyeli öğrenme kütüphanesi.
-*   **`app-stock-predictor`** ([link](https://github.com/AzuraForge/app-stock-predictor)): Bir uygulama eklentisi örneği.
-*   **`applications`** ([link](https://github.com/AzuraForge/applications)): Resmi uygulama katalogu (sadece JSON veri içerir).
-*   **`api`** ([link](https://github.com/AzuraForge/api)): RESTful API ve WebSocket sunucusu.
-*   **`worker`** ([link](https://github.com/AzuraForge/worker)): Arka plan görevlerini (eğitimleri) işleyen Celery worker.
-*   **`dashboard`** ([link](https://github.com/AzuraForge/dashboard)): React tabanlı web kullanıcı arayüzü.
+*   **`core`**: Temel otomatik türev motoru.
+*   **`learner`**: `core` üzerinde yüksek seviyeli öğrenme kütüphanesi.
+*   **`app-stock-predictor`**: Bir uygulama eklentisi örneği.
+*   **`applications`**: Resmi uygulama katalogu.
+*   **`api`**: RESTful API ve WebSocket sunucusu (Redis Pub/Sub dinleyicisi).
+*   **`worker`**: Arka plan görevlerini işleyen Celery worker (Redis Pub/Sub yayıncısı).
+*   **`dashboard`**: React tabanlı web kullanıcı arayüzü.
+*   **`platform`**: Tüm servisleri bir araya getiren ana orkestrasyon deposu (bu repo).
 
 ## ⚙️ Geliştirme Ortamı Kurulumu
 
 Bu adımlar, platformun tüm parçalarını yerel geliştirme için hazır hale getirir.
 
-1.  **Gerekli Araçlar:**
-    *   **Git:** Repoları klonlamak için.
-    *   **Python 3.8+:** Tüm Python bileşenleri için.
-    *   **Node.js & npm:** Frontend bileşeni için.
-    *   **Docker Desktop:** Redis ve Dockerize edilmiş ortamda test için (alternatifler belirtilecektir).
+1.  **Gerekli Araçlar:** Git, Python 3.8+, Node.js & npm, Docker Desktop.
 
 2.  **Repoları Klonlama:**
-    Platformda geliştirmek için tüm ilgili repoları aynı seviyede bir klasöre klonlamanız önerilir:
+    Tüm ilgili repoları aynı seviyede bir klasöre klonlayın:
     ```bash
     mkdir azuraforge-dev
     cd azuraforge-dev
 
+    git clone https://github.com/AzuraForge/platform.git
     git clone https://github.com/AzuraForge/core.git
     git clone https://github.com/AzuraForge/learner.git
-    git clone https://github.com/AzuraForge/app-stock-predictor.git
     git clone https://github.com/AzuraForge/applications.git
+    git clone https://github.com/AzuraForge/app-stock-predictor.git
     git clone https://github.com/AzuraForge/api.git
     git clone https://github.com/AzuraForge/worker.git
     git clone https://github.com/AzuraForge/dashboard.git
-    git clone https://github.com/AzuraForge/platform.git # Orkestrasyon için
     ```
 
-3.  **Sanal Ortam Kurulumu (Python):**
-    Her Python projesinin kendi sanal ortamı olabilir veya merkezi bir tane kullanabiliriz. Yerel geliştirme için, **`api` projesinin** kök dizininde tek bir sanal ortam oluşturmak ve tüm Python bağımlılıklarını oraya kurmak en pratik yoldur.
+3.  **Sanal Ortam ve Bağımlılıklar (Python):**
+    Yerel geliştirme için, **`platform` projesinin** kök dizininde tek bir sanal ortam oluşturup tüm Python bağımlılıklarını oraya kurmak en pratik yoldur.
 
     ```bash
-    cd api # `api` reposunun içine gir
+    cd platform # Ana `platform` reposunun içine gir
     python -m venv .venv
-    .\.venv\Scripts\activate # Windows için
-    # source ./.venv/bin/activate # Linux/macOS için
+    # Windows: .\.venv\Scripts\activate | Linux/macOS: source ./.venv/bin/activate
     ```
-
-4.  **Python Bağımlılıklarını Kurma (Tüm Python Repoları için):**
-    Sanal ortam aktifken, tüm Python repolarını "düzenlenebilir" (editable) modda kurmalıyız. Bu, kodda yaptığınız değişikliklerin anında yansımasını sağlar. **`api` projesinin** kök dizininde olduğunuzdan emin olun.
-
+    # Tüm Python repolarını "düzenlenebilir" modda kur
     ```bash
-    # Önce en alt seviyeden başlayarak kütüphaneleri kurun
     pip install -e ../core 
     pip install -e ../learner
-    pip install -e ../app-stock-predictor # İlk uygulama eklentisi
-    pip install -e ../applications       # Uygulama katalogu
-    
-    # Sonra API ve Worker'ı kurun
-    pip install -e .                     # `api` projesini kurar
-    pip install -e ../worker             # `worker` projesini kurar
+    pip install -e ../applications
+    pip install -e ../app-stock-predictor
+    pip install -e ../api
+    pip install -e ../worker
     ```
-    Bu komutlar, her bir reponun `pyproject.toml` dosyasını okuyacak ve tüm bağımlılık zincirini doğru bir şekilde çözecektir.
 
-5.  **JavaScript Bağımlılıklarını Kurma (Dashboard için):**
+4.  **JavaScript Bağımlılıkları (Dashboard):**
     ```bash
     cd ../dashboard # `dashboard` reposunun içine gir
     npm install
     ```
 
-6.  **Redis Kurulumu:**
-    Platform, bir Redis sunucusuna ihtiyaç duyar. En kolay yol Docker kullanmaktır:
+5.  **Redis Kurulumu (Docker ile):**
     ```bash
     docker run -d -p 6379:6379 --name azuraforge_redis redis
     ```
@@ -88,59 +76,57 @@ Sanal ortamınız aktifken ve Redis çalışırken, her servisi ayrı bir termin
 
 1.  **API Sunucusu (`api` reposundan):**
     ```bash
-    cd api
-    .\.venv\Scripts\activate # Sanal ortam aktif değilse
+    cd ../api # veya bulunduğunuz yere göre ayarlayın
+    # Gerekirse sanal ortamı aktive et
     start-api
     ```
-    (Tarayıcıda `http://localhost:8000/api/v1/docs` adresini kontrol edin.)
 
 2.  **Worker Servisi (`worker` reposundan):**
     ```bash
-    cd worker
-    .\.venv\Scripts\activate
+    cd ../worker
+    # Gerekirse sanal ortamı aktive et
     start-worker
     ```
-    (Worker terminalinde "Discovered pipeline..." loglarını kontrol edin.)
 
 3.  **Dashboard (`dashboard` reposundan):**
     ```bash
-    cd dashboard
+    cd ../dashboard
     npm run dev
     ```
-    (Tarayıcıda `http://localhost:5173` adresini açın.)
 
-## 🧪 Test Etme ve Hata Ayıklama
-
-*   **Uçtan Uca Akış:** Dashboard'dan yeni bir deney başlatarak tüm sistemin (`Dashboard -> API -> Worker -> Uygulama Eklentisi -> Kütüphane`) sorunsuz çalıştığını doğrulayın. Canlı takip ekranını ve kayıp grafiğini izleyin.
-*   **API Testleri:** `http://localhost:8000/api/v1/docs` adresinden API endpoint'lerini test edin.
-*   **Birim Testleri:** Her bir repoda (örn: `core`, `learner`, `app-stock-predictor`) kendi `pytest` testlerini çalıştırın.
-    ```bash
-    cd core # veya learner, app-stock-predictor
-    .\.venv\Scripts\activate
-    pytest
-    ```
-    (Bu testleri koşabilmek için ilgili repoda `pip install -e ".[dev]"` yapmış olmanız gerekir.)
-
-## 🔄 İteratif Geliştirme Akışı
+##  🔄 İteratif Geliştirme Akışı
 
 Çoğu zaman, kodda küçük değişiklikler yapıp bunları hızla test etmek istersiniz.
 
 1.  **Kütüphanede Değişiklik (örn: `core/src/azuraforge_core/tensor.py`):**
     *   Değişikliği yapın ve kaydedin.
-    *   Bu değişikliğin `learner` veya diğer kütüphanelerde anında etkili olması için **ekstra bir `pip install` komutuna GEREK YOKTUR**, çünkü `pip install -e` ile kuruldukları için doğrudan kaynak dosyayı kullanırlar.
-    *   `core` projesine geri dönüp `pytest` ile kendi testlerini koşun.
+    *   Bu değişikliğin diğer kütüphanelerde anında etkili olması için **ekstra bir `pip install` komutuna GEREK YOKTUR**, çünkü `-e` ile kuruldukları için doğrudan kaynak dosyayı kullanırlar.
+    *   `core` projesine geri dönüp birim testlerini (`pytest`) koşarak değişikliği doğrulayın.
     *   Değişikliği `commit`'leyin ve `push`'layın.
 
 2.  **Uygulama/Servis Değişikliği (örn: `app-stock-predictor/src/azuraforge_stockapp/pipeline.py`):**
     *   Değişikliği yapın ve kaydedin.
-    *   `api` veya `worker` servisleri otomatik olarak `reload` (yeniden yükleme) yapacaktır (eğer `uvicorn --reload` ile çalışıyorlarsa).
-    *   `api` ve `worker`'ı yeniden başlatmak genellikle yeterlidir.
+    *   `api` veya `worker` servisleri otomatik olarak `reload` (yeniden yükleme) yapacaktır (eğer `uvicorn --reload` ile çalışıyorlarsa). Değişikliğin etkisini görmek için genellikle ilgili servisi (API veya Worker) yeniden başlatmak yeterlidir.
     *   Değişikliği `commit`'leyin ve `push`'layın.
 
 3.  **Yeni Bir Bağımlılık Eklendiğinde (`pyproject.toml` değiştiğinde):**
-    *   İlgili reponun kök dizinine gidin (örn: `api`).
-    *   Sanal ortamınızı aktive edin.
-    *   `pip install -e .` komutunu tekrar çalıştırın. `pip`, sadece eksik olan yeni bağımlılıkları ekleyecektir.
+    *   Bir reponun (örn: `learner`) `pyproject.toml` dosyasına yeni bir bağımlılık (örn: `pandas`) eklediyseniz, bu değişikliğin diğer repolar tarafından tanınması için **bağımlılık zincirini yeniden kurmanız gerekir.**
+    *   `platform` klasöründeki ana sanal ortamınızı aktive edin.
+    *   `pip install -e ../learner` komutunu tekrar çalıştırın. `pip`, sadece eksik olan yeni bağımlılıkları (`pandas`) ekleyecektir.
+
+##  Canlı Takip Mimarisi Nasıl Çalışır?
+
+1.  `Dashboard`, `API`'ye bir `/experiments` POST isteği atar.
+2.  `API`, görevi `Celery` kuyruğuna bırakır ve `Dashboard`'a bir `task_id` döner.
+3.  `Dashboard`, bu `task_id` ile `API`'nin `/ws/task_status/{task_id}` WebSocket endpoint'ine bağlanır.
+4.  `API`, bu bağlantı için bir Redis istemcisi oluşturur ve `task-progress:{task_id}` kanalına **abone (subscribe)** olur.
+5.  `Worker`, görevi kuyruktan alır ve `Learner`'ı, içine `RedisProgressCallback` enjekte edilmiş şekilde çalıştırır.
+6.  `Learner`, her epoch sonunda `on_epoch_end` olayını yayınlar.
+7.  `RedisProgressCallback`, bu olayı yakalar ve ilerleme verisini (epoch, loss) Redis'teki `task-progress:{task_id}` kanalına **yayınlar (publish)**.
+8.  `API`, abone olduğu kanalda yeni bir mesaj duyar, onu alır ve WebSocket üzerinden anında `Dashboard`'a iletir.
+9.  `Dashboard`'daki `LiveTrackerPane` bileşeni, gelen bu veriyle kendini günceller.
+
+Bu yapı, `Worker`'ın CPU kullanımı ne kadar yoğun olursa olsun, raporlama ve arayüz güncellemesinin bloklanmadan, anlık olarak gerçekleşmesini sağlar.
 
 ## 🤝 Katkıda Bulunma
 

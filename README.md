@@ -8,7 +8,7 @@ Bu depo, AzuraForge ekosistemindeki tüm ana servisleri (API, Worker, Dashboard)
 
 *   **Sıfırdan İnşa:** Derin öğrenme motoru ve temel bileşenler sıfırdan geliştirilmiştir.
 *   **Modülerlik ve Bağımsızlık:** Her bileşen (kütüphane, API, worker, UI, uygulama) kendi bağımsız repo'sunda yaşar ve kendi sorumluluğuna sahiptir.
-*   **Olay Güdümlü Mimari:** Servisler arası iletişim olay tabanlı (Celery, Redis, WebSockets) gerçekleşir.
+*   **Olay Güdümlü Mimari:** Servisler arası iletişim olay tabanlı (Celery, Redis Pub/Sub, WebSockets) gerçekleşir. Bu sayede, yoğun hesaplama görevleri bile kullanıcı arayüzünü bloklamaz ve **gerçek zamanlı ilerleme takibi** mümkün olur.
 *   **Eklenti Tabanlı:** Yeni yapay zeka modelleri ve uygulamaları, platformun çekirdek koduna dokunmadan birer eklenti (plugin) olarak eklenebilir.
 *   **Ölçeklenebilirlik:** Dağıtık servisler sayesinde yatayda ölçeklenebilir.
 *   **Profesyonel Geliştirici Deneyimi:** Otomatik kurulum, test ve dokümantasyon ile geliştirme sürecini kolaylaştırmak.
@@ -18,12 +18,12 @@ Bu depo, AzuraForge ekosistemindeki tüm ana servisleri (API, Worker, Dashboard)
 AzuraForge platformu, aşağıdaki bağımsız GitHub depolarından oluşan bir mikroservis mimarisini benimser:
 
 -   **`core`** (`azuraforge-core`): Otomatik türev yeteneklerine sahip temel matematik motoru (NumPy/CuPy).
--   **`learner`** (`azuraforge-learner`): `core` üzerinde geliştirilmiş yüksek seviyeli derin öğrenme kütüphanesi (Katmanlar, Optimizatörler, Kayıp Fonksiyonları, `Learner` sınıfı).
+-   **`learner`** (`azuraforge-learner`): `core` üzerinde geliştirilmiş yüksek seviyeli derin öğrenme kütüphanesi (Katmanlar, Optimizatörler, Kayıp Fonksiyonları, `Learner` sınıfı ve `Callback` sistemi).
 -   **`applications`** (`azuraforge-applications`): Platform için resmi uygulama eklentilerinin katalogu (JSON dosyası).
 -   **`app-stock-predictor`** (`azuraforge-app-stock-predictor`): Gerçek bir uygulama eklentisi örneği (Hisse Senedi Tahmini).
--   **`api`** (`azuraforge-api`): RESTful API ve WebSocket endpoint'leri sunan iletişim katmanı.
+-   **`api`** (`azuraforge-api`): RESTful API ve WebSocket endpoint'leri sunan olay güdümlü iletişim katmanı.
 -   **`worker`** (`azuraforge-worker`): Arka plan görevlerini işleyen ve uygulama eklentilerini çalıştıran işçi servisi.
--   **`dashboard`** (`azuraforge-dashboard`): Platform için web tabanlı kullanıcı arayüzü.
+-   **`dashboard`** (`azuraforge-dashboard`): Platform için web tabanlı, canlı takip yeteneklerine sahip kullanıcı arayüzü.
 
 Bu repo, tüm bu servisleri tek bir `docker-compose` komutuyla ayağa kaldıran ana orkestrasyon katmanıdır.
 
@@ -51,7 +51,6 @@ Tüm platformu yerel makinenizde tek bir komutla başlatmak için:
     ```bash
     mkdir -p ./reports
     ```
-    (Windows kullanıyorsanız `REPORTS_DIR`'i `C:/azuraforge_platform_reports` gibi bir mutlak yola ayarlamanız ve bu klasörü oluşturmanız daha güvenli olabilir).
 4.  **Platformu başlatın:**
     ```bash
     docker-compose up --build -d
