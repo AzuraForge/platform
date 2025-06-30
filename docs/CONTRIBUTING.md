@@ -74,3 +74,27 @@ Commit mesajları, yapılan değişikliği net bir şekilde açıklamalıdır ve
 7.  **Kod İncelemesi:** Kodunuz incelenecek ve gerekli geri bildirimler sağlanacaktır.
 
 Bu standartlara uyarak, AzuraForge platformunun uzun vadede sağlıklı, sürdürülebilir ve yüksek kalitede kalmasına yardımcı olursunuz.
+
+
+## 📦 Versiyonlama ve Bağımlılık Yönetimi
+
+Platformun kararlılığını sağlamak için tüm Python paketlerimiz Anlamsal Versiyonlama (Semantic Versioning) ve Git etiketlerini kullanır. Bağımlılıklar asla `@main` branch'ine işaret etmemelidir.
+
+### Bir Kütüphanede Değişiklik Yapıldığında İzlenecek Adımlar:
+
+Bir kütüphanede (örn: `learner`) bir hata düzeltmesi veya yeni bir özellik eklendiğinde, aşağıdaki adımlar izlenmelidir:
+
+1.  **Değişiklikleri Tamamlayın:** Gerekli kod değişikliklerini yapın, testleri güncelleyin ve `main` branch'ine birleştirin.
+
+2.  **Versiyonu Yükseltin:** `pyproject.toml` dosyasındaki `version` numarasını anlamsal versiyonlama kurallarına göre artırın.
+    *   `fix` (hata düzeltmesi): `0.1.3` -> `0.1.4` (Patch artışı)
+    *   `feat` (yeni özellik): `0.1.3` -> `0.2.0` (Minor artış)
+
+3.  **Yeni Versiyonu Etiketleyin:** Yeni versiyon numarasını bir Git etiketi olarak oluşturun ve GitHub'a gönderin.
+    ```bash
+    # learner/ dizinindeyken
+    git tag v0.2.0
+    git push origin v0.2.0
+    ```
+
+4.  **Bağımlı Repoları Güncelleyin:** `learner` kütüphanesini kullanan tüm diğer repoların (`api`, `app-stock-predictor` vb.) `pyproject.toml` dosyalarındaki ilgili satırı yeni versiyon etiketiyle (`...@v0.2.0`) güncelleyin.
