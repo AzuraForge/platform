@@ -1,7 +1,8 @@
 Here are some example usages of the enhanced Project Snapshot Tool:
 
 ```bash
-git bundle create repo_backup.bundle --all  # Tüm tarihçeyi tek dosyada
+git bundle create artifacts/snapshots/v1.0.0.bundle --all  # Tüm tarihçeyi tek dosyada
+git clone artifacts/snapshots/v1.0.0.bundle artifacts/source
 ```
 
 ### 1. Basic Snapshot Creation

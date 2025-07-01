@@ -4,5 +4,7 @@ reports
 *.snapshot
 *-snapshot.txt
 
-# ...ama bu dizindekiler hariç
-!artifacts/snapshots/
+*.bundle
+*-bundle
+
+artifacts
