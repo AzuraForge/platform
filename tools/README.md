@@ -1,9 +1,13 @@
 Here are some example usages of the enhanced Project Snapshot Tool:
 
+```bash
+git bundle create repo_backup.bundle --all  # Tüm tarihçeyi tek dosyada
+```
+
 ### 1. Basic Snapshot Creation
 ```bash
 # Create a snapshot of the current directory (default settings)
-python tools\snapshot_tool.py collect project_snapshot.txt
+python tools\snapshot_tool.py collect artifacts/snapshots/v1.0.0.snapshot
 
 # Create a snapshot with custom include/exclude patterns
 python tools\snapshot_tool.py collect my_snapshot.txt \

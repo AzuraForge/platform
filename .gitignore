@@ -1,2 +1,8 @@
 reports
 .cache
+# Tüm snapshot'ları ignorela...
+*.snapshot
+*-snapshot.txt
+
+# ...ama bu dizindekiler hariç
+!artifacts/snapshots/
