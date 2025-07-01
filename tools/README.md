@@ -1,14 +1,14 @@
 Here are some example usages of the enhanced Project Snapshot Tool:
 
 ```bash
-git bundle create artifacts/snapshots/v1.0.0.bundle --all  # Tüm tarihçeyi tek dosyada
-git clone artifacts/snapshots/v1.0.0.bundle artifacts/source
+git bundle create artifacts/snapshots/v0.1.0.bundle --all  # Tüm tarihçeyi tek dosyada
+git clone artifacts/snapshots/v0.1.0.bundle artifacts/source
 ```
 
 ### 1. Basic Snapshot Creation
 ```bash
 # Create a snapshot of the current directory (default settings)
-python tools\snapshot_tool.py collect artifacts/snapshots/v1.0.0.snapshot
+python tools\snapshot_tool.py collect artifacts/snapshots/v0.1.0.snapshot
 
 # Create a snapshot with custom include/exclude patterns
 python tools\snapshot_tool.py collect my_snapshot.txt \
