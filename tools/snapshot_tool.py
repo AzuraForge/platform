@@ -5,7 +5,7 @@ import argparse
 from typing import List, Dict, Any, Set, Optional, Tuple
 import re
 
-# Configuration for included/excluded paths and extensions
+# Enhanced configuration for included/excluded paths and extensions
 DEFAULT_INCLUDE_DIRS = ["."]
 DEFAULT_INCLUDE_EXTENSIONS = [
     ".toml",
@@ -15,13 +15,20 @@ DEFAULT_INCLUDE_EXTENSIONS = [
     ".json",
     ".md",
     ".txt",
-    "html",
+    ".html",
     ".bat",
     ".sh",
     ".jsx",
     ".js",
     ".json",
-    ".css"    
+    ".css",
+    "Dockerfile",  # Explicitly include Dockerfile
+    "docker-compose.yml",  # Common docker-compose filename
+    "Makefile",
+    "Procfile",
+    ".env",
+    ".gitignore",
+    ".dockerignore"
 ]
 DEFAULT_EXCLUDE_PATTERNS = [
     "__pycache__",
@@ -52,8 +59,12 @@ DEFAULT_EXCLUDE_PATTERNS = [
     "site",
     "node_modules",
     ".DS_Store",
-    "Thumbs.db", # Windows thumbnail cache
-    "*.lock", # npm lock dosyaları gibi
+    "Thumbs.db",
+    "package-lock.json",  # Explicitly exclude package-lock.json
+    "yarn.lock",         # Explicitly exclude yarn.lock
+    "*.lock",            # General lock files
+    "*.min.js",          # Minified JS files
+    "*.min.css",         # Minified CSS files
 ]
 
 FILE_HEADER_TEMPLATE = "========== FILE: {file_path} =========="
@@ -100,37 +111,37 @@ def clean_code_comments(content: str, file_extension: str) -> str:
 
 
 def should_exclude(item_path: str, root_path: str, exclude_patterns: List[str]) -> bool:
-    """Checks if a file or directory should be excluded based on the patterns."""
+    """Enhanced exclusion check with better pattern matching."""
     normalized_item_path = os.path.normpath(item_path)
     normalized_root_path = os.path.normpath(os.path.abspath(root_path))
     
     try:
         relative_item_path = os.path.relpath(normalized_item_path, normalized_root_path)
     except ValueError:
-        # If item_path is not relative to root_path (e.g., different drive on Windows)
-        # or other path normalization issues, treat it as its own path.
         relative_item_path = normalized_item_path
     
     relative_item_path_slashes = relative_item_path.replace(os.sep, "/")
+    filename = os.path.basename(normalized_item_path)
 
     for pattern in exclude_patterns:
-        normalized_pattern = os.path.normpath(pattern)
-        normalized_pattern_slashes = normalized_pattern.replace(os.sep, "/")
-
-        # Wildcard extensions like "*.pyc"
-        if pattern.startswith("*."):
-            if relative_item_path_slashes.endswith(pattern[1:]): return True
-        # Directory names or file names without path
-        elif "/" not in pattern and "." not in pattern and not pattern.startswith("*"):
+        # Exact filename match (e.g., "package-lock.json")
+        if filename == pattern:
+            return True
+            
+        # Extension pattern (e.g., "*.lock")
+        if pattern.startswith("*.") and filename.endswith(pattern[1:]):
+            return True
+            
+        # Directory name match (e.g., "node_modules")
+        if "/" not in pattern and "." not in pattern and not pattern.startswith("*"):
             path_segments = relative_item_path_slashes.split("/")
-            if pattern in path_segments: return True
-        # Exact file name match
-        elif pattern == os.path.basename(normalized_item_path): return True
-        # Full path prefix match or relative path match
-        elif normalized_item_path.startswith(os.path.join(normalized_root_path, normalized_pattern)) or \
-             relative_item_path_slashes.startswith(normalized_pattern_slashes): return True
-        # Absolute path match
-        elif os.path.isabs(normalized_pattern) and normalized_pattern == normalized_item_path: return True
+            if pattern in path_segments:
+                return True
+                
+        # Path prefix match (e.g., "docs/_build")
+        if pattern in relative_item_path_slashes:
+            return True
+            
     return False
 
 
@@ -155,7 +166,7 @@ def collect_project_files_full(
         excluded_patterns_placeholder=", ".join(exclude_patterns),
     )
 
-    all_found_relative_paths: Set[str] = set() # This set stores relative paths to prevent duplicates
+    all_found_relative_paths: Set[str] = set()
     content_parts: List[str] = [snapshot_content_header]
     processed_files_count = 0
 
@@ -171,13 +182,13 @@ def collect_project_files_full(
                 d for d in dirs
                 if not should_exclude(os.path.join(root, d), abs_base_dir, exclude_patterns)
             ]
+            
             for file_name in files:
                 file_path = os.path.join(root, file_name)
-
                 relative_file_path = os.path.relpath(file_path, abs_base_dir)
                 display_path = relative_file_path.replace(os.sep, "/")
 
-                # Skip if already processed (e.g., if included by multiple patterns)
+                # Skip if already processed
                 if display_path in all_found_relative_paths:
                     continue 
 
@@ -186,14 +197,20 @@ def collect_project_files_full(
                     continue
 
                 _, file_extension = os.path.splitext(file_name)
-                # For extension check, handle files without an explicit extension (like Dockerfile)
-                name_part_for_ext_check = file_extension.lower() if file_extension else file_name.lower()
-
-                # Check if file extension (or full name for extensionless files) is in include list
-                if any(name_part_for_ext_check.endswith(ext.lower()) for ext in include_extensions) or \
-                   (not file_extension and file_name.lower() in [ext.lower() for ext in include_extensions if not ext.startswith('.')]):
-                    
-                    all_found_relative_paths.add(display_path) # Add to set of found paths
+                filename_lower = file_name.lower()
+                
+                # Check if file should be included based on:
+                # 1. Extension match (e.g., ".py")
+                # 2. Full filename match (e.g., "Dockerfile")
+                # 3. Extensionless but in include_extensions (e.g., "Makefile")
+                should_include = (
+                    file_extension.lower() in [ext.lower() for ext in include_extensions if ext.startswith('.')] or
+                    filename_lower in [ext.lower() for ext in include_extensions if not ext.startswith('.')] or
+                    (not file_extension and filename_lower in [ext.lower() for ext in include_extensions if not ext.startswith('.')])
+                )
+                
+                if should_include:
+                    all_found_relative_paths.add(display_path)
                     try:
                         with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
                             file_content = f.read()
@@ -201,8 +218,6 @@ def collect_project_files_full(
                         if clean_comments:
                             file_content = clean_code_comments(file_content, file_extension)
                         
-                        # Add a leading newline for separator, then the header, then content.
-                        # This creates the format: \n========== FILE:PATH==========\nCONTENT
                         content_parts.append(f"\n{FILE_HEADER_TEMPLATE.format(file_path=display_path)}\n")
                         content_parts.append(file_content)
                         processed_files_count += 1
@@ -239,28 +254,19 @@ def restore_from_full_snapshot(
         print(f"Error reading snapshot file: {e}")
         return
 
-    # Regex to find file blocks. It captures the file path (group 1) and its content (group 2).
-    # The crucial point is that group(2) captures ALL characters (including newlines due to re.DOTALL)
-    # after the header line's trailing newline, until the START of the next file header or end of string.
-    # The lookahead `(?=...)` is non-consuming, so the content is captured completely.
     file_block_pattern = re.compile(
-        r"^========== FILE: (.*?) ==========\n"  # Match header line and its trailing newline
-        r"(.*?)"                                 # Capture content (non-greedy)
-        r"(?=\n========== FILE: |\Z)",           # Lookahead: followed by newline then next header, OR end of string.
-                                                # \Z matches only at the end of the string.
+        r"^========== FILE: (.*?) ==========\n"
+        r"(.*?)"
+        r"(?=\n========== FILE: |\Z)",
         re.MULTILINE | re.DOTALL
     )
     
-    # Find the end of the initial info header to start parsing file blocks
     info_header_last_line = SNAPSHOT_INFO_TEMPLATE.splitlines()[-1]
     content_start_index = full_content.find(info_header_last_line)
     if content_start_index == -1:
         print("Error: Could not find the end of the snapshot info header.")
         return
     
-    # Slice the content to start exactly after the info header,
-    # and then lstrip any *leading* newlines that might be left before the first file block.
-    # This ensures the regex for the first file block can match correctly.
     content_to_parse = full_content[content_start_index + len(info_header_last_line):].lstrip('\n')
 
     files_restored = 0
@@ -271,14 +277,11 @@ def restore_from_full_snapshot(
 
     for match in matches:
         relative_file_path = match.group(1).strip()
-        # KRİTİK DÜZELTME: match.group(2) üzerinde .strip() metodunu kaldırdık.
-        # Bu, tüm boşluk karakterlerinin (yeni satırlar dahil) korunmasını sağlar.
         content_part = match.group(2) 
 
         os_specific_relative_path = relative_file_path.replace("/", os.sep)
         target_file_path = os.path.join(target_dir, os_specific_relative_path)
         
-        # DEBUG YARDIMI: Yazılacak içeriğin uzunluğunu göster
         print(f"Processing file: {relative_file_path} (Content length: {len(content_part)}) -> {target_file_path}")
 
         if os.path.exists(target_file_path) and not overwrite_existing:
@@ -313,7 +316,7 @@ def restore_from_full_snapshot(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Project Snapshot Tool (Full Version)")
+    parser = argparse.ArgumentParser(description="Enhanced Project Snapshot Tool")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     parser_collect = subparsers.add_parser(
@@ -330,25 +333,25 @@ def main():
         "--include-dir",
         action="append",
         dest="include_dirs",
-        help="Directory to include (relative to base_dir or absolute). Can be used multiple times. Defaults to ['.']",
+        help="Directory to include (relative to base_dir or absolute). Can be used multiple times.",
     )
     parser_collect.add_argument(
         "--include-ext",
         action="append",
         dest="include_extensions",
-        help="File extension to include (e.g., .py, .md). Can be used multiple times. Defaults to common code/config extensions.",
+        help="File extension to include (e.g., .py, .md). Can be used multiple times.",
     )
     parser_collect.add_argument(
         "--exclude-pattern",
         action="append",
         dest="exclude_patterns",
-        help="Pattern/path to exclude. Can be used multiple times. Defaults to common ignores.",
+        help="Pattern/path to exclude. Can be used multiple times.",
     )
     parser_collect.add_argument(
         "--base-dir",
         type=str,
         default=".",
-        help="Base directory for the project (default: current directory). Relative paths are resolved against this.",
+        help="Base directory for the project (default: current directory).",
     )
     parser_collect.add_argument(
         "--clean-comments",
@@ -383,19 +386,10 @@ def main():
     args = parser.parse_args()
 
     if args.command == "collect":
-        final_include_dirs = (
-            args.include_dirs if args.include_dirs is not None else DEFAULT_INCLUDE_DIRS
-        )
-        final_include_extensions = (
-            args.include_extensions
-            if args.include_extensions is not None
-            else DEFAULT_INCLUDE_EXTENSIONS
-        )
-        final_exclude_patterns = (
-            args.exclude_patterns
-            if args.exclude_patterns is not None
-            else DEFAULT_EXCLUDE_PATTERNS
-        )
+        final_include_dirs = args.include_dirs if args.include_dirs is not None else DEFAULT_INCLUDE_DIRS
+        final_include_extensions = args.include_extensions if args.include_extensions is not None else DEFAULT_INCLUDE_EXTENSIONS
+        final_exclude_patterns = args.exclude_patterns if args.exclude_patterns is not None else DEFAULT_EXCLUDE_PATTERNS
+        
         collect_project_files_full(
             output_file=args.output_file,
             include_dirs=final_include_dirs,
@@ -414,11 +408,7 @@ def main():
 
 
 if __name__ == "__main__":
-    # Example usage:
-    # python tools/snapshot_generator.py collect project_full_snapshot.txt
-    # python tools/snapshot_generator.py restore project_full_snapshot.txt --dry-run   
-    # python tools/snapshot_generator.py restore project_full_snapshot.txt --overwrite
-    print("Project Snapshot Tool (Full Version)")
+    print("Enhanced Project Snapshot Tool")
     print("Collects project files into a single snapshot file or restores from a snapshot.")
     print("Use 'collect' to create a snapshot and 'restore' to restore files from it.")    
     main()
