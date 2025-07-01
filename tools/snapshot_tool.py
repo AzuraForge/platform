@@ -30,7 +30,7 @@ DEFAULT_INCLUDE_EXTENSIONS = [
     ".gitignore",
     ".dockerignore"
 ]
-DEFAULT_EXCLUDE_PATTERNS = [
+DEFAULT_EXCLUDE_PATTERNS = [    
     "__pycache__",
     ".git",
     ".venv",
@@ -65,6 +65,7 @@ DEFAULT_EXCLUDE_PATTERNS = [
     "*.lock",            # General lock files
     "*.min.js",          # Minified JS files
     "*.min.css",         # Minified CSS files
+    "project_snapshot.txt",
 ]
 
 FILE_HEADER_TEMPLATE = "========== FILE: {file_path} =========="
