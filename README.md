@@ -22,6 +22,8 @@ Platformumuz dört temel prensip üzerine kuruludur: **"The AzuraForge Way"**
 4.  **Genişletilebilir Eklenti Sistemi:**
     Yeni AI uygulamaları, platformun çekirdek koduna dokunmadan, Python'un `entry_points` mekanizması kullanılarak sisteme "eklenti" olarak dahil edilebilir. Bu, platformun yeteneklerinin organik olarak büyümesini sağlar.
 
+Daha detaylı iterasyon ve inceleme rehberi için [Sürekli İnceleme Rehberi](./docs/PERPETUAL_REVIEW_GUIDE.md) belgesine göz atın
+
 ---
 
 ## ✨ Ana Yetenekler
