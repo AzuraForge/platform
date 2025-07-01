@@ -3,10 +3,10 @@ Here are some example usages of the enhanced Project Snapshot Tool:
 ### 1. Basic Snapshot Creation
 ```bash
 # Create a snapshot of the current directory (default settings)
-python snapshot_tool.py collect project_snapshot.txt
+python tools\snapshot_tool.py collect project_snapshot.txt
 
 # Create a snapshot with custom include/exclude patterns
-python snapshot_tool.py collect my_snapshot.txt \
+python tools\snapshot_tool.py collect my_snapshot.txt \
     --include-dir src \
     --include-dir config \
     --include-ext .java \
@@ -18,25 +18,25 @@ python snapshot_tool.py collect my_snapshot.txt \
 ### 2. Snapshot with Comment Cleaning
 ```bash
 # Create snapshot while removing comments from code files
-python snapshot_tool.py collect clean_snapshot.txt --clean-comments
+python tools\snapshot_tool.py collect clean_snapshot.txt --clean-comments
 ```
 
 ### 3. Snapshot from Specific Base Directory
 ```bash
 # Create snapshot from a different base directory
-python snapshot_tool.py collect ../snapshots/project_backup.txt --base-dir ~/projects/my_project
+python tools\snapshot_tool.py collect ../snapshots/project_backup.txt --base-dir ~/projects/my_project
 ```
 
 ### 4. Restoration Examples
 ```bash
 # Dry run (simulate restoration without writing files)
-python snapshot_tool.py restore project_snapshot.txt --dry-run
+python tools\snapshot_tool.py restore project_snapshot.txt --dry-run
 
 # Actual restoration to current directory
-python snapshot_tool.py restore project_snapshot.txt
+python tools\snapshot_tool.py restore project_snapshot.txt
 
 # Restoration to different directory with overwrite
-python snapshot_tool.py restore project_snapshot.txt \
+python tools\snapshot_tool.py restore project_snapshot.txt \
     --target-dir ~/projects/restored_project \
     --overwrite
 ```
@@ -44,7 +44,7 @@ python snapshot_tool.py restore project_snapshot.txt \
 ### 5. Complex Example with Multiple Directories
 ```bash
 # Snapshot specific directories with custom settings
-python snapshot_tool.py collect full_backup.txt \
+python tools\snapshot_tool.py collect full_backup.txt \
     --include-dir src \
     --include-dir tests \
     --include-dir config \
@@ -61,10 +61,10 @@ python snapshot_tool.py collect full_backup.txt \
 ### 6. Checking What Will Be Included
 ```bash
 # First see what would be included with current settings
-python snapshot_tool.py collect test_snapshot.txt --dry-run
+python tools\snapshot_tool.py collect test_snapshot.txt --dry-run
 
 # Then create the actual snapshot
-python snapshot_tool.py collect test_snapshot.txt
+python tools\snapshot_tool.py collect test_snapshot.txt
 ```
 
 The tool will:
