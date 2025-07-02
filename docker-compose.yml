@@ -33,8 +33,6 @@ services:
     build:
       context: ./api
       dockerfile: Dockerfile
-    # === DEĞİŞİKLİK: Bu satır kaldırıldı. Artık Dockerfile'daki CMD kullanılacak. ===
-    # command: start-api 
     ports: ["8000:8000"]
     volumes:
       - ./api:/app
@@ -57,8 +55,6 @@ services:
     build:
       context: ./worker
       dockerfile: Dockerfile
-    # === DEĞİŞİKLİK: Bu satır kaldırıldı. Artık Dockerfile'daki CMD kullanılacak. ===
-    # command: start-worker
     volumes:
       - ./worker:/app
       - ${REPORTS_DIR}:/app/reports
@@ -67,13 +63,18 @@ services:
       - REDIS_URL=${REDIS_URL}
       - REPORTS_DIR=/app/reports
       - CACHE_DIR=/app/.cache
-      - AZURAFORGE_DEVICE=gpu
+      - AZURAFORGE_DEVICE=${AZURAFORGE_DEVICE} # Env'den çekiliyor
       - DATABASE_URL=${DATABASE_URL}
+      # YENİ EKLENEN SATIRLAR (DeepSeek önerisi): GPU Passthrough Ayarları
+      - NVIDIA_VISIBLE_DEVICES=all # <--- YENİ EKLENDİ!
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility # <--- YENİ EKLENDİ!
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_started
+    # YENİ EKLENEN SATIR (DeepSeek önerisi): Docker'a NVIDIA Runtime'ı kullanmasını söyle
+    runtime: nvidia # <--- BU SATIR EKLENDİ!
     deploy:
       resources:
         reservations:
@@ -88,7 +89,6 @@ services:
     build:
       context: ./dashboard
       dockerfile: Dockerfile
-    # Bu servis Node.js tabanlı olduğu için command'ın kalması doğru.
     command: npm run dev -- --host 0.0.0.0
     ports: ["5173:5173"]
     volumes:
