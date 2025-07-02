@@ -73,7 +73,7 @@ services:
       redis:
         condition: service_started
     runtime: nvidia
-    shm_size: '2gb' # <--- YENİ SATIR: Paylaşılan belleği artırıyoruz.
+    shm_size: '4gb' # <--- BU SATIR DEĞİŞTİ! Paylaşılan belleği 4gb'a çıkarıyoruz.
     deploy:
       resources:
         reservations:
