@@ -64,6 +64,7 @@ services:
       - REPORTS_DIR=/app/reports
       - CACHE_DIR=/app/.cache
       - AZURAFORGE_DEVICE=${AZURAFORGE_DEVICE} # Env'den çekiliyor
+      - DATABASE_URL=${DATABASE_URL}
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     depends_on:
