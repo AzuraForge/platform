@@ -18,15 +18,16 @@ Ancak, derinlemesine incelemelerimiz sonucunda, platformun daha da olgunlaşmas�
 
 Bu alanlar, projenin mevcut mimari ve operasyonel risklerini azaltmaya, temel kararlılığı artırmaya ve kritik eksiklikleri gidermeye yöneliktir.
 
-| Öncelik | Görev                                      | Durum     | Neden? (İş Değeri)                                                              | İlgili Repo(lar)           |
-| :------ | :----------------------------------------- | :-------- | :------------------------------------------------------------------------------ | :------------------------- |
-| **1**   | **API & Worker'ı Ayırma (Decoupling)**     | `[⬜]`    | Ölçeklenmenin ve bağımsız dağıtımın önündeki en büyük engeli kaldırır.           | `api`, `worker`            |
-| **2**   | **Veritabanı Modelini Tekilleştirme**      | `[⬜]`    | Kod tekrarını önler, gelecekteki hataları engeller, merkezi yönetim sağlar.      | `api`, `worker`, `(yeni)`  |
-| **3**   | **Merkezi Log Yönetimi (Loki+Promtail)**   | `[⬜]`    | Sorun gidermeyi 10 kat hızlandırır ve sistemin sağlığını izlenebilir kılar.         | `platform` (docker-compose)|
-| **4**   | **Hassas Bilgilerin Güvenliği (Secrets)**  | `[⬜]`    | Üretim ortamı için temel güvenlik standardını sağlar.                             | `platform` (docker-compose)|
-| **5**   | **Frontend CSS Modülerleşmesi**            | `[⬜]`    | `App.css`'i yönetilebilir hale getirir, stil çakışmalarını önler.               | `dashboard`                |
-| **6**   | **Kapsamlı Test Kapsamı**                  | `[⬜]`    | `core` ve `learner` motorunun güvenilirliğini garanti altına alır.                  | `core`, `learner`         |
-| **7**   | **Kullanıcı Odaklı Hata Yönetimi**         | `[⬜]`    | Kullanıcı deneyimini doğrudan ve olumlu yönde etkileyen, düşük eforlu/yüksek etkili bir iştir. | `api`, `dashboard`     |
+| Öncelik | Görev                                                                         | Durum     | Neden? (İş Değeri)                                                              | İlgili Repo(lar)                         |
+| :------ | :---------------------------------------------------------------------------- | :-------- | :------------------------------------------------------------------------------ | :--------------------------------------- |
+| **1**   | **API & Worker'ı Ayırma (Decoupling)**                                        | `[⬜]`    | Ölçeklenmenin ve bağımsız dağıtımın önündeki en büyük engeli kaldırır.           | `api`, `worker`                          |
+| **2**   | **DB Modellerini `dbmodels` Reposuna Taşıma** | `[⬜]`    | Kod tekrarını önler, merkezi yönetim sağlar, gelecekteki hataları engeller.      | `api`, `worker`, `dbmodels` |
+| **3**   | **Merkezi Log Yönetimi (Loki+Promtail)**                                      | `[⬜]`    | Sorun gidermeyi 10 kat hızlandırır ve sistemin sağlığını izlenebilir kılar.         | `platform` (docker-compose)              |
+| **4**   | **Hassas Bilgilerin Güvenliği (Secrets)**                                     | `[⬜]`    | Üretim ortamı için temel güvenlik standardını sağlar.                             | `platform` (docker-compose)              |
+| **5**   | **Frontend CSS Modülerleşmesi**                                               | `[⬜]`    | `App.css`'i yönetilebilir hale getirir, stil çakışmalarını önler.               | `dashboard`                              |
+| **6**   | **Kapsamlı Test Kapsamı**                                                     | `[⬜]`    | `core` ve `learner` motorunun güvenilirliğini garanti altına alır.                  | `core`, `learner`                        |
+| **7**   | **Kullanıcı Odaklı Hata Yönetimi**                                            | `[⬜]`    | Kullanıcı deneyimini doğrudan ve olumlu yönde etkileyen, düşük eforlu/yüksek etkili bir iştir. | `api`, `dashboard`                       |
+
 
 ---
 

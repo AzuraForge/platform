@@ -17,6 +17,26 @@ Platformumuz dört temel prensip üzerine kuruludur: **"The AzuraForge Way"**
 3.  **Olay Güdümlü ve Asenkron Akış:** `Celery` ve `Redis Pub/Sub` üzerine kurulu mimari sayesinde, yoğun model eğitimleri bile sistemi bloklamaz.
 4.  **Genişletilebilir Eklenti Sistemi:** Yeni AI uygulamaları, platformun çekirdek koduna dokunmadan, Python'un `entry_points` mekanizması kullanılarak sisteme "eklenti" olarak dahil edilebilir.
 
+## 🗺️ Ekosisteme Genel Bakış
+
+AzuraForge platformu, aşağıdaki bağımsız GitHub depolarından oluşur:
+
+| Repo                         | Sorumluluk                                                                       | Teknoloji            |
+| ---------------------------- | -------------------------------------------------------------------------------- | -------------------- |
+| **Çekirdek Kütüphaneler**    |                                                                                  |                      |
+| `core`                       | Temel tensör matematiği ve otomatik türev (geri yayılım) motoru.                   | `Python`, `NumPy`      |
+| `learner`                    | Yüksek seviyeli öğrenme kütüphanesi (Katmanlar, Optimizatörler, Pipeline'lar).     | `Python`             |
+| `dbmodels`                   | **[YENİ]** Tüm servisler için ortak SQLAlchemy veritabanı modelleri.               | `Python`, `SQLAlchemy` |
+| **Uygulama Eklentileri**     |                                                                                  |                      |
+| `applications`               | Resmi ve test edilmiş uygulama eklentilerinin katalogunu tutar.                    | `JSON`               |
+| `app-stock-predictor`        | Gerçek bir zaman serisi tahmin eklentisi örneği.                                 | `Python`             |
+| `app-weather-forecaster`     | Hava durumu verileriyle tahmin yapan bir eklenti örneği.                          | `Python`             |
+| **Platform Servisleri**      |                                                                                  |                      |
+| `api`                        | RESTful API ve WebSocket (Pub/Sub) sunan merkezi iletişim katmanı.                 | `FastAPI`            |
+| `worker`                     | Arka plan görevlerini (model eğitimi) işleyen ve raporları oluşturan işçi servisi. | `Celery`, `Redis`    |
+| `dashboard`                  | React tabanlı, canlı takip ve raporlama yeteneklerine sahip web arayüzü.           | `React`, `Vite`      |
+| **Orkestrasyon (Bu Repo)**   |                                                                                  |                      |
+| `platform`                   | Tüm servisleri `docker-compose` ile bir araya getirir ve ana dokümantasyonu barındırır. | `Docker`, `YAML`     |
 ---
 
 ## ✨ Ana Yetenekler

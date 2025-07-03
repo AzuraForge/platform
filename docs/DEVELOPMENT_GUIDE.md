@@ -36,6 +36,7 @@ cd azuraforge
 git clone https://github.com/AzuraForge/platform.git
 git clone https://github.com/AzuraForge/core.git
 git clone https://github.com/AzuraForge/learner.git
+git clone https://github.com/AzuraForge/dbmodels.git
 git clone https://github.com/AzuraForge/api.git
 git clone https://github.com/AzuraForge/worker.git
 git clone https://github.com/AzuraForge/dashboard.git
@@ -71,6 +72,7 @@ python -m venv .venv
 # '..' kullanarak bir üst dizindeki kardeş klasörlere ulaşıyoruz
 pip install -e ../core
 pip install -e ../learner
+pip install -e ../dbmodels
 pip install -e ../api
 pip install -e ../worker
 pip install -e ../applications
