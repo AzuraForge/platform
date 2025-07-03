@@ -27,8 +27,12 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      # YENİ: Otomatik yapılandırma (provisioning) yolunu belirtiyoruz
+      - GF_PROVISIONING_PATH=/etc/grafana/provisioning
     volumes:
       - grafana_data:/var/lib/grafana
+      # YENİ: Host'taki config dizinimizi container'daki provisioning yoluna bağlıyoruz
+      - ./config/grafana:/etc/grafana/provisioning
     depends_on:
       - loki
     restart: always
