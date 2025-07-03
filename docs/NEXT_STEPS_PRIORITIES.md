@@ -1,52 +1,41 @@
 # 🚀 AzuraForge: Sonraki Adımlar ve İterasyon Odak Noktaları
 
-**Bu belge, AzuraForge projesinin `PERPETUAL_REVIEW_GUIDE.md` rehberinde tanımlanan tüm uzmanlık perspektiflerinin sentezlenmiş halidir. Amacı, projenin mevcut durumunu değerlendirerek önümüzdeki dönem (örn: bir sonraki 1-2 iterasyon) için en kritik ve etkili odak noktalarını belirlemek ve "The AzuraForge Way" felsefesini operasyonel adımlara dönüştürmektir.**
-
-Bu, projenin yaşayan ve nefes alan, **canlı yol haritasıdır**.
+**Bu belge, projenin mevcut durumunu, tamamlanan ana görevleri ve bir sonraki iterasyonlar için odaklanılacak öncelikli eylem planını içerir. Bu, projenin yaşayan ve nefes alan, canlı yol haritasıdır.**
 
 ---
 
-### **Genel Değerlendirme ve Mevcut Durum:**
+## ✅ TAMAMLANAN FAZLAR: TEMELİ SAĞLAMLAŞTIRMA VE YETENEK GENİŞLETME
 
-AzuraForge platformu, "sıfırdan inşa edilmiş" AI motoru (`azuraforge-core`, `learner`), olay güdümlü mimarisi (Redis Pub/Sub) ve Docker tabanlı dağıtık yapısıyla sağlam bir MVP (Minimum Viable Product) aşamasındadır. Canlı takip ve dinamik raporlama gibi ana yetenekler başarıyla gösterilmiştir. Dokümantasyonun olgunluğu, projenin iyi yönetildiğini göstermektedir.
+Aşağıdaki kritik görevler başarıyla tamamlanmış ve platform sağlam bir temele oturtulmuştur.
 
-Ancak, derinlemesine incelemelerimiz sonucunda, platformun daha da olgunlaşması, ölçeklenmesi, güvenliği ve geliştirici deneyimi için atılması gereken kritik adımlar bulunmaktadır. Önceliğimiz, mimari borçları temizlemek ve temeli endüstriyel standartlara taşımaktır.
-
----
-
-### **Öncelikli Odak Alanları: FAZ 0 - TEMELİ SAĞLAMLAŞTIRMA (Foundation Hardening)**
-
-Bu alanlar, projenin mevcut mimari ve operasyonel risklerini azaltmaya, temel kararlılığı artırmaya ve kritik eksiklikleri gidermeye yöneliktir.
-
-| Öncelik | Görev                                                                         | Durum     | Neden? (İş Değeri)                                                              | İlgili Repo(lar)                         |
-| :------ | :---------------------------------------------------------------------------- | :-------- | :------------------------------------------------------------------------------ | :--------------------------------------- |
-| **1**   | **API & Worker'ı Ayırma (Decoupling)**                                        | `[⬜]`    | Ölçeklenmenin ve bağımsız dağıtımın önündeki en büyük engeli kaldırır.           | `api`, `worker`                          |
-| **2**   | **DB Modellerini `dbmodels` Reposuna Taşıma** | `[⬜]`    | Kod tekrarını önler, merkezi yönetim sağlar, gelecekteki hataları engeller.      | `api`, `worker`, `dbmodels` |
-| **3**   | **Merkezi Log Yönetimi (Loki+Promtail)**                                      | `[⬜]`    | Sorun gidermeyi 10 kat hızlandırır ve sistemin sağlığını izlenebilir kılar.         | `platform` (docker-compose)              |
-| **4**   | **Hassas Bilgilerin Güvenliği (Secrets)**                                     | `[⬜]`    | Üretim ortamı için temel güvenlik standardını sağlar.                             | `platform` (docker-compose)              |
-| **5**   | **Frontend CSS Modülerleşmesi**                                               | `[⬜]`    | `App.css`'i yönetilebilir hale getirir, stil çakışmalarını önler.               | `dashboard`                              |
-| **6**   | **Kapsamlı Test Kapsamı**                                                     | `[⬜]`    | `core` ve `learner` motorunun güvenilirliğini garanti altına alır.                  | `core`, `learner`                        |
-| **7**   | **Kullanıcı Odaklı Hata Yönetimi**                                            | `[⬜]`    | Kullanıcı deneyimini doğrudan ve olumlu yönde etkileyen, düşük eforlu/yüksek etkili bir iştir. | `api`, `dashboard`                       |
-
+| Öncelik | Görev                                 | Durum     | Sonuç                                                                      |
+| :------ | :------------------------------------ | :-------- | :------------------------------------------------------------------------- |
+| **1**   | **API & Worker'ı Ayırma (Decoupling)**       | `[✔️]`    | Servisler artık tamamen bağımsız ve ölçeklenebilir.                          |
+| **2**   | **DB Modellerini Tekilleştirme**          | `[✔️]`    | `dbmodels` reposu ile merkezi ve tutarlı veri şeması sağlandı.             |
+| **3**   | **Merkezi Log Yönetimi**                | `[✔️]`    | Loki, Promtail ve Grafana ile tüm loglar tek bir yerden izlenebilir.        |
+| **4**   | **Hassas Bilgilerin Güvenliği (Secrets)** | `[✔️]`    | Veritabanı kimlik bilgileri artık Docker Secrets ile güvende.                |
+| **5**   | **Frontend CSS Modülerleşmesi**       | `[✔️]`    | Dashboard, bileşen bazlı stillerle daha yönetilebilir ve sağlam hale geldi. |
+| **6**   | **Kapsamlı Test Kapsamı (Temel)**        | `[✔️]`    | Core/Learner katmanlarının temel operasyonları PyTorch ile doğrulandı.      |
+| **7**   | **Kullanıcı Odaklı Hata Yönetimi**      | `[✔️]`    | API ve Dashboard, kullanıcıya anlamlı hata mesajları sunacak şekilde geliştirildi.|
+| **8**   | **Genişletilmiş AI Yetenekleri**         | `[✔️]`    | Görüntü (Conv2D) ve Ses/NLP (Embedding, Attention) için temel katmanlar eklendi.|
+| **9**   | **Uçtan Uca Özellikler**                | `[✔️]`    | Model Kaydı, Anlık Tahmin API'si ve Hiperparametre Optimizasyonu tamamlandı.|
 
 ---
 
-### **Orta Vadeli Hedefler: FAZ 1 - DENEYİMİ DERİNLEŞTİRME (MLOps Capability Expansion)**
+### **🎯 AKTİF FAZ: FAZ 3 - ÜRÜNLEŞTİRME VE CİLALAMA (Productization & Polish)**
 
-Temel sağlamlaştıktan sonra, platformun ana MLOps yeteneklerini genişletmeye ve kullanıcıya daha fazla değer sunmaya odaklanacağız.
+**Amaç:** Mevcut güçlü altyapıyı, son kullanıcının kolayca kullanabileceği, kararlı ve "cilalı" bir ürüne dönüştürmek.
 
-*   **Model Kayıt Defteri ve Model Sunumu:** Eğitilen en iyi modellerin kalıcı olarak saklanabileceği bir "Model Kayıt Defteri" (`Model Registry`) sistemi geliştirmek. Bu modeller üzerinden tahmin yapmak için `API`'ye yeni endpoint'ler (`/models/{model_id}/predict`) eklemek. Dashboard'a da bir "Model Kütüphanesi" sayfası eklemek.
-*   **Hiperparametre Optimizasyonu (AutoML-light):** Dashboard üzerinden parametre aralıkları tanımlayarak hiperparametre optimizasyon görevleri başlatma arayüzü geliştirmek. Worker'ın bu görevleri paralel çalıştırmasını sağlamak ve sonuçları Dashboard'da interaktif grafiklerle görselleştirmek.
-*   **Frontend State Yönetimi:** Daha kompleks hale gelen frontend state'i yönetmek için Redux veya Zustand gibi bir kütüphane entegrasyonunu araştırmak ve başlamak.
+| Öncelik | Görev                                                 | Durum     | Neden? (İş Değeri)                                                                   | İlgili Repo(lar)           |
+| :------ | :---------------------------------------------------- | :-------- | :----------------------------------------------------------------------------------- | :------------------------- |
+| **1**   | **Kullanıcı Yönetimi ve Kimlik Doğrulama (JWT)**        | `[⬜]`    | Platformu çok kullanıcılı hale getirir, ticarileştirmenin ve güvenliğin temelidir. | `dbmodels`, `api`, `dashboard` |
+| **2**   | **Gelişmiş Raporlama Arayüzü**                        | `[⬜]`    | Sınıflandırma raporlarını (Confusion Matrix vb.) Dashboard'da görselleştirir.  | `dashboard`, `learner`       |
+| **3**   | **Kapsamlı Kullanıcı Dokümantasyonu**                   | `[⬜]`    | "İlk Modelinizi Eğitin" gibi rehberlerle platformun kullanımını kolaylaştırır.  | `platform` (docs)          |
+| **4**   | **CI/CD Pipeline'larını Olgunlaştırma**                 | `[⬜]`    | Her PR'da testlerin otomatik çalışması, güvenlik taramaları eklenmesi.           | `platform` (github)        |
 
 ---
 
-### **Uzun Vadeli Hedefler: FAZ 2 - EVRENİ GENİŞLETME (Genesis)**
+### **SONRAKİ FAZLAR (Gelecek Vizyonu)**
 
-Bu hedefler, AzuraForge'u sektörde lider, ileri görüşlü ve kapsamlı bir AI/ML platformu haline getirmeyi amaçlamaktadır.
-
-*   **Görsel Model Genetik Laboratuvarı:** Kullanıcıların `azuraforge-core`'daki AI katmanlarını sürükle-bırak arayüzü ile birleştirerek kendi nöral ağ mimarilerini görsel olarak tasarlayabildiği ve otomatik kod üretebildiği bir modül geliştirmek.
-*   **Açıklanabilir Yapay Zeka (XAI) Entegrasyonu:** Raporlara, modelin bir tahmini "neden" yaptığını açıklayan (örn: SHAP, LIME entegrasyonu ile) bir bölüm eklemek.
-*   **VocaForge'un Yeniden Doğuşu:** Platformun yeteneklerini ses üretimi için kullanarak projenin kökenine dönmek.
-
-`[✔️] Tamamlandı` `[🟢 Aktif]` `[⏳ Devam Ediyor]` `[⬜ Planlanıyor]`
+*   **FAZ 4: DERİNLEŞME VE İNOVASYON:** AI Motorunu Transformer gibi modern mimarilerle güçlendirmek.
+*   **FAZ 5: EKOSİSTEM VE TOPLULUK:** Topluluğun katkı yapabileceği bir "AzuraForge Hub" oluşturmak.
