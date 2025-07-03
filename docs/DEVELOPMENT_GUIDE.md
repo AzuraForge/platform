@@ -43,6 +43,8 @@ git clone https://github.com/AzuraForge/dashboard.git
 git clone https://github.com/AzuraForge/applications.git
 git clone https://github.com/AzuraForge/app-stock-predictor.git
 git clone https://github.com/AzuraForge/app-weather-forecaster.git
+git clone https://github.com/AzuraForge/app-image-classifier.git
+git clone https://github.com/AzuraForge/app-voice-generator.git
 ```
 
 ### Adım 1.3: Ortam Değişkenlerini Ayarlama
@@ -78,6 +80,8 @@ pip install -e ../worker
 pip install -e ../applications
 pip install -e ../app-stock-predictor
 pip install -e ../app-weather-forecaster
+pip install -e ../app-image-classifier
+pip install -e ../app-voice-generato
 ```
 
 ### Adım 1.5: JavaScript Bağımlılıklarını Kurma (Dashboard)
