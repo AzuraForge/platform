@@ -1,12 +1,50 @@
 services:
-  # 1. Redis Servisi
+  # --- GÖZLEMLENEBİLİRLİK (OBSERVABILITY) SERVİSLERİ ---
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: azuraforge_loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./config/loki-config.yml:/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: always
+
+  promtail:
+    image: grafana/promtail:2.9.0
+    container_name: azuraforge_promtail
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - ./config/promtail-config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+    restart: always
+
+  grafana:
+    image: grafana/grafana-oss:10.2.2
+    container_name: azuraforge_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - loki
+    restart: always
+
+  # --- ALTYAPI SERVİSLERİ ---
   redis:
     image: redis:alpine
     container_name: azuraforge_redis
     ports: ["6379:6379"]
     volumes: ["redis_data:/data"]
+    logging: # <-- LOGLAMA EKLENDİ
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  # 2. PostgreSQL Veritabanı Servisi
   postgres:
     image: postgres:15-alpine
     container_name: azuraforge_postgres
@@ -14,59 +52,56 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+    ports: ["5432:5432"]
+    volumes: ["postgres_data:/var/lib/postgresql/data"]
     restart: always
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
-
+    logging: # <-- LOGLAMA EKLENDİ
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        
   # --- ANA PLATFORM SERVİSLERİ ---
-
-  # 3. API Servisi
   api:
     container_name: azuraforge_api
     build:
-      # DÜZELTME: Kardeş klasöre işaret etmesi için yolu güncelliyoruz.
       context: ../api
       dockerfile: Dockerfile
     ports: ["8000:8000"]
     volumes:
-      # DÜZELTME: Host yolunu, kardeş klasöre göre güncelliyoruz.
       - ../api:/app
-      # Bu yollar .env dosyasından geldiği için doğru kalmalı.
       - ${REPORTS_DIR}:/app/reports
       - ${CACHE_DIR}:/app/.cache
     environment:
-      - REDIS_URL=${REDIS_URL}
+      - REDIS_URL=redis://redis:6379/0
       - REPORTS_DIR=/app/reports
       - CACHE_DIR=/app/.cache
       - DATABASE_URL=${DATABASE_URL}
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_started
+      postgres: { condition: service_healthy }
+      redis: { condition: service_started }
+    logging: # <-- LOGLAMA EKLENDİ
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  # 4. Worker Servisi
   worker:
     container_name: azuraforge_worker
     build:
-      # DÜZELTME: Kardeş klasöre işaret etmesi için yolu güncelliyoruz.
       context: ../worker
       dockerfile: Dockerfile
     volumes:
-      # DÜZELTME: Host yolunu, kardeş klasöre göre güncelliyoruz.
       - ../worker:/app
-      # Bu yollar .env dosyasından geldiği için doğru kalmalı.
       - ${REPORTS_DIR}:/app/reports
       - ${CACHE_DIR}:/app/.cache
     environment:
-      - REDIS_URL=${REDIS_URL}
+      - REDIS_URL=redis://redis:6379/0
       - REPORTS_DIR=/app/reports
       - CACHE_DIR=/app/.cache
       - AZURAFORGE_DEVICE=${AZURAFORGE_DEVICE}
@@ -74,10 +109,8 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_started
+      postgres: { condition: service_healthy }
+      redis: { condition: service_started }
     runtime: nvidia
     shm_size: '4gb'
     deploy:
@@ -87,23 +120,30 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+    logging: # <-- LOGLAMA EKLENDİ
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  # 5. Dashboard Servisi
   dashboard:
     container_name: azuraforge_dashboard
     build:
-      # DÜZELTME: Kardeş klasöre işaret etmesi için yolu güncelliyoruz.
       context: ../dashboard
       dockerfile: Dockerfile
     command: npm run dev -- --host 0.0.0.0
     ports: ["5173:5173"]
     volumes:
-      # DÜZELTME: Host yolunu, kardeş klasöre göre güncelliyoruz.
       - ../dashboard:/app
-      # Bu satır, host'taki node_modules'in container'dakini ezmesini engeller.
       - /app/node_modules
     depends_on: [api]
+    logging: # <-- LOGLAMA EKLENDİ
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   redis_data:
   postgres_data:
+  grafana_data: # <-- YENİ VOLUME
