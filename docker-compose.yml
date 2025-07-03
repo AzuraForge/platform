@@ -51,10 +51,8 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: azuraforge_postgres
-    # DÜZELTME: 'environment' içinden hassas verileri kaldırıyoruz
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      # YENİ: Sırların okunacağı dosya yollarını belirtiyoruz
+      POSTGRES_DB: ${POSTGRES_DB} # Bu .env dosyasından okunur
       POSTGRES_USER_FILE: /run/secrets/postgres_user
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
     ports: ["5432:5432"]
@@ -62,6 +60,7 @@ services:
     restart: always
     healthcheck:
       # DÜZELTME: Artık PGUSER ortam değişkeni olmadığı için -U ile belirtiyoruz
+      # Ayrıca sır dosyasını okuyan kullanıcıyı da ekliyoruz
       test: ["CMD-SHELL", "pg_isready -U $$(cat /run/secrets/postgres_user) -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
@@ -69,7 +68,6 @@ services:
     logging:
       driver: "json-file"
       options: {max-size: "10m", max-file: "3"}
-    # YENİ: Bu servisin hangi sırları kullanacağını belirtiyoruz
     secrets:
       - postgres_user
       - postgres_password
@@ -85,19 +83,20 @@ services:
       - ../api:/app
       - ${REPORTS_DIR}:/app/reports
       - ${CACHE_DIR}:/app/.cache
-    # DÜZELTME: DATABASE_URL'i sırları kullanarak oluşturuyoruz
     environment:
       - REDIS_URL=redis://redis:6379/0
       - REPORTS_DIR=/app/reports
       - CACHE_DIR=/app/.cache
+      # Sırları kullanarak DATABASE_URL oluşturuyoruz
       - DATABASE_URL=postgresql+psycopg2://$$(cat /run/secrets/postgres_user):$$(cat /run/secrets/postgres_password)@postgres:5432/${POSTGRES_DB}
+      # SECRET_KEY'i de .env dosyasından alıyoruz
+      - SECRET_KEY=${SECRET_KEY}
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_started }
     logging:
       driver: "json-file"
       options: {max-size: "10m", max-file: "3"}
-    # YENİ: Bu servisin hangi sırları kullanacağını belirtiyoruz
     secrets:
       - postgres_user
       - postgres_password
@@ -111,19 +110,20 @@ services:
       - ../worker:/app
       - ${REPORTS_DIR}:/app/reports
       - ${CACHE_DIR}:/app/.cache
-    # DÜZELTME: DATABASE_URL'i sırları kullanarak oluşturuyoruz
     environment:
       - REDIS_URL=redis://redis:6379/0
       - REPORTS_DIR=/app/reports
       - CACHE_DIR=/app/.cache
       - AZURAFORGE_DEVICE=${AZURAFORGE_DEVICE}
-      - DATABASE_URL=postgresql+psycopg2://$$(cat /run/secrets/postgres_user):$$(cat /run/secrets/password)@postgres:5432/${POSTGRES_DB}
+      # === KRİTİK DÜZELTME: 'password' -> 'postgres_password' ===
+      - DATABASE_URL=postgresql+psycopg2://$$(cat /run/secrets/postgres_user):$$(cat /run/secrets/postgres_password)@postgres:5432/${POSTGRES_DB}
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_started }
-    runtime: nvidia
+    # GPU ile ilgili ayarlar
+    # runtime: nvidia # Docker versiyonuna göre bu satır bazen gerekmez
     shm_size: '4gb'
     deploy:
       resources:
@@ -135,7 +135,6 @@ services:
     logging:
       driver: "json-file"
       options: {max-size: "10m", max-file: "3"}
-    # YENİ: Bu servisin hangi sırları kullanacağını belirtiyoruz
     secrets:
       - postgres_user
       - postgres_password
