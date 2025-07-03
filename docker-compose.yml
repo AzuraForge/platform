@@ -31,11 +31,14 @@ services:
   api:
     container_name: azuraforge_api
     build:
-      context: ./api
+      # DÜZELTME: Kardeş klasöre işaret etmesi için yolu güncelliyoruz.
+      context: ../api
       dockerfile: Dockerfile
     ports: ["8000:8000"]
     volumes:
-      - ./api:/app
+      # DÜZELTME: Host yolunu, kardeş klasöre göre güncelliyoruz.
+      - ../api:/app
+      # Bu yollar .env dosyasından geldiği için doğru kalmalı.
       - ${REPORTS_DIR}:/app/reports
       - ${CACHE_DIR}:/app/.cache
     environment:
@@ -53,17 +56,20 @@ services:
   worker:
     container_name: azuraforge_worker
     build:
-      context: ./worker
+      # DÜZELTME: Kardeş klasöre işaret etmesi için yolu güncelliyoruz.
+      context: ../worker
       dockerfile: Dockerfile
     volumes:
-      - ./worker:/app
+      # DÜZELTME: Host yolunu, kardeş klasöre göre güncelliyoruz.
+      - ../worker:/app
+      # Bu yollar .env dosyasından geldiği için doğru kalmalı.
       - ${REPORTS_DIR}:/app/reports
       - ${CACHE_DIR}:/app/.cache
     environment:
       - REDIS_URL=${REDIS_URL}
       - REPORTS_DIR=/app/reports
       - CACHE_DIR=/app/.cache
-      - AZURAFORGE_DEVICE=${AZURAFORGE_DEVICE} # Env'den çekiliyor
+      - AZURAFORGE_DEVICE=${AZURAFORGE_DEVICE}
       - DATABASE_URL=${DATABASE_URL}
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
@@ -73,7 +79,7 @@ services:
       redis:
         condition: service_started
     runtime: nvidia
-    shm_size: '4gb' # <--- BU SATIR DEĞİŞTİ! Paylaşılan belleği 4gb'a çıkarıyoruz.
+    shm_size: '4gb'
     deploy:
       resources:
         reservations:
@@ -86,12 +92,15 @@ services:
   dashboard:
     container_name: azuraforge_dashboard
     build:
-      context: ./dashboard
+      # DÜZELTME: Kardeş klasöre işaret etmesi için yolu güncelliyoruz.
+      context: ../dashboard
       dockerfile: Dockerfile
     command: npm run dev -- --host 0.0.0.0
     ports: ["5173:5173"]
     volumes:
-      - ./dashboard:/app
+      # DÜZELTME: Host yolunu, kardeş klasöre göre güncelliyoruz.
+      - ../dashboard:/app
+      # Bu satır, host'taki node_modules'in container'dakini ezmesini engeller.
       - /app/node_modules
     depends_on: [api]
 
