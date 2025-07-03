@@ -38,14 +38,18 @@ Bu adımlar, platformun tüm parçalarını yerel geliştirme için hazır hale 
     mkdir azuraforge-dev
     cd azuraforge-dev
 
-    git clone https://github.com/AzuraForge/platform.git
     git clone https://github.com/AzuraForge/core.git
     git clone https://github.com/AzuraForge/learner.git
-    git clone https://github.com/AzuraForge/applications.git
-    git clone https://github.com/AzuraForge/app-stock-predictor.git
+
     git clone https://github.com/AzuraForge/api.git
     git clone https://github.com/AzuraForge/worker.git
     git clone https://github.com/AzuraForge/dashboard.git
+
+    git clone https://github.com/AzuraForge/platform.git
+
+    git clone https://github.com/AzuraForge/applications.git
+    git clone https://github.com/AzuraForge/app-stock-predictor.git
+    git clone https://github.com/AzuraForge/app-weather-forecaster
     ```
 
 3.  **Sanal Ortam ve Bağımlılıklar (Python):**
