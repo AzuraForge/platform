@@ -1,86 +1,112 @@
-Here are some example usages of the enhanced Project Snapshot Tool:
+# AzuraForge Proje Snapshot Aracı
 
-```bash
-git bundle create artifacts/snapshots/v0.1.0.bundle --all  # Tüm tarihçeyi tek dosyada
-git clone artifacts/snapshots/v0.1.0.bundle artifacts/source
+Bu dizin, AzuraForge ekosisteminin tamamının anlık görüntülerini (snapshot) almak ve yönetmek için kullanılan `snapshot_tool.py` aracını içerir.
+
+## Genel Bakış
+
+`snapshot_tool.py`, tüm AzuraForge "kardeş repo"larını tarayarak, projenin o anki durumunu tek bir metin dosyasına paketleyen güçlü bir komut satırı aracıdır. Bu dosya, projenin kod tabanını paylaşmak, analiz etmek, AI modellerine girdi olarak sunmak veya yedeklemek için idealdir.
+
+Araç iki ana komut üzerine kuruludur:
+*   `collect`: Proje dosyalarını tarar ve tek bir snapshot dosyası oluşturur.
+*   `restore`: Bir snapshot dosyasından proje yapısını geri yükler.
+
+---
+
+## Kurulum ve Konum
+
+Araç, projenin `platform` reposu içinde yer alır ve herhangi bir ek bağımlılık gerektirmez. Komutları çalıştırırken `platform` dizininde olmanız tavsiye edilir.
+
+---
+
+## Kullanım Örnekleri
+
+Aşağıdaki tüm örneklerde, proje yapınızın şu şekilde olduğu varsayılmıştır:
+
+```
+/path/to/your/workspace/  <-- Projenin ana çalışma alanı
+├── platform/
+│   └── tools/
+│       └── snapshot_tool.py
+├── api/
+├── core/
+└── ...diğer repolar
 ```
 
-### 1. Basic Snapshot Creation
-```bash
-# Create a snapshot of the current directory (default settings)
-python tools\snapshot_tool.py collect artifacts/snapshots/v0.1.0.snapshot
+Tüm komutlar, terminalde `/path/to/your/workspace/platform/` dizinindeyken çalıştırılmalıdır.
 
-# Create a snapshot with custom include/exclude patterns
-python tools\snapshot_tool.py collect my_snapshot.txt \
-    --include-dir src \
-    --include-dir config \
-    --include-ext .java \
-    --include-ext .xml \
-    --exclude-pattern target \
-    --exclude-pattern *.iml
+### 1. Temel Snapshot Oluşturma (Tavsiye Edilen Yöntem)
+
+Bu komut, projenin ana çalışma alanını (`../`) tarar ve varsayılan ayarlarla (`.py`, `.js`, `.md` vb. dahil, `__pycache__`, `node_modules` vb. hariç) bir snapshot oluşturur.
+
+```bash
+# .../platform/ dizinindeyken:
+python tools/snapshot_tool.py collect project_snapshot.txt --base-dir ../
 ```
+*   **Sonuç:** `.../platform/project_snapshot.txt` dosyası oluşturulur.
 
-### 2. Snapshot with Comment Cleaning
+### 2. Gelişmiş Snapshot Oluşturma (Özel Kurallar)
+
+Sadece belirli dizinleri veya dosya uzantılarını dahil etmek ve özel dışlama kuralları eklemek için:
+
 ```bash
-# Create snapshot while removing comments from code files
-python tools\snapshot_tool.py collect clean_snapshot.txt --clean-comments
-```
-
-### 3. Snapshot from Specific Base Directory
-```bash
-# Create snapshot from a different base directory
-python tools\snapshot_tool.py collect ../snapshots/project_backup.txt --base-dir ~/projects/my_project
-```
-
-### 4. Restoration Examples
-```bash
-# Dry run (simulate restoration without writing files)
-python tools\snapshot_tool.py restore project_snapshot.txt --dry-run
-
-# Actual restoration to current directory
-python tools\snapshot_tool.py restore project_snapshot.txt
-
-# Restoration to different directory with overwrite
-python tools\snapshot_tool.py restore project_snapshot.txt \
-    --target-dir ~/projects/restored_project \
-    --overwrite
-```
-
-### 5. Complex Example with Multiple Directories
-```bash
-# Snapshot specific directories with custom settings
-python tools\snapshot_tool.py collect full_backup.txt \
-    --include-dir src \
-    --include-dir tests \
-    --include-dir config \
+# Sadece `api` ve `core` repolarını, sadece `.py` ve `.md` dosyalarını al
+python tools/snapshot_tool.py collect api_core_snapshot.txt --base-dir ../ \
+    --include-dir ../api \
+    --include-dir ../core \
     --include-ext .py \
-    --include-ext .yaml \
-    --include-ext Dockerfile \
-    --exclude-pattern __pycache__ \
-    --exclude-pattern *.log \
-    --exclude-pattern temp \
-    --base-dir ~/projects/my_project \
-    --clean-comments
+    --include-ext .md \
+    --exclude-pattern tests
 ```
 
-### 6. Checking What Will Be Included
+### 3. Yorumları Temizleyerek Snapshot Alma
+
+Kod dosyalarındaki yorum satırlarını kaldırarak daha temiz ve daha küçük bir snapshot oluşturmak için `--clean-comments` bayrağını kullanın. Bu, AI modellerine girdi hazırlarken faydalıdır.
+
 ```bash
-# First see what would be included with current settings
-python tools\snapshot_tool.py collect test_snapshot.txt --dry-run
-
-# Then create the actual snapshot
-python tools\snapshot_tool.py collect test_snapshot.txt
+# Yorumsuz bir snapshot oluştur
+python tools/snapshot_tool.py collect clean_snapshot.txt --base-dir ../ --clean-comments
 ```
 
-The tool will:
-1. For `collect` command:
-   - Show warnings for non-existent directories
-   - Display total files included at the end
-   - Preserve all file content exactly (or clean comments if requested)
+### 4. Snapshot'tan Geri Yükleme
 
-2. For `restore` command:
-   - Show detailed progress of each file being restored
-   - Provide a summary of files restored/skipped
-   - Handle directory creation automatically
+Oluşturulmuş bir `project_snapshot.txt` dosyasından tüm projeyi geri yüklemek için:
 
-Remember that the default settings already include most common development files while excluding build artifacts and temporary files, so you can often just use the basic command for most cases.
+```bash
+# 1. Geri yüklenecek snapshot dosyasının .../platform/ içinde olduğundan emin olun.
+# 2. .../platform/ dizinindeyken aşağıdaki komutu çalıştırın.
+
+# Bu komut, dosyaları bir üst dizine (ana çalışma alanına) geri yükleyecektir.
+python tools/snapshot_tool.py restore project_snapshot.txt --target-dir ../
+```
+
+Mevcut dosyaların üzerine yazmak isterseniz `--overwrite` bayrağını ekleyin:
+
+```bash
+python tools/snapshot_tool.py restore project_snapshot.txt --target-dir ../ --overwrite
+```
+
+### 5. "Ne Dahil Edilecek?" Kontrolü (Dry Run)
+
+Snapshot oluşturmadan önce hangi dosyaların dahil edileceğini listelemek için (dosya yazma işlemi yapmaz):
+
+```bash
+# Bu komut, snapshot_tool.py'nin --dry-run argümanını desteklediğini varsayar.
+python tools/snapshot_tool.py collect test.txt --base-dir ../ --dry-run
+```
+
+---
+
+## Aracın Yetenekleri
+
+*   **`collect` komutu:**
+    *   Var olmayan dizinler için uyarı gösterir.
+    *   İşlem sonunda toplam kaç dosyanın dahil edildiğini raporlar.
+    *   Tüm dosya içeriğini tam olarak korur (veya `--clean-comments` ile yorumları temizler).
+    *   Kardeş repo yapısıyla tam uyumlu çalışır.
+
+*   **`restore` komutu:**
+    *   Geri yüklenen her dosya için detaylı ilerleme bilgisi gösterir.
+    *   İşlem sonunda geri yüklenen/atlanan dosyaların bir özetini sunar.
+    *   Gerekli dizin yapısını otomatik olarak oluşturur.
+
+**Unutmayın:** Aracın varsayılan ayarları, en yaygın geliştirme dosyalarını dahil edip, derleme çıktılarını, bağımlılık klasörlerini ve geçici dosyaları hariç tutacak şekilde yapılandırılmıştır. Çoğu durumda, **"Temel Snapshot Oluşturma"** bölümündeki komut yeterli olacaktır.
