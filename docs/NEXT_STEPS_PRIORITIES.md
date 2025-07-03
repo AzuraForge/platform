@@ -19,6 +19,7 @@ Aşağıdaki kritik görevler başarıyla tamamlanmış ve platform sağlam bir 
 | **7**   | **Kullanıcı Odaklı Hata Yönetimi**      | `[✔️]`    | API ve Dashboard, kullanıcıya anlamlı hata mesajları sunacak şekilde geliştirildi.|
 | **8**   | **Genişletilmiş AI Yetenekleri**         | `[✔️]`    | Görüntü (Conv2D) ve Ses/NLP (Embedding, Attention) için temel katmanlar eklendi.|
 | **9**   | **Uçtan Uca Özellikler**                | `[✔️]`    | Model Kaydı, Anlık Tahmin API'si ve Hiperparametre Optimizasyonu tamamlandı.|
+| **10**  | **Kullanıcı Yönetimi ve Kimlik Doğrulama** | `[✔️]`    | Platforma JWT tabanlı güvenli giriş sistemi entegre edildi.                  |
 
 ---
 
@@ -28,10 +29,9 @@ Aşağıdaki kritik görevler başarıyla tamamlanmış ve platform sağlam bir 
 
 | Öncelik | Görev                                                 | Durum     | Neden? (İş Değeri)                                                                   | İlgili Repo(lar)           |
 | :------ | :---------------------------------------------------- | :-------- | :----------------------------------------------------------------------------------- | :------------------------- |
-| **1**   | **Kullanıcı Yönetimi ve Kimlik Doğrulama (JWT)**        | `[⬜]`    | Platformu çok kullanıcılı hale getirir, ticarileştirmenin ve güvenliğin temelidir. | `dbmodels`, `api`, `dashboard` |
-| **2**   | **Gelişmiş Raporlama Arayüzü**                        | `[⬜]`    | Sınıflandırma raporlarını (Confusion Matrix vb.) Dashboard'da görselleştirir.  | `dashboard`, `learner`       |
-| **3**   | **Kapsamlı Kullanıcı Dokümantasyonu**                   | `[⬜]`    | "İlk Modelinizi Eğitin" gibi rehberlerle platformun kullanımını kolaylaştırır.  | `platform` (docs)          |
-| **4**   | **CI/CD Pipeline'larını Olgunlaştırma**                 | `[⬜]`    | Her PR'da testlerin otomatik çalışması, güvenlik taramaları eklenmesi.           | `platform` (github)        |
+| **1**   | **Gelişmiş Raporlama Arayüzü**                        | `[⬜]`    | Sınıflandırma raporlarını (Confusion Matrix vb.) Dashboard'da görselleştirir.  | `dashboard`, `learner`       |
+| **2**   | **Kapsamlı Kullanıcı Dokümantasyonu**                   | `[⬜]`    | "İlk Modelinizi Eğitin" gibi rehberlerle platformun kullanımını kolaylaştırır.  | `platform` (docs)          |
+| **3**   | **CI/CD Pipeline'larını Olgunlaştırma**                 | `[⬜]`    | Her PR'da testlerin otomatik çalışması, güvenlik taramaları eklenmesi.           | `platform` (github)        |
 
 ---
 

@@ -32,6 +32,8 @@ Bu vizyonu gerçekleştirmek için dört temel anayasal prensibe bağlıyız: **
 *   **Faz 2: Yetenek Setini Genişletme ("Capability Expansion"):**
     *   **AI Motorunun Geliştirilmesi:** `core` ve `learner` kütüphanelerine `Conv2D`, `MaxPool2D`, `Embedding`, `Attention`, `CrossEntropyLoss` gibi yeni temel yapı taşları eklendi.
     *   **Uçtan Uca Yetenekler:** `Model Kaydetme/Sunma`, `Hiperparametre Optimizasyonu` ve `Görüntü/Ses Pipeline` temelleri gibi özellikler platforma kazandırıldı.
+*   **Faz 3: Ürünleştirme ve Cilalama (Productization & Polish) [Başlandı]:**
+    *   **Kullanıcı Yönetimi (JWT):** Platforma güvenli kimlik doğrulama ve kullanıcı yönetimi temeli eklendi.
 
 ---
 
@@ -39,7 +41,7 @@ Bu vizyonu gerçekleştirmek için dört temel anayasal prensibe bağlıyız: **
 
 **Projenin anlık ve detaylı eylem planı için lütfen [Sonraki Adımlar ve Öncelikler](./NEXT_STEPS_PRIORITIES.md) belgemize bakın.**
 
-### **FAZ 3: ÜRÜNLEŞTİRME VE CİLALAMA (Productization & Polish) [Sıradaki]**
+### **FAZ 3: ÜRÜNLEŞTİRME VE CİLALAMA (Productization & Polish) [Devam Ediyor]**
 *   **Hedef:** Mevcut güçlü altyapıyı, son kullanıcının kolayca kullanabileceği, kararlı ve "cilalı" bir ürüne dönüştürmek.
 *   **Ana Başlıklar:** Kullanıcı Yönetimi (Authentication), Gelişmiş Raporlama Arayüzleri, Kapsamlı Kullanıcı Dokümantasyonu, UI/UX İyileştirmeleri.
 

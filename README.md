@@ -26,7 +26,7 @@ AzuraForge platformu, aşağıdaki bağımsız GitHub depolarından oluşur:
 | **Çekirdek Kütüphaneler**    |                                                                                  |                      |
 | `core`                       | Temel tensör matematiği ve otomatik türev (geri yayılım) motoru.                   | `Python`, `NumPy`      |
 | `learner`                    | Yüksek seviyeli öğrenme kütüphanesi (Katmanlar, Optimizatörler, Pipeline'lar).     | `Python`             |
-| `dbmodels`                   | **[YENİ]** Tüm servisler için ortak SQLAlchemy veritabanı modelleri.               | `Python`, `SQLAlchemy` |
+| `dbmodels`                   | Tüm servisler için ortak SQLAlchemy veritabanı modelleri.                          | `Python`, `SQLAlchemy` |
 | **Uygulama Eklentileri**     |                                                                                  |                      |
 | `applications`               | Resmi ve test edilmiş uygulama eklentilerinin katalogunu tutar.                    | `JSON`               |
 | `app-stock-predictor`        | Gerçek bir zaman serisi tahmin eklentisi örneği.                                 | `Python`             |
@@ -42,6 +42,7 @@ AzuraForge platformu, aşağıdaki bağımsız GitHub depolarından oluşur:
 ## ✨ Ana Yetenekler
 
 *   **Sıfırdan İnşa Edilmiş Çekirdek:** Otomatik türev, `LSTM` gibi gelişmiş katmanlar ve `Adam` optimizer içeren, saf Python/NumPy tabanlı bir derin öğrenme motoru.
+*   **Güvenli Kimlik Doğrulama:** JWT tabanlı kullanıcı yönetimi ve korumalı API endpoint'leri ile güvenli bir çalışma ortamı.
 *   **Canlı Deney Takibi:** `WebSocket` aracılığıyla, devam eden bir eğitimin ilerlemesini, anlık kayıp değerini ve tahmin grafiklerini anlık olarak izleme imkanı.
 *   **Dinamik ve İnteraktif Raporlama:** Tamamlanan her deney için, `Dashboard` üzerinden erişilebilen, `Chart.js` ile çizilmiş interaktif grafikler ve detaylı metrikler.
 *   **Deney Karşılaştırma:** Birden fazla deney sonucunu tek bir arayüzde görsel olarak karşılaştırarak en iyi modeli kolayca belirleme.
@@ -54,7 +55,7 @@ Detaylı geliştirme ortamı kurulumu için **[Geliştirme Rehberi](./docs/DEVEL
 
 1.  **Docker Desktop'ın yüklü ve çalıştığından emin olun.**
 2.  **Tüm AzuraForge repolarını klonlayın:** Geliştirme rehberinde açıklandığı gibi, tüm repoları aynı ana dizin altında "kardeş" olarak klonlayın.
-3.  **.env dosyasını oluşturun:** Bu (`platform`) dizinde, `.env.example` dosyasını kopyalayarak `.env` adıyla yeni bir dosya oluşturun.
+3.  **.env dosyasını oluşturun:** Bu (`platform`) dizinde, `.env.example` dosyasını kopyalayarak `.env` adıyla yeni bir dosya oluşturun ve içindeki `SECRET_KEY` değişkenini düzenleyin.
 4.  **Gerekli Dizinleri Oluşturun:**
     ```bash
     mkdir -p ./reports ./.cache
@@ -64,7 +65,7 @@ Detaylı geliştirme ortamı kurulumu için **[Geliştirme Rehberi](./docs/DEVEL
     docker-compose up --build -d
     ```
 6.  **Platforma erişin:**
-    *   **Dashboard:** `http://localhost:5173`
+    *   **Dashboard:** `http://localhost:5173` (Giriş için varsayılan bilgiler: `admin` / `DefaultPassword123!`)
     *   **API Dokümantasyonu:** `http://localhost:8000/api/v1/docs`
 
 ---

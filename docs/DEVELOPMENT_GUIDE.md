@@ -49,11 +49,12 @@ git clone https://github.com/AzuraForge/app-voice-generator.git
 
 ### Adım 1.3: Ortam Değişkenlerini Ayarlama
 
-`platform` klasöründeki `.env.example` dosyasını kopyalayarak `.env` adıyla yeni bir dosya oluşturun. Bu dosya, tüm servisler tarafından kullanılacak ortak konfigürasyonları içerir.
+`platform` klasöründeki `.env.example` dosyasını kopyalayarak `.env` adıyla yeni bir dosya oluşturun. **Özellikle `SECRET_KEY` değişkenini güvenli bir değerle doldurduğunuzdan emin olun.**
 
 ```bash
 cd platform
 cp .env.example .env
+# .env dosyasını bir metin düzenleyici ile açıp SECRET_KEY'i ayarlayın.
 cd ..
 ```
 
@@ -120,9 +121,13 @@ Bu, tüm servislerin birbiriyle entegre bir şekilde nasıl çalıştığını g
     *   **Dashboard:** `http://localhost:5173`
     *   **API Dokümantasyonu:** `http://localhost:8000/api/v1/docs`
 
+    > **✨ ÖNEMLİ:** Platform ilk kez başlatıldığında `api` servisi otomatik olarak bir varsayılan kullanıcı oluşturur. `Dashboard`'a giriş yapmak için bu bilgileri kullanın:
+    > **Kullanıcı Adı:** `admin`
+    > **Parola:** `DefaultPassword123!`
+
 ### Senaryo B: Hızlı Yerel Geliştirme (Docker olmadan)
 
-Bir serviste (örneğin `api`) hızlıca değişiklik yapıp test etmek istediğinizde bu yöntemi kullanın. Bu çok daha hızlı bir geliştirme döngüsü sağlar.
+Bir serviste (örneğin `api`) hızlıca değişiklik yapıp test etmek istediğinizde bu yöntemi kullanın.
 
 1.  **Altyapıyı Başlatın:**
     Önce sadece veritabanı ve Redis'i Docker ile ayağa kaldırın.
@@ -149,12 +154,11 @@ Bir serviste (örneğin `api`) hızlıca değişiklik yapıp test etmek istediğ
         npm run dev
         ```
 
-Bu kurulumla, herhangi bir Python veya JavaScript dosyasında yaptığınız değişiklik, ilgili servis tarafından otomatik olarak algılanacak ve yeniden yüklenecektir.
+Bu kurulumla, herhangi bir Python veya JavaScript dosyasında yaptığınız değişiklik, ilgili servis tarafından otomatik olarak algılanacak ve yeniden yüklenecektir. **Giriş yapmak için yine yukarıda belirtilen varsayılan `admin` bilgilerini kullanabilirsiniz.**
 
 ---
 
 ## 🔄 İteratif Geliştirme Akışı
 
-*   **Kod Değişikliği:** Bir dosyayı değiştirip kaydedin. **Senaryo B**'de çalışıyorsanız, ilgili servis (`api`, `worker` veya `dashboard`) genellikle değişikliği otomatik olarak algılar. **Senaryo A**'da çalışıyorsanız, `docker-compose up --build` komutunu tekrar çalıştırmanız gerekir.
-*   **Yeni Bağımlılık Ekleme:** Bir reponun `pyproject.toml` dosyasına yeni bir paket eklediyseniz, ana `platform` dizinine dönüp o reponun `-e` kurulum komutunu tekrar çalıştırın (`pip install -e ../ilgili-repo`). Pip, sadece eksik olan yeni bağımlılığı kuracaktır.
-
+*   **Kod Değişikliği:** Bir dosyayı değiştirip kaydedin. **Senaryo B**'de çalışıyorsanız, ilgili servis (`api`, `worker` veya `dashboard`) genellikle değişikliği otomatik olarak algılar. **Senaryo A**'da çalışıyorsanız, `docker-compose up --build -d ilgili-servis-adi` komutuyla sadece değişen servisi yeniden build edebilirsiniz.
+*   **Yeni Bağımlılık Ekleme:** Bir reponun `pyproject.toml` veya `package.json` dosyasına yeni bir paket eklediyseniz, ilgili `pip install -e` veya `npm install` komutunu tekrar çalıştırın.
