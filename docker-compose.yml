@@ -1,12 +1,17 @@
+# YENİ: En üstte sırlarımızı tanımlıyoruz
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password.txt
+  postgres_user:
+    file: ./secrets/postgres_user.txt
+
 services:
   # --- GÖZLEMLENEBİLİRLİK (OBSERVABILITY) SERVİSLERİ ---
   loki:
     image: grafana/loki:2.9.0
     container_name: azuraforge_loki
-    ports:
-      - "3100:3100"
-    volumes:
-      - ./config/loki-config.yml:/etc/loki/local-config.yaml
+    ports: ["3100:3100"]
+    volumes: ["./config/loki-config.yml:/etc/loki/local-config.yaml"]
     command: -config.file=/etc/loki/local-config.yaml
     restart: always
 
@@ -22,19 +27,15 @@ services:
   grafana:
     image: grafana/grafana-oss:10.2.2
     container_name: azuraforge_grafana
-    ports:
-      - "3000:3000"
+    ports: ["3000:3000"]
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
-      # YENİ: Otomatik yapılandırma (provisioning) yolunu belirtiyoruz
       - GF_PROVISIONING_PATH=/etc/grafana/provisioning
     volumes:
       - grafana_data:/var/lib/grafana
-      # YENİ: Host'taki config dizinimizi container'daki provisioning yoluna bağlıyoruz
       - ./config/grafana:/etc/grafana/provisioning
-    depends_on:
-      - loki
+    depends_on: [loki]
     restart: always
 
   # --- ALTYAPI SERVİSLERİ ---
@@ -43,32 +44,35 @@ services:
     container_name: azuraforge_redis
     ports: ["6379:6379"]
     volumes: ["redis_data:/data"]
-    logging: # <-- LOGLAMA EKLENDİ
+    logging:
       driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+      options: {max-size: "10m", max-file: "3"}
 
   postgres:
     image: postgres:15-alpine
     container_name: azuraforge_postgres
+    # DÜZELTME: 'environment' içinden hassas verileri kaldırıyoruz
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+      # YENİ: Sırların okunacağı dosya yollarını belirtiyoruz
+      POSTGRES_USER_FILE: /run/secrets/postgres_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
     ports: ["5432:5432"]
     volumes: ["postgres_data:/var/lib/postgresql/data"]
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      # DÜZELTME: Artık PGUSER ortam değişkeni olmadığı için -U ile belirtiyoruz
+      test: ["CMD-SHELL", "pg_isready -U $$(cat /run/secrets/postgres_user) -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
-    logging: # <-- LOGLAMA EKLENDİ
+    logging:
       driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+      options: {max-size: "10m", max-file: "3"}
+    # YENİ: Bu servisin hangi sırları kullanacağını belirtiyoruz
+    secrets:
+      - postgres_user
+      - postgres_password
         
   # --- ANA PLATFORM SERVİSLERİ ---
   api:
@@ -81,19 +85,22 @@ services:
       - ../api:/app
       - ${REPORTS_DIR}:/app/reports
       - ${CACHE_DIR}:/app/.cache
+    # DÜZELTME: DATABASE_URL'i sırları kullanarak oluşturuyoruz
     environment:
       - REDIS_URL=redis://redis:6379/0
       - REPORTS_DIR=/app/reports
       - CACHE_DIR=/app/.cache
-      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_URL=postgresql+psycopg2://$$(cat /run/secrets/postgres_user):$$(cat /run/secrets/postgres_password)@postgres:5432/${POSTGRES_DB}
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_started }
-    logging: # <-- LOGLAMA EKLENDİ
+    logging:
       driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+      options: {max-size: "10m", max-file: "3"}
+    # YENİ: Bu servisin hangi sırları kullanacağını belirtiyoruz
+    secrets:
+      - postgres_user
+      - postgres_password
 
   worker:
     container_name: azuraforge_worker
@@ -104,12 +111,13 @@ services:
       - ../worker:/app
       - ${REPORTS_DIR}:/app/reports
       - ${CACHE_DIR}:/app/.cache
+    # DÜZELTME: DATABASE_URL'i sırları kullanarak oluşturuyoruz
     environment:
       - REDIS_URL=redis://redis:6379/0
       - REPORTS_DIR=/app/reports
       - CACHE_DIR=/app/.cache
       - AZURAFORGE_DEVICE=${AZURAFORGE_DEVICE}
-      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_URL=postgresql+psycopg2://$$(cat /run/secrets/postgres_user):$$(cat /run/secrets/password)@postgres:5432/${POSTGRES_DB}
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     depends_on:
@@ -124,11 +132,13 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
-    logging: # <-- LOGLAMA EKLENDİ
+    logging:
       driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+      options: {max-size: "10m", max-file: "3"}
+    # YENİ: Bu servisin hangi sırları kullanacağını belirtiyoruz
+    secrets:
+      - postgres_user
+      - postgres_password
 
   dashboard:
     container_name: azuraforge_dashboard
@@ -141,13 +151,11 @@ services:
       - ../dashboard:/app
       - /app/node_modules
     depends_on: [api]
-    logging: # <-- LOGLAMA EKLENDİ
+    logging:
       driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+      options: {max-size: "10m", max-file: "3"}
 
 volumes:
   redis_data:
   postgres_data:
-  grafana_data: # <-- YENİ VOLUME
+  grafana_data:
