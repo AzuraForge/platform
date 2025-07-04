@@ -162,3 +162,11 @@ Bu kurulumla, herhangi bir Python veya JavaScript dosyasında yaptığınız de�
 
 *   **Kod Değişikliği:** Bir dosyayı değiştirip kaydedin. **Senaryo B**'de çalışıyorsanız, ilgili servis (`api`, `worker` veya `dashboard`) genellikle değişikliği otomatik olarak algılar. **Senaryo A**'da çalışıyorsanız, `docker-compose up --build -d ilgili-servis-adi` komutuyla sadece değişen servisi yeniden build edebilirsiniz.
 *   **Yeni Bağımlılık Ekleme:** Bir reponun `pyproject.toml` veya `package.json` dosyasına yeni bir paket eklediyseniz, ilgili `pip install -e` veya `npm install` komutunu tekrar çalıştırın.
+
+---
+
+## 🐞 Sorun Giderme (Troubleshooting)
+
+Platformu ayağa kaldırırken veya geliştirme yaparken bir sorunla mı karşılaştınız? Yalnız değilsiniz! Bu tür karmaşık sistemlerde hatalar geliştirme sürecinin doğal bir parçasıdır.
+
+Karşılaşılan yaygın sorunlar ve kanıtlanmış çözümleri için lütfen öncelikle merkezi **[Sorun Giderme Rehberimize](./TROUBLESHOOTING_GUIDE.md)** göz atın.
