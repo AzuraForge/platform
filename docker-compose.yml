@@ -69,6 +69,7 @@ services:
         
   # --- ANA PLATFORM SERVİSLERİ ---
   api:
+    # ... (API servisi önceki doğru haliyle aynı kalıyor) ...
     container_name: azuraforge_api
     build:
       context: ../api
@@ -107,7 +108,7 @@ services:
       - ${REPORTS_DIR:-./reports}:/app/reports
       - ${CACHE_DIR:-./.cache}:/app/.cache
     environment:
-      # Worker için de aynı temiz yapıyı kullanıyoruz
+      # SADECE hassas olmayan değişkenler burada
       - POSTGRES_HOST=postgres
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_DB_PORT=5432
@@ -116,7 +117,6 @@ services:
       - CACHE_DIR=/app/.cache
       - AZURAFORGE_DEVICE=${AZURAFORGE_DEVICE:-cpu}
     secrets:
-      # Worker da artık sırları dosya olarak okuyacak
       - postgres_user
       - postgres_password
     depends_on:
