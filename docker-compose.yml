@@ -1,5 +1,4 @@
 # version etiketi modern compose'da gereksizdir.
-
 secrets:
   postgres_user:
     file: ./secrets/postgres_user.txt
@@ -9,7 +8,7 @@ secrets:
     file: ./secrets/secret_key.txt
 
 services:
-  # --- GÖZLEMLENEBİLİRLİK (OBSERVABILITY) SERVİSLERİ ---
+  # ... (loki, promtail, grafana, redis, postgres servisleri aynı kalıyor) ...
   loki:
     image: grafana/loki:2.9.0
     container_name: azuraforge_loki
@@ -17,7 +16,6 @@ services:
     volumes: ["./config/loki-config.yml:/etc/loki/local-config.yaml"]
     command: -config.file=/etc/loki/local-config.yaml
     restart: always
-
   promtail:
     image: grafana/promtail:2.9.0
     container_name: azuraforge_promtail
@@ -26,7 +24,6 @@ services:
       - ./config/promtail-config.yml:/etc/promtail/config.yml
     command: -config.file=/etc/promtail/config.yml
     restart: always
-
   grafana:
     image: grafana/grafana-oss:10.2.2
     container_name: azuraforge_grafana
@@ -40,8 +37,6 @@ services:
       - ./config/grafana:/etc/grafana/provisioning
     depends_on: [loki]
     restart: always
-
-  # --- ALTYAPI SERVİSLERİ ---
   redis:
     image: redis:alpine
     container_name: azuraforge_redis
@@ -50,7 +45,6 @@ services:
     logging:
       driver: "json-file"
       options: {max-size: "10m", max-file: "3"}
-
   postgres:
     image: postgres:15-alpine
     container_name: azuraforge_postgres
@@ -85,7 +79,6 @@ services:
       - ${REPORTS_DIR:-./reports}:/app/reports
       - ${CACHE_DIR:-./.cache}:/app/.cache
     environment:
-      # Bu değişkenler entrypoint.sh tarafından okunacak
       - POSTGRES_HOST=postgres
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_DB_PORT=5432
@@ -93,7 +86,6 @@ services:
       - REPORTS_DIR=/app/reports
       - CACHE_DIR=/app/.cache
     secrets:
-      # Sırlar dosya olarak içeri alınır, entrypoint okur.
       - postgres_user
       - postgres_password
       - secret_key
@@ -115,7 +107,7 @@ services:
       - ${REPORTS_DIR:-./reports}:/app/reports
       - ${CACHE_DIR:-./.cache}:/app/.cache
     environment:
-      # Bu değişkenler entrypoint.sh tarafından okunacak
+      # Worker için de aynı temiz yapıyı kullanıyoruz
       - POSTGRES_HOST=postgres
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_DB_PORT=5432
@@ -124,6 +116,7 @@ services:
       - CACHE_DIR=/app/.cache
       - AZURAFORGE_DEVICE=${AZURAFORGE_DEVICE:-cpu}
     secrets:
+      # Worker da artık sırları dosya olarak okuyacak
       - postgres_user
       - postgres_password
     depends_on:
