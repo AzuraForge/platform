@@ -1,16 +1,12 @@
-# docker-compose.yml (TAM VE EKSİKSİZ VERSİYON)
+# version etiketi modern compose'da gereksizdir.
 
-# Docker Compose dosyasının 3.8 versiyonunu kullandığımızı belirtiyoruz.
-# Bu, 'secrets' gibi modern özellikleri destekler.
-version: "3.8"
-
-# Proje genelinde kullanılacak sırları tanımlıyoruz.
-# Docker, bu dosyaların içeriğini güvenli bir şekilde konteynerlere iletecek.
 secrets:
-  postgres_password:
-    file: ./secrets/postgres_password.txt
   postgres_user:
     file: ./secrets/postgres_user.txt
+  postgres_password:
+    file: ./secrets/postgres_password.txt
+  secret_key:
+    file: ./secrets/secret_key.txt
 
 services:
   # --- GÖZLEMLENEBİLİRLİK (OBSERVABILITY) SERVİSLERİ ---
@@ -66,7 +62,6 @@ services:
     volumes: ["postgres_data:/var/lib/postgresql/data"]
     restart: always
     healthcheck:
-      # Sır dosyasının içeriğini okuyarak healthcheck yapıyoruz.
       test: ["CMD-SHELL", "pg_isready -U $$(cat /run/secrets/postgres_user) -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
@@ -90,26 +85,24 @@ services:
       - ${REPORTS_DIR:-./reports}:/app/reports
       - ${CACHE_DIR:-./.cache}:/app/.cache
     environment:
-      # DİKKAT: Artık DATABASE_URL'i burada shell komutuyla oluşturmuyoruz.
-      # Sırlardan gelen ortam değişkenlerini kullanıyoruz.
-      - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER_SECRET}:${POSTGRES_PASSWORD_SECRET}@postgres:5432/${POSTGRES_DB}
+      # Bu değişkenler entrypoint.sh tarafından okunacak
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_DB_PORT=5432
       - REDIS_URL=redis://redis:6379/0
       - REPORTS_DIR=/app/reports
       - CACHE_DIR=/app/.cache
-      - SECRET_KEY=${SECRET_KEY}
-    command: >
-      sh -c "wait-for-it.sh postgres:5432 -t 60 -- uvicorn azuraforge_api.main:app --host 0.0.0.0 --port 8000 --reload"
+    secrets:
+      # Sırlar dosya olarak içeri alınır, entrypoint okur.
+      - postgres_user
+      - postgres_password
     depends_on:
       postgres: { condition: service_healthy }
-      redis: { condition: service_started }
+    command: >
+      uvicorn azuraforge_api.main:app --host 0.0.0.0 --port 8000 --reload
     logging:
       driver: "json-file"
       options: {max-size: "10m", max-file: "3"}
-    secrets:
-      - source: postgres_user
-        target: POSTGRES_USER_SECRET
-      - source: postgres_password
-        target: POSTGRES_PASSWORD_SECRET
 
   worker:
     container_name: azuraforge_worker
@@ -121,13 +114,17 @@ services:
       - ${REPORTS_DIR:-./reports}:/app/reports
       - ${CACHE_DIR:-./.cache}:/app/.cache
     environment:
-      - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER_SECRET}:${POSTGRES_PASSWORD_SECRET}@postgres:5432/${POSTGRES_DB}
+      # Bu değişkenler entrypoint.sh tarafından okunacak
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_DB_PORT=5432
       - REDIS_URL=redis://redis:6379/0
       - REPORTS_DIR=/app/reports
       - CACHE_DIR=/app/.cache
       - AZURAFORGE_DEVICE=${AZURAFORGE_DEVICE:-cpu}
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    secrets:
+      - postgres_user
+      - postgres_password
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_started }
@@ -138,14 +135,11 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+    command: >
+      python3 -m azuraforge_worker.main
     logging:
       driver: "json-file"
       options: {max-size: "10m", max-file: "3"}
-    secrets:
-      - source: postgres_user
-        target: POSTGRES_USER_SECRET
-      - source: postgres_password
-        target: POSTGRES_PASSWORD_SECRET
 
   dashboard:
     container_name: azuraforge_dashboard
@@ -162,7 +156,6 @@ services:
       driver: "json-file"
       options: {max-size: "10m", max-file: "3"}
 
-# Paylaşımlı disk alanlarını tanımlıyoruz.
 volumes:
   redis_data:
   postgres_data:
