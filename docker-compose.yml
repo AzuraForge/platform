@@ -96,6 +96,7 @@ services:
       # Sırlar dosya olarak içeri alınır, entrypoint okur.
       - postgres_user
       - postgres_password
+      - secret_key
     depends_on:
       postgres: { condition: service_healthy }
     command: >
