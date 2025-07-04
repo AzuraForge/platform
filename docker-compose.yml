@@ -87,10 +87,23 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - REPORTS_DIR=/app/reports
       - CACHE_DIR=/app/.cache
-      # Sırları kullanarak DATABASE_URL oluşturuyoruz
       - DATABASE_URL=postgresql+psycopg2://$$(cat /run/secrets/postgres_user):$$(cat /run/secrets/postgres_password)@postgres:5432/${POSTGRES_DB}
-      # SECRET_KEY'i de .env dosyasından alıyoruz
       - SECRET_KEY=${SECRET_KEY}
+    
+    # === KRİTİK DÜZELTME: 'command' satırı ekliyoruz ===
+    command: >
+      sh -c "
+        echo 'Waiting for PostgreSQL...' &&
+        while ! nc -z postgres 5432; do
+          sleep 0.1;
+        done;
+        echo 'PostgreSQL started.';
+        
+        # Şimdi, shell değişkeni yorumladıktan sonra uvicorn'u başlat
+        uvicorn azuraforge_api.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+    # === DÜZELTME SONU ===
+    
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_started }
@@ -100,6 +113,7 @@ services:
     secrets:
       - postgres_user
       - postgres_password
+
 
   worker:
     container_name: azuraforge_worker
