@@ -13,7 +13,6 @@ services:
     ports: ["3100:3100"]
     volumes:
       - ./config/loki-config.yml:/etc/loki/config.yaml
-    # Komutu ve dosyayı config.yaml olarak standartlaştırıyoruz
     command: -config.file=/etc/loki/config.yaml
     restart: always
     healthcheck:
@@ -26,14 +25,16 @@ services:
     image: grafana/promtail:2.9.0
     container_name: azuraforge_promtail
     volumes:
+      # Promtail'in host makinedeki Docker log dosyalarını okumasını sağlıyoruz
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      # Promtail'in Docker meta verilerini (konteyner adları gibi) okumasını sağlıyoruz
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./config/promtail-config.yml:/etc/promtail/config.yml
     command: -config.file=/etc/promtail/config.yml
     restart: always
     depends_on:
       loki:
-        condition: service_healthy # Loki'nin sağlıklı olmasını bekle
+        condition: service_healthy
 
   grafana:
     image: grafana/grafana-oss:10.2.2
@@ -49,17 +50,21 @@ services:
     restart: always
     depends_on:
       loki:
-        condition: service_healthy # Grafana'nın da başlamadan önce Loki'nin sağlıklı olmasını bekle
+        condition: service_healthy
 
+  # === ANA PLATFORM SERVİSLERİ ===
+  # Tüm servisler için standart logging ayarı
   redis:
     image: redis:alpine
     container_name: azuraforge_redis
     ports: ["6379:6379"]
     volumes: ["redis_data:/data"]
-    logging:
+    logging: &default-logging
       driver: "json-file"
-      options: {max-size: "10m", max-file: "3"}
-
+      options:
+        max-size: "10m"
+        max-file: "3"
+        
   postgres:
     image: postgres:15-alpine
     container_name: azuraforge_postgres
@@ -75,13 +80,11 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    logging:
-      driver: "json-file"
-      options: {max-size: "10m", max-file: "3"}
     secrets:
       - postgres_user
       - postgres_password
-        
+    logging: *default-logging
+
   api:
     container_name: azuraforge_api
     build: { context: ../api, dockerfile: Dockerfile }
@@ -104,10 +107,8 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
     command: uvicorn azuraforge_api.main:app --host 0.0.0.0 --port 8000 --reload
-    logging:
-      driver: "json-file"
-      options: {max-size: "10m", max-file: "3"}
-
+    logging: *default-logging
+    
   worker:
     container_name: azuraforge_worker
     build: { context: ../worker, dockerfile: Dockerfile }
@@ -134,9 +135,7 @@ services:
         reservations:
           devices: [{ driver: nvidia, count: 1, capabilities: [gpu] }]
     command: python3 -m azuraforge_worker.main
-    logging:
-      driver: "json-file"
-      options: {max-size: "10m", max-file: "3"}
+    logging: *default-logging
 
   dashboard:
     container_name: azuraforge_dashboard
@@ -147,9 +146,7 @@ services:
       - ../dashboard:/app
       - /app/node_modules
     depends_on: [api]
-    logging:
-      driver: "json-file"
-      options: {max-size: "10m", max-file: "3"}
+    logging: *default-logging
 
 volumes:
   redis_data:
