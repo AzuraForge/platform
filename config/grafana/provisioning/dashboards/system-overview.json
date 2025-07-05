@@ -1,4 +1,6 @@
 {
+    "__inputs": [],
+    "__requires": [],
     "annotations": {
         "list": [
             {
@@ -48,11 +50,11 @@
                         "type": "loki",
                         "uid": "loki"
                     },
-                    "expr": "{job=\"container-logs\"}",
+                    "expr": "{job=\"container-logs\", container=~\"azuraforge_.*$Service\"}",
                     "refId": "A"
                 }
             ],
-            "title": "Tüm Servis Logları",
+            "title": "$Service Logları",
             "type": "logs"
         }
     ],
@@ -63,7 +65,32 @@
         "azuraforge"
     ],
     "templating": {
-        "list": []
+        "list": [
+            {
+                "current": {
+                    "selected": false,
+                    "text": "",
+                    "value": ""
+                },
+                "datasource": {
+                    "type": "loki",
+                    "uid": "loki"
+                },
+                "definition": "label_values(container)",
+                "hide": 0,
+                "includeAll": true,
+                "label": "Servis",
+                "multi": false,
+                "name": "Service",
+                "options": [],
+                "query": "label_values(container)",
+                "refresh": 1,
+                "regex": "azuraforge_.*",
+                "skipUrlSync": false,
+                "sort": 1,
+                "type": "query"
+            }
+        ]
     },
     "time": {
         "from": "now-1h",
@@ -73,6 +100,5 @@
     "timezone": "browser",
     "title": "AzuraForge System Overview",
     "uid": "azuraforge-system-overview",
-    "version": 3,
-    "weekStart": ""
+    "version": 4
 }
