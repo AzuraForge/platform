@@ -2,62 +2,34 @@
 
 Bu belge, AzuraForge platformunda geliştirme yaparken karşılaşılan yaygın sorunları, nedenlerini ve kanıtlanmış çözümlerini içerir. Bir sorunla karşılaştığınızda ilk başvuracağınız yer burası olmalıdır.
 
-## 1. Konteyner Başlatma Hataları (`Exited (1)`)
+## 1. Konteyner Başlatma veya Çalışma Zamanı Hataları
 
-Bir veya daha fazla servis (`api`, `worker` vb.) `docker-compose up` sonrası `Exited (1)` durumuna geçiyorsa, bu genellikle servisin başlangıç anında bir hata ile karşılaştığını gösterir.
+### Vaka Analizi 1: `docker-compose up` sırasında `loki: plugin not found` Hatası
+*   **Hata Logu:** `Error response from daemon: error looking up logging plugin loki: plugin "loki" not found`
+*   **Neden:** `docker-compose.yml` dosyasında bir veya daha fazla servis, `logging` sürücüsü olarak `loki` kullanmaya ayarlanmıştır. Ancak, ana makinedeki Docker motorunda bu eklenti kurulu değildir. Bu, özellikle Docker'ın standart dağıtımlarında yaygındır.
+*   **Çözüm:** Logları doğrudan Loki'ye gönderme yönteminden vazgeçin. Bunun yerine, tüm servislerin `logging` ayarını varsayılan `json-file` olarak bırakın. Logları toplama görevini `promtail` servisine verin. `promtail-config.yml` dosyasının, `docker_sd_configs` kullanarak Docker soketinden logları okuyacak şekilde yapılandırıldığından emin olun. Bu yöntem, ek Docker eklentisi gerektirmediği için daha taşınabilir ve güvenilirdir.
 
-**Kontrol Adımları:**
-1.  **Logları İncele:** Hatanın kök nedenini bulmak için her zaman ilk olarak çöken servisin loglarını kontrol edin:
-    ```bash
-    docker-compose logs <servis_adi>
-    ```
-2.  Aşağıdaki yaygın senaryoları kontrol edin.
+### Vaka Analizi 2: Grafana'da "No data" veya "Datasource not found" Hatası
+*   **Hata Logu:** Grafana arayüzünde "No data" yazısı. `grafana` konteyner loglarında `Failed to upgrade legacy queries Datasource ... was not found` veya `failed to save dashboard ... could not resolve dashboards:uid:...`
+*   **Neden:** Bu sorunun birden çok katmanı olabilir:
+    1.  **Promtail-Loki Bağlantısı:** `promtail` logları toplayıp Loki'ye gönderemiyor olabilir. `promtail-config.yml` dosyasındaki `scrape_configs` bölümünün, ağ adına bağımlı olmadan tüm konteynerleri keşfettiğinden emin olun.
+    2.  **Grafana-Loki Bağlantısı:** Grafana, Loki veri kaynağını bulamıyor. Grafana'nın modern sürümleri, `provisioning` ile oluşturulan veri kaynakları ve dashboard'lar arasında tutarlı bir bağlantı için `uid` alanına güvenir.
+*   **Çözüm:**
+    1.  `platform/config/grafana/provisioning/datasources/loki-datasource.yml` dosyasında, `datasource` için sabit bir `uid` (örn: `azuraforge_loki_ds`) tanımlayın.
+    2.  `platform/config/grafana/provisioning/dashboards/system-overview.json` dosyasında, tüm panellerin ve değişkenlerin `datasource` alanının, bu sabit `uid`'yi kullandığından emin olun.
+    3.  `docker-compose down -v` komutuyla sistemi volümleriyle birlikte tamamen indirip yeniden başlatarak Grafana'nın provisioning işlemini sıfırdan yapmasını sağlayın.
 
----
+### Vaka Analizi 3: Worker'da `KeyError` veya `pydantic.ValidationError`
+*   **Hata Logu:** Batch (toplu) deneyler çalıştırırken `KeyError: 'some_column'` veya Pydantic'in `Field required` hatası.
+*   **Neden:** Hiperparametre optimizasyonu sırasında her bir alt deney, konfigürasyonun sadece değişen kısmını alır. Ancak pipeline, tam konfigürasyona (örn: hedef sütun adı) ihtiyaç duyar. Veya, `worker` içindeki bir yardımcı fonksiyon (örn: `get_shared_data`), Pydantic doğrulaması için pipeline'a eksik bir konfigürasyon gönderiyordur.
+*   **Çözüm:** Pipeline kodunu daha sağlam hale getirin.
+    *   `_get_target_and_feature_cols` gibi metotlar, hedef sütunun her zaman özellikler listesinde olduğundan emin olmalıdır.
+    *   `worker`'da, bir pipeline'ın geçici bir örneğini oluşturmanız gerekiyorsa, ona her zaman `full_config` (kullanıcıdan gelen orijinal konfigürasyonla zenginleştirilmiş tam yapı) gönderin, sadece bir parçasını değil.
 
-### Vaka Analizi 1: `ImportError` veya `NameError`
-*   **Hata Logu:** `ImportError: cannot import name ...` veya `NameError: name '...' is not defined`.
-*   **Neden:** Genellikle bir Python dosyasının en üstüne gerekli `import` satırının eklenmesi unutulmuştur. Projemizdeki son `NameError: name 'abstractmethod' is not defined` hatası buna bir örnektir.
-*   **Çözüm:** Hata mesajında belirtilen dosyayı açın ve eksik olan importu (örn: `from abc import abstractmethod`) ekleyin.
-
-### Vaka Analizi 2: Döngüsel İçe Aktarma (`Circular Import`)
-*   **Hata Logu:** `ImportError: cannot import name '...' from partially initialized module '...' (most likely due to a circular import)`
-*   **Neden:** İki Python modülü (örneğin `A.py` ve `B.py`) birbirini import etmeye çalıştığında oluşur. Bu, kodun "Tek Sorumluluk Prensibi"ne aykırı şekilde yapılandırıldığını gösterir.
-*   **Çözüm:** Bağımlılıkları yeniden yapılandırın. Ortak fonksiyonları, her iki modülün de import edebileceği üçüncü bir yardımcı modüle (örn: `utils.py`) taşıyın. Böylece bağımlılık akışı tek yönlü hale gelir (`A -> utils`, `B -> utils`).
-
-### Vaka Analizi 3: `passlib` ve `bcrypt` Uyumsuzluğu
-*   **Hata Logu:** `(trapped) error reading bcrypt version` veya `AttributeError: module 'bcrypt' has no attribute '__about__'`
-*   **Neden:** `pip` tarafından kurulan `passlib` ve `bcrypt` kütüphanelerinin versiyonları birbiriyle uyumlu değildir.
-*   **Çözüm:** İlgili servisin (`api` gibi) `pyproject.toml` dosyasında, bu kütüphanelerin uyumlu olduğu bilinen versiyonlarını sabitleyin ("pinleyin"):
-    ```toml
-    dependencies = [
-        "passlib[bcrypt]",
-        "bcrypt==4.1.3",
-        ...
-    ]
-    ```
-
-### Vaka Analizi 4: Celery Worker Süreçlerinde Veritabanı Bağlantı Hatası
-*   **Hata Logu:** `RuntimeError: Database engine not initialized for this worker process.`
-*   **Neden:** Celery'nin `prefork` modelinde, ana worker süreci başladığında oluşturulan veritabanı bağlantısı (`engine`), görevleri işleyen çocuk süreçlere miras kalmaz.
-*   **Çözüm:** Her bir çocuk sürecin kendi veritabanı bağlantısını oluşturmasını sağlamak için Celery'nin `worker_process_init` sinyalini kullanın. `worker/src/azuraforge_worker/celery_app.py` dosyasındaki gibi bir yapı kurun:
-    ```python
-    from celery.signals import worker_process_init
-    
-    engine = None
-
-    @worker_process_init.connect
-    def init_worker_db_connection(**kwargs):
-        global engine
-        # ... engine'i burada oluştur ...
-    ```
+### Vaka Analizi 4: Sistemin Kilitlenmesi ve Aşırı Kaynak Tüketimi
+*   **Semptomlar:** Sistem yavaşlar, Docker komutları yanıt vermez, bellek kullanımı %90'ları aşar.
+*   **Neden:** Genellikle, Celery'nin `prefork` modelinde çalışan birden çok worker alt sürecinin, her birinin büyük bir veri setini kendi bellek alanına yüklemesinden kaynaklanır (`Concurrency Sayısı * Veri Seti Boyutu`).
+*   **Çözüm:** Veri yükleme mantığını pipeline'ların içinden çıkarın. `worker`'ın ana görev modülünde (`training_tasks.py` gibi), Python'un `@lru_cache` dekoratörünü kullanarak paylaşımlı bir bellek içi önbellek oluşturun. Veriyi, görevi alan alt süreçler yerine, bu paylaşımlı fonksiyonda **sadece bir kez** yükleyin. Alt süreçler bu önbelleğe kopyalama yapmadan (copy-on-write) erişir, bu da bellek kullanımını dramatik şekilde düşürür.
 
 ---
-
-## 2. Docker Compose ve Ortam Değişkenleri
-
-### Sorun: `The "VAR_NAME" variable is not set. Defaulting to a blank string.` Uyarısı
-*   **Neden:** Bu bir **uyarıdır, hata değil**. `docker-compose.yml` dosyanızda `${VAR_NAME}` gibi bir değişken varsa, Docker Compose bu değeri önce `.env` dosyanızda arar. Bulamazsa bu uyarıyı verir.
-*   **Ne Zaman Güvenli?** Eğer bu değişkeni, bizim yaptığımız gibi, Docker'ın `secrets` mekanizması ile konteynerin içine **doğrudan** atıyorsanız, bu uyarı zararsızdır ve görmezden gelinebilir. `postgres` servisindeki `healthcheck` komutu buna bir örnektir.
-*   **Ne Zaman Tehlikeli?** Eğer bu değişkeni, uygulamanızın **doğrudan okuması** gerekiyorsa (örneğin `environment` bloğunda `DATABASE_URL=${DB_USER}:${DB_PASS}...` gibi bir kullanım), bu uyarı, uygulamanıza boş değerlerin gittiği ve muhtemelen çökeceği anlamına gelir.
-*   **En Sağlam Çözüm:** Hassas bilgileri (`secrets` ile) ve hassas olmayan konfigürasyonları (`environment` ile) ayrı tutun. Python/Node.js kodunuzun bu iki kaynaktan da okuyacak şekilde akıllı olmasını sağlayın. `dbmodels/database.py` dosyasındaki `get_database_url` fonksiyonu buna iyi bir örnektir.
+Bu güncellemelerle birlikte, projenizin dokümantasyonu da mevcut stabil durumunu yansıtacak ve gelecekteki geliştirmeler için sağlam bir zemin oluşturacaktır.

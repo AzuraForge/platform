@@ -26,14 +26,16 @@ Bu vizyonu gerçekleştirmek için dört temel anayasal prensibe bağlıyız: **
     *   **Mimari Dönüşüm:** Proje, bağımsız "kardeş repo" yapısına sahip bir mikroservis mimarisine geçirildi.
     *   **Servislerin Ayrıştırılması (Decoupling):** `api` ve `worker` servisleri, Redis üzerinden haberleşerek tamamen bağımsız hale getirildi.
     *   **Merkezi Veritabanı Modelleri:** `dbmodels` reposu oluşturularak tüm servisler için tek bir veri şeması kaynağı sağlandı.
-    *   **Gözlemlenebilirlik:** Loki, Promtail ve Grafana ile merkezi bir loglama altyapısı kuruldu.
-    *   **Güvenlik:** Hassas veritabanı bilgileri, Docker Secrets ile güvence altına alındı.
     *   **Frontend Modülerleşmesi:** `Dashboard`'daki global `App.css`, bileşen bazlı CSS Modüllerine ayrılarak daha yönetilebilir hale getirildi.
 *   **Faz 2: Yetenek Setini Genişletme ("Capability Expansion"):**
     *   **AI Motorunun Geliştirilmesi:** `core` ve `learner` kütüphanelerine `Conv2D`, `MaxPool2D`, `Embedding`, `Attention`, `CrossEntropyLoss` gibi yeni temel yapı taşları eklendi.
-    *   **Uçtan Uca Yetenekler:** `Model Kaydetme/Sunma`, `Hiperparametre Optimizasyonu` ve `Görüntü/Ses Pipeline` temelleri gibi özellikler platforma kazandırıldı.
-*   **Faz 3: Ürünleştirme ve Cilalama (Productization & Polish) [Başlandı]:**
-    *   **Kullanıcı Yönetimi (JWT):** Platforma güvenli kimlik doğrulama ve kullanıcı yönetimi temeli eklendi.
+    *   **Uçtan Uca Yetenekler:** `Model Kaydetme/Sunma`, `Hiperparametre Optimizasyonu`, `Kullanıcı Yönetimi (JWT)` ve `İnteraktif Raporlama` gibi özellikler platforma kazandırıldı.
+*   **Faz 3: Stabilizasyon ve Optimizasyon (Stability & Optimization) [Tamamlandı]:**
+    *   **Kaynak Yönetimi:** `worker` servisindeki bellek patlaması sorunu, paylaşımlı bellek (shared-memory) optimizasyonu ile çözüldü.
+    *   **GPU Entegrasyonu:** GPU kullanımının garantilenmesi ve sessiz hata (silent failure) durumlarının önlenmesi sağlandı.
+    *   **Gözlemlenebilirlik Altyapısı:** Loki, Promtail ve Grafana yığını tam entegre edilerek merkezi loglama sistemi tamamen işlevsel hale getirildi.
+    *   **Uygulama Tutarlılığı:** Tüm eklentilerin (`app-*`) `worker` tarafından doğru şekilde kurulması ve dinamik formlarının `dashboard`'da gösterilmesi sağlandı.
+    *   **Hata Ayıklama:** `Pydantic ValidationError` ve `KeyError` gibi kritik çalışma zamanı (runtime) hataları giderildi.
 
 ---
 
@@ -41,14 +43,14 @@ Bu vizyonu gerçekleştirmek için dört temel anayasal prensibe bağlıyız: **
 
 **Projenin anlık ve detaylı eylem planı için lütfen [Sonraki Adımlar ve Öncelikler](./NEXT_STEPS_PRIORITIES.md) belgemize bakın.**
 
-### **FAZ 3: ÜRÜNLEŞTİRME VE CİLALAMA (Productization & Polish) [Devam Ediyor]**
-*   **Hedef:** Mevcut güçlü altyapıyı, son kullanıcının kolayca kullanabileceği, kararlı ve "cilalı" bir ürüne dönüştürmek.
-*   **Ana Başlıklar:** Kullanıcı Yönetimi (Authentication), Gelişmiş Raporlama Arayüzleri, Kapsamlı Kullanıcı Dokümantasyonu, UI/UX İyileştirmeleri.
+### **AKTİF FAZ: FAZ 4 - ÜRÜNLEŞTİRME VE CİLALAMA (Productization & Polish)**
+*   **Hedef:** Mevcut güçlü ve stabil altyapıyı, son kullanıcının kolayca kullanabileceği, "cilalı" ve zengin özelliklere sahip bir ürüne dönüştürmek.
+*   **Ana Başlıklar:** Gelişmiş UI/UX (Daha iyi grafikler, daha basit tahmin arayüzü), Kapsamlı Kullanıcı Dokümantasyonu, CI/CD Otomasyonu.
 
-### **FAZ 4: DERİNLEŞME VE İNOVASYON (Deep Tech & Innovation) [Gelecek]**
+### **FAZ 5: DERİNLEŞME VE İNOVASYON (Deep Tech & Innovation) [Gelecek]**
 *   **Hedef:** AI motorunu, Transformer gibi en modern mimarileri destekleyecek şekilde derinleştirmek ve platforma benzersiz, yenilikçi özellikler katmak.
-*   **Ana Başlıklar:** `Multi-Head Attention`, `LayerNorm`, `WaveNet`/`Tacotron` prototipleri, Açıklanabilir Yapay Zeka (XAI).
+*   **Ana Başlıklar:** `Multi-Head Attention`, `LayerNorm`, Veri Artırma (Data Augmentation), Açıklanabilir Yapay Zeka (XAI).
 
-### **FAZ 5: EKOSİSTEM VE TOPLULUK (Ecosystem & Community) [Uzun Vadeli Vizyon]**
+### **FAZ 6: EKOSİSTEM VE TOPLULUK (Ecosystem & Community) [Uzun Vadeli Vizyon]**
 *   **Hedef:** AzuraForge'u, topluluğun katkıda bulunabileceği, eklentilerini paylaşabileceği canlı bir ekosisteme dönüştürmek.
 *   **Ana Başlıklar:** "AzuraForge Hub" (Eklenti Pazarı), Sertifikasyon Programları, Stratejik Ortaklıklar.
