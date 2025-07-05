@@ -1,4 +1,3 @@
-# version etiketi modern compose'da gereksizdir.
 secrets:
   postgres_user:
     file: ./secrets/postgres_user.txt
@@ -8,22 +7,28 @@ secrets:
     file: ./secrets/secret_key.txt
 
 services:
-  # ... (loki, promtail, grafana, redis, postgres servisleri aynı kalıyor) ...
   loki:
     image: grafana/loki:2.9.0
     container_name: azuraforge_loki
     ports: ["3100:3100"]
-    volumes: ["./config/loki-config.yml:/etc/loki/local-config.yaml"]
+    volumes:
+      - ./config/loki-config.yml:/etc/loki/local-config.yaml
     command: -config.file=/etc/loki/local-config.yaml
     restart: always
+
   promtail:
     image: grafana/promtail:2.9.0
     container_name: azuraforge_promtail
     volumes:
+      # Docker loglarının host makinede bulunduğu standart yolu bağlıyoruz.
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      # Docker soketini bağlayarak promtail'in konteyner meta verilerini okumasını sağlıyoruz
+      - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./config/promtail-config.yml:/etc/promtail/config.yml
     command: -config.file=/etc/promtail/config.yml
     restart: always
+    depends_on: [loki]
+
   grafana:
     image: grafana/grafana-oss:10.2.2
     container_name: azuraforge_grafana
@@ -34,9 +39,10 @@ services:
       - GF_PROVISIONING_PATH=/etc/grafana/provisioning
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./config/grafana:/etc/grafana/provisioning
+      - ./config/grafana/provisioning:/etc/grafana/provisioning
     depends_on: [loki]
     restart: always
+
   redis:
     image: redis:alpine
     container_name: azuraforge_redis
@@ -45,6 +51,7 @@ services:
     logging:
       driver: "json-file"
       options: {max-size: "10m", max-file: "3"}
+
   postgres:
     image: postgres:15-alpine
     container_name: azuraforge_postgres
@@ -67,13 +74,9 @@ services:
       - postgres_user
       - postgres_password
         
-  # --- ANA PLATFORM SERVİSLERİ ---
   api:
-    # ... (API servisi önceki doğru haliyle aynı kalıyor) ...
     container_name: azuraforge_api
-    build:
-      context: ../api
-      dockerfile: Dockerfile
+    build: { context: ../api, dockerfile: Dockerfile }
     ports: ["8000:8000"]
     volumes:
       - ../api:/app
@@ -92,23 +95,19 @@ services:
       - secret_key
     depends_on:
       postgres: { condition: service_healthy }
-    command: >
-      uvicorn azuraforge_api.main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn azuraforge_api.main:app --host 0.0.0.0 --port 8000 --reload
     logging:
       driver: "json-file"
       options: {max-size: "10m", max-file: "3"}
 
   worker:
     container_name: azuraforge_worker
-    build:
-      context: ../worker
-      dockerfile: Dockerfile
+    build: { context: ../worker, dockerfile: Dockerfile }
     volumes:
       - ../worker:/app
       - ${REPORTS_DIR:-./reports}:/app/reports
       - ${CACHE_DIR:-./.cache}:/app/.cache
     environment:
-      # SADECE hassas olmayan değişkenler burada
       - POSTGRES_HOST=postgres
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_DB_PORT=5432
@@ -125,21 +124,15 @@ services:
     deploy:
       resources:
         reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    command: >
-      python3 -m azuraforge_worker.main
+          devices: [{ driver: nvidia, count: 1, capabilities: [gpu] }]
+    command: python3 -m azuraforge_worker.main
     logging:
       driver: "json-file"
       options: {max-size: "10m", max-file: "3"}
 
   dashboard:
     container_name: azuraforge_dashboard
-    build:
-      context: ../dashboard
-      dockerfile: Dockerfile
+    build: { context: ../dashboard, dockerfile: Dockerfile }
     command: npm run dev -- --host 0.0.0.0
     ports: ["5173:5173"]
     volumes:

@@ -1,0 +1,10 @@
+apiVersion: 1
+providers:
+- name: 'AzuraForge Dashboards'
+  orgId: 1
+  folder: 'AzuraForge'
+  type: file
+  disableDeletion: false
+  editable: true
+  options:
+    path: /etc/grafana/provisioning/dashboards
