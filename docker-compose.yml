@@ -12,22 +12,28 @@ services:
     container_name: azuraforge_loki
     ports: ["3100:3100"]
     volumes:
-      - ./config/loki-config.yml:/etc/loki/local-config.yaml
-    command: -config.file=/etc/loki/local-config.yaml
+      - ./config/loki-config.yml:/etc/loki/config.yaml
+    # Komutu ve dosyayı config.yaml olarak standartlaştırıyoruz
+    command: -config.file=/etc/loki/config.yaml
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   promtail:
     image: grafana/promtail:2.9.0
     container_name: azuraforge_promtail
     volumes:
-      # Docker loglarının host makinede bulunduğu standart yolu bağlıyoruz.
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      # Docker soketini bağlayarak promtail'in konteyner meta verilerini okumasını sağlıyoruz
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./config/promtail-config.yml:/etc/promtail/config.yml
     command: -config.file=/etc/promtail/config.yml
     restart: always
-    depends_on: [loki]
+    depends_on:
+      loki:
+        condition: service_healthy # Loki'nin sağlıklı olmasını bekle
 
   grafana:
     image: grafana/grafana-oss:10.2.2
@@ -40,8 +46,10 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
       - ./config/grafana/provisioning:/etc/grafana/provisioning
-    depends_on: [loki]
     restart: always
+    depends_on:
+      loki:
+        condition: service_healthy # Grafana'nın da başlamadan önce Loki'nin sağlıklı olmasını bekle
 
   redis:
     image: redis:alpine
