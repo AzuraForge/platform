@@ -1,0 +1,55 @@
+# platform/.github/workflows/ci-python-lint-test.yml
+name: Python Lint & Test
+
+# Bu workflow, herhangi bir repodan tetiklenebilmesi için 'workflow_call' olarak tanımlanır.
+# Bu, tüm repolarımızda aynı CI mantığını tekrar etmeden kullanmamızı sağlar.
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        required: true
+        type: string
+        description: 'Python versiyonu (örn: "3.10")'
+      working-directory:
+        required: true
+        type: string
+        description: 'İşlemlerin çalışacağı dizin (örn: ./api)'
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    
+    # İşlemlerin çalışacağı ana dizini belirtir.
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+
+    steps:
+      - name: 1. Kodu Al (Checkout)
+        uses: actions/checkout@v4
+
+      - name: 2. Python Ortamını Kur
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+          cache: 'pip' # pip bağımlılıklarını cache'leyerek sonraki çalışmaları hızlandırır.
+
+      - name: 3. Geliştirme Bağımlılıklarını Yükle
+        run: |
+          python -m pip install --upgrade pip
+          # 'editable' modda ve geliştirme bağımlılıkları ile birlikte kurar.
+          pip install -e .[dev]
+
+      - name: 4. Flake8 ile Lint Kontrolü
+        run: |
+          # --count: Hataları sayar
+          # --select=E9,F63,F7,F82: Bazı özel hataları seçer
+          # --show-source: Hatalı kodu gösterir
+          # --statistics: İstatistikleri gösterir
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # --exit-zero: Sadece uyarılar varsa bile CI'ın başarılı olmasını sağlar.
+          # Sadece stil hataları için build'in kırılmasını engeller.
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: 5. Pytest ile Birim Testlerini Çalıştır
+        run: pytest
