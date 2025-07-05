@@ -1,6 +1,4 @@
 {
-    "__inputs": [],
-    "__requires": [],
     "annotations": {
         "list": [
             {
@@ -25,7 +23,7 @@
         {
             "datasource": {
                 "type": "loki",
-                "uid": "loki"
+                "uid": "azuraforge_loki_ds"  
             },
             "gridPos": {
                 "h": 20,
@@ -48,9 +46,9 @@
                 {
                     "datasource": {
                         "type": "loki",
-                        "uid": "loki"
+                        "uid": "azuraforge_loki_ds" 
                     },
-                    "expr": "{job=\"container-logs\", container=~\"azuraforge_.*$Service\"}",
+                    "expr": "{job=\"container-logs\", container=~\"$Service\"}",
                     "refId": "A"
                 }
             ],
@@ -68,13 +66,13 @@
         "list": [
             {
                 "current": {
-                    "selected": false,
-                    "text": "",
-                    "value": ""
+                    "selected": true,
+                    "text": "All",
+                    "value": "$__all"
                 },
                 "datasource": {
                     "type": "loki",
-                    "uid": "loki"
+                    "uid": "azuraforge_loki_ds"  
                 },
                 "definition": "label_values(container)",
                 "hide": 0,
@@ -83,7 +81,11 @@
                 "multi": false,
                 "name": "Service",
                 "options": [],
-                "query": "label_values(container)",
+                "query": {
+                    "refId": "Loki-Service-Variable-Query",
+                    "label": "container",
+                    "stream_selector": "{job=\"container-logs\"}"
+                },
                 "refresh": 1,
                 "regex": "azuraforge_.*",
                 "skipUrlSync": false,
@@ -100,5 +102,5 @@
     "timezone": "browser",
     "title": "AzuraForge System Overview",
     "uid": "azuraforge-system-overview",
-    "version": 4
+    "version": 5
 }
