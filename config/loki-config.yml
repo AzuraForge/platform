@@ -1,7 +1,10 @@
 auth_enabled: false
 
 server:
+  # Konteynerin tüm ağ arayüzlerinden gelen istekleri dinlemesini sağlar.
+  http_listen_address: 0.0.0.0
   http_listen_port: 3100
+  grpc_listen_address: 0.0.0.0
   grpc_listen_port: 9081
 
 common:
@@ -28,3 +31,11 @@ schema_config:
 
 ruler:
   alertmanager_url: http://localhost:9093
+
+# Bu ayar, Promtail gibi istemcilerin logları hangi yola göndereceğini belirler.
+ingester:
+  lifecycler:
+    ring:
+      kvstore:
+        store: inmemory
+      replication_factor: 1
