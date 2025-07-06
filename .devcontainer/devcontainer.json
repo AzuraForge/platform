@@ -1,0 +1,65 @@
+// ========== DOSYA: platform/.devcontainer/devcontainer.json ==========
+{
+	"name": "AzuraForge Platform (API Servisi)",
+
+	// Bu, VS Code'a bu geliştirme ortamını docker-compose ile
+	// yönetmesini söyler.
+	"dockerComposeFile": [
+		"../docker-compose.yml"
+	],
+
+	// Bu, VS Code'un hangi servisi "ana geliştirme atölyesi" olarak
+	// kabul edeceğini ve terminali hangi servisin içine açacağını belirtir.
+	// `api` servisi, hızlı geri bildirim (uvicorn --reload) ve merkezi
+	// rolü nedeniyle en iyi başlangıç noktasıdır.
+	"service": "api",
+
+	// DÜZELTME: Bu, VS Code'un konteyner içinde açacağı klasördür.
+	// docker-compose.yml dosyasında API projesini /app klasörüne
+	// bağladığımız için, burası da /app olmalıdır.
+	// "Workspace does not exist" hatasını bu satır düzeltir.
+	"workspaceFolder": "/app",
+	
+	// Bu bölüm, VS Code'a hangi portları yerel makinenize
+	// otomatik olarak yönlendirmesi gerektiğini söyler.
+	"forwardPorts": [
+		3000, // Grafana
+		3100, // Loki
+		5173, // Dashboard
+		5432, // PostgreSQL
+		6379, // Redis
+		8000  // API
+	],
+
+	// Bu bölüm, VS Code'a bu ortam açıldığında hangi
+	// eklentilerin otomatik olarak kurulmasını istediğinizi söyler.
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"ms-azuretools.vscode-docker",
+				"charliermarsh.ruff",
+				"esbenp.prettier-vscode",
+				"redhat.vscode-yaml"
+			],
+			// Geliştirici deneyimini iyileştiren ek ayarlar
+			"settings": {
+				"terminal.integrated.shell.linux": "/bin/bash",
+				"python.defaultInterpreterPath": "/usr/bin/python3",
+				"python.linting.enabled": true,
+				"python.linting.pylintEnabled": false,
+				"python.linting.flake8Enabled": true,
+				"python.formatting.provider": "black"
+			}
+		}
+	},
+
+	// Bu komut, konteynerler oluşturulduktan sonra çalıştırılır.
+	// Gerekli dizinleri oluşturur ve temel bir "hoş geldin" mesajı verir.
+	"postCreateCommand": "mkdir -p /app/reports /app/.cache && echo 'AzuraForge API geliştirme ortamı hazır. Terminal /app dizininde başlatıldı.'",
+
+	// Uzak (remote) kullanıcıyı root olarak ayarla. Bu, geliştirme sırasında
+	// izin (permission) sorunlarını önler.
+	"remoteUser": "root"
+}
