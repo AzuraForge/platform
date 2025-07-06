@@ -91,8 +91,8 @@ services:
     ports: ["8000:8000"]
     volumes:
       - ../api:/app
-      - ${REPORTS_DIR:-./reports}:/app/reports
-      - ${CACHE_DIR:-./.cache}:/app/.cache
+      - reports_data:/app/reports
+      - cache_data:/app/.cache
     environment:
       - POSTGRES_HOST=postgres
       - POSTGRES_DB=${POSTGRES_DB}
@@ -117,8 +117,8 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ../worker:/app
-      - ${REPORTS_DIR:-./reports}:/app/reports
-      - ${CACHE_DIR:-./.cache}:/app/.cache
+      - reports_data:/app/reports
+      - cache_data:/app/.cache
     environment:
       - POSTGRES_HOST=postgres
       - POSTGRES_DB=${POSTGRES_DB}
@@ -164,3 +164,5 @@ volumes:
   redis_data:
   postgres_data:
   grafana_data:
+  reports_data:
+  cache_data:
