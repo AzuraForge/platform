@@ -1,38 +1,25 @@
-# 🚀 AzuraForge: Sonraki Adımlar ve İterasyon Odak Noktaları
+# 🚀 AzuraForge: Sonraki Adımlar ve Öncelikler (FAZ 4)
 
-**Bu belge, projenin mevcut durumunu, tamamlanan ana görevleri ve bir sonraki iterasyonlar için odaklanılacak öncelikli eylem planını içerir. Bu, projenin yaşayan ve nefes alan, canlı yol haritasıdır.**
-
----
-
-## ✅ TAMAMLANAN FAZ 3: STABİLİZASYON VE OPTİMİZASYON
-
-Aşağıdaki kritik görevler başarıyla tamamlanmış ve platform sağlam, performanslı ve gözlemlenebilir bir temele oturtulmuştur.
-
-| Öncelik | Görev                                 | Durum     | Sonuç                                                                      |
-| :------ | :------------------------------------ | :-------- | :------------------------------------------------------------------------- |
-| **1**   | **Kaynak Yönetimi (Bellek Optimizasyonu)** | `[✔️]`    | Worker bellek patlaması paylaşımlı önbellek ile çözüldü, sistem kilitlenmeleri önlendi. |
-| **2**   | **GPU Kullanımının Garantilenmesi**      | `[✔️]`    | `core` kütüphanesi artık GPU kullanılamadığında hata veriyor, sessiz hatalar engellendi. |
-| **3**   | **Merkezi Log Yönetimi (Loki/Grafana)**  | `[✔️]`    | Tüm servis logları artık Grafana üzerinden merkezi olarak izlenebilir.        |
-| **4**   | **Pipeline Hatalarının Giderilmesi**     | `[✔️]`    | `weather-forecaster`'daki `KeyError`, `NaN` ve `ValidationError` hataları giderildi. |
-| **5**   | **Uygulama Entegrasyonunun Tamamlanması**| `[✔️]`    | Tüm uygulama eklentileri (`app-*`) artık `dashboard`'da doğru formlarla listeleniyor. |
-| **6**   | **Model Kütüphanesi ve Raporlama**       | `[✔️]`    | Model Kütüphanesi artık başarılı modelleri listeliyor, raporlama özelliği çalışıyor. |
+**Bu belge, projenin "FAZ 4 - ÜRÜNLEŞTİRME VE CİLALAMA" aşamasındaki öncelikli yol haritasıdır.** Amacımız, mevcut sağlam altyapıyı, son kullanıcı için değeri yüksek, sezgisel ve profesyonel özelliklerle zenginleştirmektir.
 
 ---
 
-### **🎯 AKTİF FAZ: FAZ 4 - ÜRÜNLEŞTİRME VE CİLALAMA (Productization & Polish)**
+## 🎯 FAZ 4 Odak Alanları
 
-**Amaç:** Mevcut güçlü ve stabil altyapıyı, son kullanıcının keyifle kullanacağı, "cilalı" ve zengin özelliklere sahip bir ürüne dönüştürmek.
-
-| Öncelik | Görev                                      | Durum     | Neden? (İş Değeri) / Sonuç                                                          | İlgili Repo(lar)           |
-| :------ | :----------------------------------------- | :-------- | :---------------------------------------------------------------------------------- | :------------------------- |
-| **1**   | **CI/CD Pipeline'larını Olgunlaştırma**      | `[⬜]`    | Her PR'da test/linting otomasyonu, kod kalitesini garanti altına alır ve regresyonu önler. | `platform` (github)        |
-| **2**   | **UI/UX İnce Ayarları ve Geliştirmeler**     | `[✔️]`    | **Sonuç:** Anlık Tahmin arayüzü, manuel veri girişi yerine otomatik olarak son veriyi kullanarak tahmin yapacak şekilde basitleştirildi. UX dramatik şekilde iyileştirildi. | `dashboard`, `api`       |
-| **3**   | **Alembic ile Veritabanı Geçişleri**         | `[⬜]`    | Gelecekteki veritabanı şema değişikliklerini güvenli ve otomatik hale getirir.      | `dbmodels`                 |
-| **4**   | **Kapsamlı Kullanıcı Dokümantasyonu**        | `[⬜]`    | "İlk Modelinizi Eğitin" gibi rehberlerle platformun kullanımını kolaylaştırır.         | `platform` (docs)          |
+| Öncelik | Tema | Görev Adı | Neden Önemli? (İş Değeri) | Etkilenecek Repolar | Durum |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **1** | **Akıllı Arayüzler** | **Deney Karşılaştırma Arayüzünü İyileştirme** | Toplu deney sonuçlarını (batch experiments) anlamlandırmak için **paralel koordinat grafiği** eklemek. Bu, en iyi hiperparametreyi bulmayı saniyeler meselesi haline getirir ve platformun analiz gücünü sergiler. | `dashboard` | `[⬜]` |
+| **2** | **Daha Derin Analiz** | **Hata Analizi ve Tahmin Dağılımı Grafiği** | Regresyon modelleri için hataların dağılımını (histogram) ve gerçek vs. tahmin grafiğini (scatter plot) eklemek. Bu, modelin zayıf ve güçlü yönlerini ortaya çıkararak basit bir MLOps aracından öteye taşır. | `worker`, `dashboard` | `[⬜]` |
+| **3** | **Sağlam Altyapı** | **Alembic ile Veritabanı Geçişlerini Yönetme** | Veritabanı şema değişikliklerini (örn: yeni sütun ekleme) güvenli, otomatik ve versiyon kontrollü hale getirmek. Bu, projenin uzun vadeli sağlığı ve ekip çalışması için kritik bir yatırımdır. | `dbmodels`, `api`, `worker` | `[⬜]` |
+| **4. (Düşük Öncelik)** | **Akıllı Arayüzler** | **Tahmin Görevi İçin İptal Butonu** | Özellikle gelecekte eklenecek karmaşık ve yavaş çalışabilecek modeller için, kullanıcının başlattığı bir tahmin görevini iptal edebilmesi (revoke) kullanıcı deneyimini iyileştirir. | `api`, `dashboard` | `[⬜]` |
 
 ---
 
-### **SONRAKİ FAZLAR (Gelecek Vizyonu)**
+### **Sonraki Adım: Görev #1'e Odaklanma**
 
-*   **FAZ 5: DERİNLEŞME VE İNOVASYON:** AI Motorunu Transformer gibi modern mimarilerle güçlendirmek.
-*   **FAZ 6: EKOSİSTEM VE TOPLULUK:** Topluluğun katkı yapabileceği bir "AzuraForge Hub" oluşturmak.
+Şu anki ana önceliğimiz, **1 numaralı görev olan Deney Karşılaştırma Arayüzünü İyileştirmektir.** Bu görev, platforma en çok "cilalı ürün" hissini katacak ve kullanıcılar için en somut değeri üretecektir.
+
+**Eylem Planı:**
+1.  Gerekli görselleştirme kütüphanesini (`plotly.js` veya benzeri) `dashboard` projesine eklemek.
+2.  `BatchCard` bileşenine, yeni karşılaştırma modalını tetikleyecek bir "Analiz Et" butonu eklemek.
+3.  Gelen deney verilerini paralel koordinat grafiğinin formatına uygun hale getiren ve grafiği render eden yeni bir modal bileşeni (`BatchComparisonView.jsx`) oluşturmak.

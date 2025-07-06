@@ -14,8 +14,6 @@ AzuraForge'da geliştirme yaparken, iki temel prensibi aklımızda tutarız:
 
 ## ⚙️ 1. Geliştirme Ortamı Kurulumu
 
-Bu adımlar, platformun tüm parçalarını yerel geliştirme için hazır hale getirir.
-
 ### Adım 1.1: Gerekli Araçlar
 
 *   Git
@@ -25,14 +23,9 @@ Bu adımlar, platformun tüm parçalarını yerel geliştirme için hazır hale 
 
 ### Adım 1.2: Repoları Klonlama (Kardeş Klasör Yapısı)
 
-Tüm ilgili repoları, aynı seviyede bir ana klasör altına klonlayın. Bu yapı, projenin temelini oluşturur.
-
+Tüm ilgili repoları, aynı seviyede bir ana klasör altına klonlayın:
 ```bash
-# Ana çalışma alanınızı oluşturun
-mkdir azuraforge
-cd azuraforge
-
-# Tüm repoları kardeş olarak klonlayın
+mkdir azuraforge && cd azuraforge
 git clone https://github.com/AzuraForge/platform.git
 git clone https://github.com/AzuraForge/core.git
 git clone https://github.com/AzuraForge/learner.git
@@ -47,25 +40,36 @@ git clone https://github.com/AzuraForge/app-image-classifier.git
 git clone https://github.com/AzuraForge/app-voice-generator.git
 ```
 
-### Adım 1.3: Ortam Değişkenlerini Ayarlama
+### Adım 1.3: Ortam Değişkenlerini Ayarlama (Yeni Modüler Yöntem)
 
-`platform` klasöründeki `.env.example` dosyasını kopyalayarak `.env` adıyla yeni bir dosya oluşturun. **Özellikle `SECRET_KEY` değişkenini güvenli bir değerle doldurduğunuzdan emin olun.**
+Her servisin kendi konfigürasyonunu yönetmesi için ilgili `.env.example` dosyalarını kopyalayın.
 
-```bash
-cd platform
-cp .env.example .env
-# .env dosyasını bir metin düzenleyici ile açıp SECRET_KEY'i ayarlayın.
-cd ..
-```
+*   **Platform için (Docker Compose):**
+    ```bash
+    cd platform
+    cp .env.example .env
+    cd ..
+    ```
+*   **Dashboard için:**
+    ```bash
+    cd dashboard
+    cp .env.example .env
+    cd ..
+    ```
+*   **API ve Worker için (İsteğe bağlı, Docker'sız çalıştırma için):**
+    ```bash
+    cd api
+    cp .env.example .env
+    cd ../worker
+    cp .env.example .env
+    cd .. 
+    ```
 
 ### Adım 1.4: Python Bağımlılıklarını Kurma (Tek Sanal Ortam)
 
 En pratik yol, **`platform` projesinin** kök dizininde tek bir sanal ortam oluşturup tüm Python bağımlılıklarını oraya "düzenlenebilir" modda kurmaktır.
-
 ```bash
-# Platform dizinine girin
 cd platform
-
 # Sanal ortamı oluşturun ve aktive edin
 python -m venv .venv
 # Windows: .\.venv\Scripts\activate
@@ -86,12 +90,8 @@ pip install -e ../app-voice-generator
 ```
 
 ### Adım 1.5: JavaScript Bağımlılıklarını Kurma (Dashboard)
-
 ```bash
-# Dashboard dizinine girin
 cd ../dashboard
-
-# Bağımlılıkları kurun
 npm install
 ```
 
@@ -99,62 +99,25 @@ npm install
 
 ## ▶️ 2. Platformu Çalıştırma
 
-İki ana çalışma senaryonuz var:
+### Senaryo A: Docker ile Tüm Platformu Çalıştırma (Önerilen)
 
-### Senaryo A: Docker ile Tüm Platformu Çalıştırma (Önerilen Başlangıç)
-
-Bu, tüm servislerin birbiriyle entegre bir şekilde nasıl çalıştığını görmek için en iyi yoldur.
-
-1.  **Gerekli Dizinleri Oluşturun:**
-    `platform` dizinindeyken, `docker-compose.yml`'de kullanılan paylaşımlı dizinleri oluşturun.
-    ```bash
-    # platform dizininde olduğunuzdan emin olun
-    mkdir -p ./reports ./.cache
-    ```
-2.  **Platformu Başlatın:**
-    `docker-compose` komutunu `platform` dizininden çalıştırın. Docker, kardeş klasörlerdeki diğer projeleri otomatik olarak bulacaktır.
-    ```bash
-    # platform dizininde olduğunuzdan emin olun
-    docker-compose up --build -d
-    ```
+1.  **Gerekli Dizinleri Oluşturun:** `platform` dizinindeyken `mkdir -p ./reports ./.cache` komutunu çalıştırın.
+2.  **Platformu Başlatın:** `platform` dizinindeyken `docker-compose up --build -d` komutunu çalıştırın.
 3.  **Platforma Erişin:**
     *   **Dashboard:** `http://localhost:5173`
     *   **API Dokümantasyonu:** `http://localhost:8000/api/v1/docs`
-
-    > **✨ ÖNEMLİ:** Platform ilk kez başlatıldığında `api` servisi otomatik olarak bir varsayılan kullanıcı oluşturur. `Dashboard`'a giriş yapmak için bu bilgileri kullanın:
-    > **Kullanıcı Adı:** `admin`
-    > **Parola:** `DefaultPassword123!`
+    *   Giriş: `admin` / `DefaultPassword123!`
 
 ### Senaryo B: Hızlı Yerel Geliştirme (Docker olmadan)
 
-Bir serviste (örneğin `api`) hızlıca değişiklik yapıp test etmek istediğinizde bu yöntemi kullanın.
+Bu yöntem, her servisin kendi `.env` dosyasından konfigürasyonunu okuması sayesinde artık çok daha kolay.
 
-1.  **Altyapıyı Başlatın:**
-    Önce sadece veritabanı ve Redis'i Docker ile ayağa kaldırın.
-    ```bash
-    # platform dizininde olduğunuzdan emin olun
-    docker-compose up -d postgres redis
-    ```
+1.  **Altyapıyı Başlatın:** `platform` dizinindeyken `docker-compose up -d postgres redis` komutunu çalıştırın.
 2.  **Servisleri Ayrı Terminallerde Çalıştırın:**
-    Her servis için ayrı bir terminal açın, **önceden oluşturduğunuz sanal ortamı aktive edin** ve ilgili komutu çalıştırın.
-
-    *   **Terminal 1 (API):**
-        ```bash
-        cd ../api
-        start-api
-        ```
-    *   **Terminal 2 (Worker):**
-        ```bash
-        cd ../worker
-        start-worker
-        ```
-    *   **Terminal 3 (Dashboard):**
-        ```bash
-        cd ../dashboard
-        npm run dev
-        ```
-
-Bu kurulumla, herhangi bir Python veya JavaScript dosyasında yaptığınız değişiklik, ilgili servis tarafından otomatik olarak algılanacak ve yeniden yüklenecektir. **Giriş yapmak için yine yukarıda belirtilen varsayılan `admin` bilgilerini kullanabilirsiniz.**
+    *   Her terminalde sanal ortamı (`source platform/.venv/bin/activate`) aktive edin.
+    *   **API:** `api/` dizinine gidin ve `uvicorn azuraforge_api.main:app --reload` komutunu çalıştırın.
+    *   **Worker:** `worker/` dizinine gidin ve `celery -A azuraforge_worker.celery_app worker --loglevel=info` komutunu çalıştırın.
+    *   **Dashboard:** `dashboard/` dizinine gidin ve `npm run dev` komutunu çalıştırın.
 
 ---
 

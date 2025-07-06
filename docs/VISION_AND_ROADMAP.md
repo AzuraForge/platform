@@ -25,17 +25,14 @@ Bu vizyonu gerçekleştirmek için dört temel anayasal prensibe bağlıyız: **
 *   **Faz 1: Temeli Sağlamlaştırma ("Foundation Hardening"):**
     *   **Mimari Dönüşüm:** Proje, bağımsız "kardeş repo" yapısına sahip bir mikroservis mimarisine geçirildi.
     *   **Servislerin Ayrıştırılması (Decoupling):** `api` ve `worker` servisleri, Redis üzerinden haberleşerek tamamen bağımsız hale getirildi.
-    *   **Merkezi Veritabanı Modelleri:** `dbmodels` reposu oluşturularak tüm servisler için tek bir veri şeması kaynağı sağlandı.
-    *   **Frontend Modülerleşmesi:** `Dashboard`'daki global `App.css`, bileşen bazlı CSS Modüllerine ayrılarak daha yönetilebilir hale getirildi.
 *   **Faz 2: Yetenek Setini Genişletme ("Capability Expansion"):**
     *   **AI Motorunun Geliştirilmesi:** `core` ve `learner` kütüphanelerine `Conv2D`, `MaxPool2D`, `Embedding`, `Attention`, `CrossEntropyLoss` gibi yeni temel yapı taşları eklendi.
     *   **Uçtan Uca Yetenekler:** `Model Kaydetme/Sunma`, `Hiperparametre Optimizasyonu`, `Kullanıcı Yönetimi (JWT)` ve `İnteraktif Raporlama` gibi özellikler platforma kazandırıldı.
-*   **Faz 3: Stabilizasyon ve Optimizasyon (Stability & Optimization) [Tamamlandı]:**
+*   **Faz 3: Stabilizasyon ve Taşınabilirlik (Stability & Portability) [Tamamlandı]:**
     *   **Kaynak Yönetimi:** `worker` servisindeki bellek patlaması sorunu, paylaşımlı bellek (shared-memory) optimizasyonu ile çözüldü.
-    *   **GPU Entegrasyonu:** GPU kullanımının garantilenmesi ve sessiz hata (silent failure) durumlarının önlenmesi sağlandı.
-    *   **Gözlemlenebilirlik Altyapısı:** Loki, Promtail ve Grafana yığını tam entegre edilerek merkezi loglama sistemi tamamen işlevsel hale getirildi.
-    *   **Uygulama Tutarlılığı:** Tüm eklentilerin (`app-*`) `worker` tarafından doğru şekilde kurulması ve dinamik formlarının `dashboard`'da gösterilmesi sağlandı.
-    *   **Hata Ayıklama:** `Pydantic ValidationError` ve `KeyError` gibi kritik çalışma zamanı (runtime) hataları giderildi.
+    *   **Gözlemlenebilirlik:** Loki, Promtail ve Grafana yığını entegre edilerek merkezi loglama sistemi işlevsel hale getirildi.
+    *   **Mimari Bütünlük:** Tahmin mantığı, `api`'den `worker`'a taşınarak servis sorumlulukları netleştirildi ve mimari ihlaller giderildi.
+    *   **Esnek Yapılandırma:** Tüm servisler (`api`, `worker`, `dashboard`), ortama bağımlı yapılandırmaları (`API_URL`, `WS_URL`, `DATABASE_URL`) artık `.env` dosyaları ve ortam değişkenleri üzerinden dinamik olarak alacak şekilde güncellendi. Bu, platformun her ortamda (yerel, tünel, üretim) sorunsuz çalışmasını sağlar.
 
 ---
 
@@ -44,8 +41,8 @@ Bu vizyonu gerçekleştirmek için dört temel anayasal prensibe bağlıyız: **
 **Projenin anlık ve detaylı eylem planı için lütfen [Sonraki Adımlar ve Öncelikler](./NEXT_STEPS_PRIORITIES.md) belgemize bakın.**
 
 ### **AKTİF FAZ: FAZ 4 - ÜRÜNLEŞTİRME VE CİLALAMA (Productization & Polish)**
-*   **Hedef:** Mevcut güçlü ve stabil altyapıyı, son kullanıcının kolayca kullanabileceği, "cilalı" ve zengin özelliklere sahip bir ürüne dönüştürmek.
-*   **Ana Başlıklar:** Gelişmiş UI/UX (Daha iyi grafikler, daha basit tahmin arayüzü), Kapsamlı Kullanıcı Dokümantasyonu, CI/CD Otomasyonu.
+*   **Hedef:** Mevcut güçlü ve stabil altyapıyı, son kullanıcının kolayca kullanabileceği, **sezgisel, görsel olarak zengin ve "vay be!" dedirten** bir ürüne dönüştürmek.
+*   **Ana Başlıklar:** Gelişmiş Görselleştirme (Paralel Koordinatlar), Derinlemesine Analiz Araçları, UI/UX İnce Ayarları, Otomasyon (CI/CD, Veritabanı Geçişleri).
 
 ### **FAZ 5: DERİNLEŞME VE İNOVASYON (Deep Tech & Innovation) [Gelecek]**
 *   **Hedef:** AI motorunu, Transformer gibi en modern mimarileri destekleyecek şekilde derinleştirmek ve platforma benzersiz, yenilikçi özellikler katmak.
