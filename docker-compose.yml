@@ -154,11 +154,11 @@ services:
     ports: ["5173:5173"]
     volumes:
       - ../dashboard:/app
-      # Eğer node_modules klasörünü host ile paylaşmak isterseniz aşağıdaki satırı aktif edin ve ilgili klasörü oluşturun
-      # - ./dashboard_node_modules:/app/node_modules
+      # node_modules bind mount kaldırıldı
     depends_on:
       - api
     logging: *default-logging
+
 
 volumes:
   redis_data:
