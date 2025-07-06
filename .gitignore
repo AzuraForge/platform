@@ -9,3 +9,4 @@ reports
 
 artifacts
 secrets
+.env
