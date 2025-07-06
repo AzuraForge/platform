@@ -82,7 +82,7 @@ pip install -e ../applications
 pip install -e ../app-stock-predictor
 pip install -e ../app-weather-forecaster
 pip install -e ../app-image-classifier
-pip install -e ../app-voice-generato
+pip install -e ../app-voice-generator
 ```
 
 ### Adım 1.5: JavaScript Bağımlılıklarını Kurma (Dashboard)
