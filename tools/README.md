@@ -40,7 +40,7 @@ Bu komut, projenin ana çalışma alanını (`../`) tarar ve varsayılan ayarlar
 
 ```bash
 # .../platform/ dizinindeyken:
-python tools/snapshot_tool.py collect project_snapshot.txt --base-dir ../
+python tools/snapshot_tool.py collect ../project_snapshot.txt --base-dir ../
 ```
 *   **Sonuç:** `.../platform/project_snapshot.txt` dosyası oluşturulur.
 
