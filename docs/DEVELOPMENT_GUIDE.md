@@ -94,17 +94,23 @@ pip install -e ../app-voice-generator
 
 Eğer platformu yerel makinenizde GPU ile çalıştırmak ve test etmek istiyorsanız, `CuPy` kütüphanesini sanal ortamınıza kurmanız gerekmektedir.
 
+CuPy'nin, sisteminizdeki Python ve CUDA sürümleriyle tam uyumlu olması kritik öneme sahiptir. En güvenilir yöntem, CUDA versiyonunuza özel paketi kurmaktır.
+
+**Önerilen Kurulum (CUDA 12.x için):**
 ```bash
 # Sanal ortamınız aktifken:
-pip install cupy
+pip install cupy-cuda12x
 ```
-**Not:** `cupy` kurulumu, sisteminizdeki CUDA versiyonu ile uyumlu olmalıdır. `pip` genellikle doğru paketi bulmaya çalışır. Kurulumda sorun yaşarsanız, [CuPy'nin resmi kurulum rehberini](https://docs.cupy.dev/en/stable/install.html) inceleyerek CUDA versiyonunuza özel (`pip install cupy-cuda11x` gibi) kurulum yapabilirsiniz.
 
-### Adım 1.6: JavaScript Bağımlılıklarını Kurma (Dashboard)
+**Alternatif (CUDA 11.x için):**
 ```bash
-cd ../dashboard
-npm install
+pip install cupy-cuda11x
 ```
+
+**Sorun Giderme:**
+*   Eğer kurulum sırasında veya `import cupy` aşamasında `AttributeError: attribute '__name__' of 'builtin_function_or_method' objects is not writable` gibi bir hata alırsanız, bu genellikle CuPy ile Python sürümünüz arasında bir uyumsuzluk olduğunu gösterir. Farklı bir CuPy serisi (örn: `cupy-cuda11x` yerine `cupy-cuda12x` veya tam tersi) kurmayı deneyin.
+*   Sisteminizdeki CUDA sürümünü `nvidia-smi` komutuyla kontrol edebilirsiniz.
+*   Detaylı bilgi için [CuPy'nin resmi kurulum rehberini](https://docs.cupy.dev/en/stable/install.html) inceleyin.
 
 ---
 
