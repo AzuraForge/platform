@@ -20,6 +20,7 @@ AzuraForge'da geliştirme yaparken, iki temel prensibi aklımızda tutarız:
 *   Python 3.10+
 *   Node.js & npm
 *   Docker & Docker Compose
+*   **(Opsiyonel, GPU için)** NVIDIA GPU, güncel sürücüler ve [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit).
 
 ### Adım 1.2: Repoları Klonlama (Kardeş Klasör Yapısı)
 
@@ -89,7 +90,17 @@ pip install -e ../app-image-classifier
 pip install -e ../app-voice-generator
 ```
 
-### Adım 1.5: JavaScript Bağımlılıklarını Kurma (Dashboard)
+### Adım 1.5: (Opsiyonel) GPU Desteği için CuPy Kurulumu
+
+Eğer platformu yerel makinenizde GPU ile çalıştırmak ve test etmek istiyorsanız, `CuPy` kütüphanesini sanal ortamınıza kurmanız gerekmektedir.
+
+```bash
+# Sanal ortamınız aktifken:
+pip install cupy
+```
+**Not:** `cupy` kurulumu, sisteminizdeki CUDA versiyonu ile uyumlu olmalıdır. `pip` genellikle doğru paketi bulmaya çalışır. Kurulumda sorun yaşarsanız, [CuPy'nin resmi kurulum rehberini](https://docs.cupy.dev/en/stable/install.html) inceleyerek CUDA versiyonunuza özel (`pip install cupy-cuda11x` gibi) kurulum yapabilirsiniz.
+
+### Adım 1.6: JavaScript Bağımlılıklarını Kurma (Dashboard)
 ```bash
 cd ../dashboard
 npm install
@@ -118,6 +129,19 @@ Bu yöntem, her servisin kendi `.env` dosyasından konfigürasyonunu okuması sa
     *   **API:** `api/` dizinine gidin ve `uvicorn azuraforge_api.main:app --reload` komutunu çalıştırın.
     *   **Worker:** `worker/` dizinine gidin ve `celery -A azuraforge_worker.celery_app worker --loglevel=info` komutunu çalıştırın.
     *   **Dashboard:** `dashboard/` dizinine gidin ve `npm run dev` komutunu çalıştırın.
+
+### **Komutları Çalıştırma**
+
+1.  Önce `pip install cupy` komutunu çalıştırarak `CuPy` kütüphanesini kur.
+2.  Kurulum bittikten sonra, GPU ile çalıştırma komutunu tekrar dene:
+    ```bash
+    $env:AZURAFORGE_DEVICE="gpu"; python tools/run_isolated.py
+    ```
+
+Bu adımlardan sonra, `azuraforge-core` motoru `CuPy`'ı başarıyla import edecek ve terminalde şu mesajı göreceksin:
+`✅ AzuraForge Core: CuPy (GPU) backend successfully loaded.`
+
+Ardından eğitim süreci başlayacak ve her bir epoch'un saniyeler içinde tamamlandığını göreceksin. Bu, platformun donanım soyutlama katmanının başarıyla çalıştığını ve artık hem CPU hem de GPU üzerinde geliştirme yapabildiğimizi gösterir.
 
 ---
 
