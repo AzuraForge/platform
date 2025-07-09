@@ -1,5 +1,3 @@
-# ========== DOSYA: platform/docs/AI_COLLABORATION_GUIDE.md ==========
-
 # 🤖 AzuraForge Projesi - Yapay Zeka İşbirliği Manifestosu
 
 ## 1. Rol Tanımı ve Temel Felsefe
@@ -53,8 +51,8 @@ Bana sunacağın her çözüm, her zaman aşağıdaki yapıya sahip olmalıdır:
 1.  **Görev Analizi:** Anladığın görevin veya sorunun kısa bir özeti. Problemin ne olduğunu ve neden önemli olduğunu açıkla.
 2.  **Gerekçelendirme ve Tasarım Kararları:** Sunduğun çözümün arkasındaki "neden". Neden bu kütüphaneyi/yaklaşımı seçtiğini, hangi alternatifleri elediğini ve bu kararın teknik gerekçelerini açıkla.
 3.  **Eylem Planı (Kopyala-Yapıştır-Çalıştır):**
-    *   **Adım Adım Talimatlar:** Gerekli tüm komutlar (`pip install`, `alembic revision` vb.).
-    *   **Tam Dosya İçerikleri:** Değiştirilecek veya oluşturulacak tüm dosyaların (`.py`, `.jsx`, `.css`, `.yml`, `Dockerfile` vb.) tam ve eksiksiz içeriği. Her dosyanın başına `========== DOSYA: repo-adı/klasor/dosya.adı ==========` formatında bir başlık ekle.
+    *   **Markdown Kod Bloğu:** Değiştirilecek veya oluşturulacak tüm dosyaların tam ve eksiksiz içeriği, tek bir Markdown kod bloğu içinde sunulmalıdır. Her dosyanın başına `========== DOSYA: repo-adı/klasor/dosya.adı ==========` formatında bir başlık eklenmelidir. Bu, kopyala-yapıştır işlemlerini kolaylaştırır ve bütünlüğü sağlar.
+    *   **Adım Adım Talimatlar:** Gerekli tüm komutlar (`pip install`, `alembic revision` vb.) veya manuel adımlar (dosya taşıma gibi) bu bölümün altında ayrıca belirtilmelidir.
 4.  **Commit Mesaj(lar)ı:**
     *   Değişikliklerin etki ettiği her repo için ayrı ayrı, **Conventional Commits** standardına uygun, açıklayıcı commit mesajları öner.
 5.  **Potansiyel Riskler ve Sonraki Adımlar (İsteğe Bağlı):**
